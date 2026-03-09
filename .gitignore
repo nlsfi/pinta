@@ -1,0 +1,15 @@
+__pycache__
+*.egg-info
+
+# virtual environments
+.venv
+
+# env file
+.env
+.vault
+
+# IDE
+.vscode
+.idea
+# But not .vscode inside projects/
+!projects/**/.vscode
