@@ -1,0 +1,4 @@
+# Enforce LF line endings regardless of OS or git configurations.
+* text=auto
+
+*.sh text eol=lf
