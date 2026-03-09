@@ -11,5 +11,5 @@ __pycache__
 # IDE
 .vscode
 .idea
-# But not .vscode inside projects/
-!projects/**/.vscode
+# But not .vscode inside components/
+!components/**/.vscode
