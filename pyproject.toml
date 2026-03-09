@@ -9,8 +9,10 @@ default-groups = ["lint"]
 package = false
 
 [tool.uv.workspace]
-# Do not add components/qgis_plugin here, since it has its own venv created with --system-site-packages.
-members = []
+
+members = ["components/*"]
+# QGIS plugins have separate venvs created with --system-site-packages
+exclude = ["components/qgis_plugin"]
 
 [dependency-groups]
 lint = [
