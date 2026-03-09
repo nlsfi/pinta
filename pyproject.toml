@@ -6,8 +6,16 @@ dependencies = []
 
 [tool.uv]
 default-groups = ["lint"]
+package = false
+
+[tool.uv.workspace]
+# Do not add components/qgis_plugin here, since it has its own venv created with --system-site-packages.
+members = []
 
 [dependency-groups]
 lint = [
   "prek==0.3.5",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"

@@ -5,8 +5,6 @@
 
 ## Development environment
 
-Each component has its own development environment setup, this setup is just for the root.
-
 * Install [uv](https://docs.astral.sh/uv/getting-started/installation/) globally or optionally later on inside the
   virtual environment
 * Create virtual environment: `python -m venv .venv`
@@ -25,4 +23,4 @@ This repository contains multiple components licensed under different licenses.
 Unless otherwise noted, source code is licensed under the MIT license.
 Exceptions:
 
-* projects/qgis_plugin/ - licensed under GPLv3
+* components/qgis_plugin/ - licensed under GPLv3
