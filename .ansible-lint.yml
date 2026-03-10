@@ -1,0 +1,11 @@
+---
+# .ansible-lint
+profile: production
+
+skip_list:
+  - name[template]
+
+var_naming_pattern: "^[a-z_][a-z0-9_]*$"
+
+mock_modules:
+  - resolve_wheel_file
