@@ -1,0 +1,29 @@
+{
+  "name": "Pinta QGIS devcontainer (WSL)",
+   "dockerComposeFile": [
+    "docker-compose.devcontainer.yml"
+  ],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ]
+    },
+    "jetbrains": {
+      "backend" : "IntelliJ",
+      "extensions": [
+        "PythonCore",
+        "Pythonid",
+        "insyncwithfoo.ryecharm",
+        "intellij.python.dap.plugin"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git" : {},
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/setup_venv.sh"
+}

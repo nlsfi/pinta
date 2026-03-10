@@ -1,0 +1,13 @@
+services:
+  devcontainer:
+    extends:
+      file: ../docker-compose.devcontainer.yml
+      service: devcontainer
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - type: bind
+        source: ..
+        target: /home/ubuntu/workspace
+        read_only: false
+    environment:
+      QT_QPA_PLATFORM: xcb

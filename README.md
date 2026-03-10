@@ -5,13 +5,10 @@
 
 ## Development environment
 
-* Install [uv](https://docs.astral.sh/uv/getting-started/installation/) globally or optionally later on inside the
-  virtual environment
-* Create virtual environment: `python -m venv .venv`
-* Activate virtual environment: `source .venv/bin/activate` or `.\.venv\Scripts\activate.bat`
-* Install dependencies: `uv sync --all-packages`
-  * If not using global uv, install uv first with: `pip install uv`
-* Install prek to run pre-commit hooks: `prek install`
+* Open project in devcontainer, see [instructions](.devcontainer/README.md)
+* Activate virtual environment: `source .venv/bin/activate`
+
+Now all dependencies and Git hooks are automatically installed in your virtual environment when using Dev Containers. See the instructions for developing individual components in their respective README files.
 
 ### Updating dependencies
 

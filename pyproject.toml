@@ -5,14 +5,11 @@ requires-python = ">=3.12"
 dependencies = []
 
 [tool.uv]
-default-groups = ["lint"]
 package = false
+default-groups = ["lint"]
 
 [tool.uv.workspace]
-
 members = ["components/*"]
-# QGIS plugins have separate venvs created with --system-site-packages
-exclude = ["components/qgis_plugin"]
 
 [dependency-groups]
 lint = [
