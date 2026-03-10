@@ -17,6 +17,14 @@
 
 `uv lock --upgrade`
 
+## Development instructions
+
+Check [component](./components) related instructions in each component's README.md.
+
+### Commit messages
+
+Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary).
+
 ## License
 
 This repository contains multiple components licensed under different licenses.
