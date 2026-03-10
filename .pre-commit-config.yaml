@@ -84,7 +84,7 @@ repos:
         exclude: ^infra/ansible/files/.*$
         args: [ "infra/ansible" ]
         additional_dependencies:
-          - ansible==11.13.0
+          - ansible==13.4.0
 
 
 

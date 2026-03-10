@@ -1,0 +1,32 @@
+FROM redhat/ubi9-init:9.5
+
+# hadolint ignore=DL3033
+RUN yum update -y \
+  && yum --disableplugin=subscription-manager install -y \
+  sudo \
+  openssh-server\
+  python312 \
+  && yum --disableplugin=subscription-manager clean all
+
+# add a non-root nopasswd sudoer as a deploy login user to use for ansible playbooks
+# also generate the host keys here since startup will happen seemingly too fast sometimes
+# and ansible will hit a changed host key error, even when checking is disabled
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN useradd deployer \
+  && echo "deployer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+  && echo "Defaults:deployer !requiretty" >> /etc/sudoers \
+  && (echo "deployer:deployer" | chpasswd) \
+  && ssh-keygen -A
+
+# if there are dependencies installed in ansible playbooks, also install those here
+# since playbooks are run with install_dependencies=false by default for container envs
+# to avoid long yum installs each time down+up is called and a fresh container is started.
+
+# hadolint ignore=DL3033
+RUN yum --disableplugin=subscription-manager install -y \
+  python3.12-setuptools \
+  python3.12-psycopg2 \
+  rsync \
+  unzip \
+  python3.12-lxml \
+  && yum --disableplugin=subscription-manager clean all

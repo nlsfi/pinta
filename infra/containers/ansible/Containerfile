@@ -1,0 +1,34 @@
+FROM redhat/ubi9-minimal:9.5
+
+# hadolint ignore=DL3041
+RUN microdnf update -y \
+  && microdnf --disableplugin=subscription-manager install -y \
+  openssh-clients \
+  sshpass \
+  python312 \
+  python3.12-pip \
+  unzip \
+  rsync \
+  git \
+  vi \
+  nano \
+  tar \
+  python3-dnf \
+  && microdnf --disableplugin=subscription-manager clean all
+
+# hadolint ignore=DL3013
+RUN python3.12 -m pip install --no-cache-dir --upgrade pip \
+  && python3.12 -m pip install --no-cache-dir \
+  "ansible==13.4.0 " \
+  "jmespath==1.1.0" \
+  "docker==7.1.0" \
+  "dnspython==2.8.0"
+
+RUN ansible-galaxy collection install community.postgresql:3.10.2 \
+    && ansible-galaxy collection install community.general:10.3.0 \
+    && ansible-galaxy collection install ansible.posix:1.6.2
+
+ENV ANSIBLE_SSH_RETRIES=5
+
+WORKDIR /ansible
+CMD [ "echo", "nothing to do by default" ]
