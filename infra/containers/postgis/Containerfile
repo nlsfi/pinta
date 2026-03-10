@@ -1,0 +1,18 @@
+FROM postgis/postgis:17-3.5
+
+RUN localedef -i fi_FI -c -f UTF-8 -A /usr/share/locale/locale.alias fi_FI.UTF-8
+ENV LANG=fi_FI.UTF8
+ENV POSTGRES_INITDB_ARGS=--encoding=UTF8
+ENV PGPORT=5432
+
+# due to docker non allowing UNSET VOLUME from parent file just move the data directory slightly
+# https://github.com/moby/moby/issues/3465#issuecomment-1002382647
+RUN mkdir -p "/pgdata" && chown -R postgres:postgres "/pgdata" && chmod 777 "/pgdata"
+ENV PGDATA=/pgdata
+
+# since container is only for development purpose just set the default pw here
+ENV POSTGRES_PASSWORD=postgres
+
+COPY ./01-cluster-requested.sh /docker-entrypoint-initdb.d/01-cluster-requested.sh
+COPY ./02-cluster-received.sh /docker-entrypoint-initdb.d/02-cluster-received.sh
+RUN rm -rf /docker-entrypoint-initdb.d/10_postgis.sh
