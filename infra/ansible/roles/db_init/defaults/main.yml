@@ -1,0 +1,30 @@
+install_dependencies: true # noqa: var-naming[no-role-prefix]
+
+db_init_host: localhost
+db_init_port: 5432
+db_init_admin_user: postgres
+db_init_admin_password: postgres
+
+db_init_maintenance_db: postgres
+db_init_template_name: template_postgis
+db_init_database_name: application
+db_init_required_extensions: []
+
+db_init_owner_role: "{{ db_init_database_name }}_owner"
+
+db_init_application_roles: []
+  # list of nologin roles for sql grant purposes
+  # these roles get CONNECT,TEMP on the database by default
+  # - name: role1
+  # - name: role2
+  #   roles:
+#     - role1
+
+db_init_application_users: []
+  # list of login users for actual application purposes, should be members in above roles
+  # or in special cases members of the owner role
+  # - name: x
+  #   password: y
+  #   roles:
+  #     - role1
+#     - role2

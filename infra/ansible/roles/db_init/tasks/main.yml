@@ -1,0 +1,176 @@
+- name: Install dependencies
+  when: install_dependencies | bool
+  block:
+    - name: Install python3.12-psycopg2 (for ansible postgresql modules)
+      ansible.builtin.dnf:
+        name: python3.12-psycopg2
+        state: present
+      become: true
+
+- name: Check instance available
+  community.postgresql.postgresql_ping:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+  register: db_init_status
+  until: db_init_status.is_available | default(false)
+  retries: 10
+  delay: 3
+
+# Applications need a template with the required extensions precreated, since
+# we should not allow superuser access for the automated processes.
+- name: Check template extensions
+  when: db_init_required_extensions | default([]) | length > 0
+  block:
+    - name: Query template extensions
+      community.postgresql.postgresql_query:
+        query: SELECT extname FROM pg_extension;
+        login_host: "{{ db_init_host }}"
+        login_port: "{{ db_init_port }}"
+        login_user: "{{ db_init_admin_user }}"
+        login_password: "{{ db_init_admin_password }}"
+        login_db: "{{ db_init_template_name }}"
+      register: db_init_ext_query
+      changed_when: false
+
+    - name: Verify template extensions
+      ansible.builtin.assert:
+        that: db_init_required_extensions is subset(template_installed_extensions)
+        quiet: true
+        fail_msg: |-
+          Database "{{ db_init_host }}:{{ db_init_port }}/{{ db_init_template_name }}" is missing some extensions:
+          {{ db_init_required_extensions | difference(template_installed_extensions) }}
+      vars:
+        template_installed_extensions: "{{ db_init_ext_query.query_result | map(attribute='extname') | list }}"
+
+- name: Create roles
+  community.postgresql.postgresql_user:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+    name: "{{ item }}"
+    role_attr_flags: NOLOGIN
+  loop_control:
+    label: "{{ item }}"
+  loop: "{{ [db_init_owner_role] + (db_init_application_roles | default([]) | map(attribute='name')) }}"
+
+- name: Create users
+  community.postgresql.postgresql_user:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+    name: "{{ item.name }}"
+    no_password_changes: true
+    role_attr_flags: LOGIN
+  loop_control:
+    label: "{{ item.name }}"
+  loop: "{{ db_init_application_users }}"
+
+# To have ansible actually report changes use duplicate block to the
+# password using changed:false, and previous block reports the made changes
+# this will only show changes for entirely new roles, not for pw changes
+- name: Set user passwords
+  community.postgresql.postgresql_user:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    role_attr_flags: LOGIN
+  changed_when: false
+  loop_control:
+    label: "{{ item.name }}"
+  loop: "{{ db_init_application_users }}"
+
+# Work around ansible bug: since admin will initially have set privilege on the roles it has
+# created, ansible does not apply the inherit privilege with membership module, since
+# it sees owner is already granted on admin, even if it is only set privilege
+- name: Grant owner to admin
+  community.postgresql.postgresql_privs:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+    type: group
+    objs: "{{ db_init_owner_role }}"
+    roles: "{{ db_init_admin_user }}"
+
+- name: Create role hierarchy
+  community.postgresql.postgresql_membership:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+    groups: "{{ item.roles }}"
+    target_roles:
+      - "{{ item.name }}"
+    state: present
+  loop: "{{ (db_init_application_roles + db_init_application_users) | rejectattr('roles', 'undefined') }}"
+  loop_control:
+    label: "{{ item.name }} in roles: {{ item.roles | join(',') }}"
+
+- name: Create database
+  community.postgresql.postgresql_db:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    maintenance_db: "{{ db_init_maintenance_db }}"
+    name: "{{ db_init_database_name }}"
+    owner: "{{ db_init_owner_role }}"
+    template: "{{ db_init_template_name }}"
+
+- name: Set database privileges
+  community.postgresql.postgresql_privs:
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+    type: database
+    objs: "{{ db_init_database_name }}"
+    roles: "{{ item[1] }}"
+    privs: "{{ item[0][0] }}"
+    state: "{{ item[0][1] }}"
+  loop_control:
+    label: "{{ db_init_database_name }} {{ item[1] }} {{ item[0][0] }} {{ item[0][1] }}"
+  loop: |
+    {{ ([('CONNECT,TEMP', 'present'), ('CREATE', 'absent')] | product(db_init_application_roles | map(attribute='name'))) +
+    [(('ALL', 'absent'), 'PUBLIC')] }}
+
+# Recheck the actual state, since if there are more required extensions added after
+# database has been created from a template with fewer extensions, the database might
+# only contain the original smaller set of extensions
+- name: Check database extensions
+  when: db_init_required_extensions | default([]) | length > 0
+  block:
+    - name: Query database extensions
+      community.postgresql.postgresql_query:
+        query: SELECT extname FROM pg_extension;
+        login_host: "{{ db_init_host }}"
+        login_port: "{{ db_init_port }}"
+        login_user: "{{ db_init_admin_user }}"
+        login_password: "{{ db_init_admin_password }}"
+        login_db: "{{ db_init_database_name }}"
+      register: db_init_ext_query
+      changed_when: false
+
+    - name: Verify database extensions
+      ansible.builtin.assert:
+        that: db_init_required_extensions is subset(db_installed_extensions)
+        quiet: true
+        fail_msg: |-
+          Database "{{ db_init_host }}:{{ db_init_port }}/{{ db_init_database_name }}" is missing some extensions:
+          {{ db_init_required_extensions | difference(db_installed_extensions) }}
+      vars:
+        db_installed_extensions: "{{ db_init_ext_query.query_result | map(attribute='extname') | list }}"

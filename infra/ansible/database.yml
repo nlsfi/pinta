@@ -1,0 +1,22 @@
+- name: Provision databases
+  hosts: server[0]
+  run_once: true
+  tasks:
+    - name: Initialize databases
+      ansible.builtin.include_role:
+        name: db_init
+      vars:
+        db_init_host: "{{ db_host }}"
+        db_init_port: "{{ db_port }}"
+        db_init_admin_user: "{{ db_admin_user }}"
+        db_init_admin_password: "{{ db_admin_password }}"
+        db_init_template_name: "{{ db_postgis_template_name | default('template_postgis') }}"
+        db_init_database_name: "{{ db_init_database.name | default(db_init_database) }}"
+        db_init_required_extensions: [postgis]
+        db_init_owner_role: "{{ db_owner_role_name }}"
+        db_init_application_roles: "{{ application_db_roles }}"
+        db_init_application_users: "{{ application_db_users }}"
+      loop: "{{ application_dbs }}"
+      loop_control:
+        loop_var: db_init_database
+        label: "{{ db_init_database.name | default(db_init_database) }}"
