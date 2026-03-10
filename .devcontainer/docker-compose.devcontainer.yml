@@ -1,0 +1,12 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/pinta-devcontainer:latest
+    network_mode: host
+    entrypoint: []
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    environment:
+      DISPLAY: :0
+      NO_PROXY: localhost,127.0.0.1

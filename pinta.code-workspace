@@ -1,0 +1,40 @@
+{
+    "extensions": {
+        "recommendations": [
+            "editorconfig.editorconfig",
+            "mikestead.dotenv",
+            "tamasfe.even-better-toml",
+            "ms-python.python",
+            "ms-python.mypy-type-checker",
+            "ms-python.flake8",
+            "charliermarsh.ruff",
+        ]
+    },
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.languageServer": "Pylance",
+         // Tests
+         "python.testing.pytestEnabled": true,
+         // Linting
+         "flake8.importStrategy": "fromEnvironment",
+         "ruff.importStrategy": "fromEnvironment",
+         "mypy-type-checker.importStrategy": "fromEnvironment",
+         // Formatting
+         "[python]": {
+             "editor.formatOnSave": true,
+             "editor.codeActionsOnSave": {
+                "source.organizeImports.ruff": "explicit",
+                "source.fixAll": "explicit"
+            },
+             "editor.defaultFormatter": "charliermarsh.ruff",
+        },
+        "files.associations": {
+            "*.ts": "xml",
+            "*.qml": "xml"
+        },
+    },
+}

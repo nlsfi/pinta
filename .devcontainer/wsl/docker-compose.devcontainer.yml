@@ -1,0 +1,30 @@
+services:
+  devcontainer:
+    extends:
+      file: ../docker-compose.devcontainer.yml
+      service: devcontainer
+    volumes:
+      - /mnt/wslg:/mnt/wslg
+      - type: bind
+        source: ../..
+        target: /workspace
+        read_only: false
+      - type: volume
+        source: venv-workspace
+        target: /workspace/.venv
+      - type: volume
+        source: tool-cache
+        target: /tool-cache
+    environment:
+      WAYLAND_DISPLAY: wayland-0
+      XDG_RUNTIME_DIR: /mnt/wslg/runtime-dir
+      QT_QPA_PLATFORM: wayland
+      MYPY_CACHE_DIR: /tool-cache/mypy
+      RUFF_CACHE_DIR: /tool-cache/ruff
+      PRE_COMMIT_HOME: /tool-cache/pre-commit
+      UV_CACHE_DIR: /tool-cache/uv
+      XDG_CACHE_HOME: /tool-cache
+
+volumes:
+  venv-workspace:
+  tool-cache:
