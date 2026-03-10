@@ -64,6 +64,8 @@ repos:
     rev: v1.19.1
     hooks:
       - id: mypy
+        additional_dependencies:
+          - sqlmodel
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.38.0
     hooks:
