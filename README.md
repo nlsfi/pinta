@@ -5,10 +5,17 @@
 
 ## Development environment
 
+* Copy .env.example to .env and adjust settings
 * Open project in devcontainer, see [instructions](.devcontainer/README.md)
 * Activate virtual environment: `source .venv/bin/activate`
 
 Now all dependencies and Git hooks are automatically installed in your virtual environment when using Dev Containers. See the instructions for developing individual components in their respective README files.
+
+### Development infra
+
+* Install docker and docker-compose (or podman and podman-docker)
+* Build containers with `docker-compose build`
+* Initialize infra with `docker-compose run --rm ansible`
 
 ### Updating dependencies
 

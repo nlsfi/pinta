@@ -1,0 +1,2 @@
+- name: Setup the database
+  import_playbook: database.yml
