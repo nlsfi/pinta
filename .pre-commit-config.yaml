@@ -27,6 +27,10 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
 
   # commit-msg hooks
   - repo: https://github.com/jorisroovers/gitlint

@@ -9,7 +9,7 @@
   virtual environment
 * Create virtual environment: `python -m venv .venv`
 * Activate virtual environment: `source .venv/bin/activate` or `.\.venv\Scripts\activate.bat`
-* Install dependencies: `uv sync`
+* Install dependencies: `uv sync --all-packages`
   * If not using global uv, install uv first with: `pip install uv`
 * Install prek to run pre-commit hooks: `prek install`
 
