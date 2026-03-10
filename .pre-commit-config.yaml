@@ -1,18 +1,18 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-default_stages: [pre-commit]
-default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [ pre-commit ]
+default_install_hook_types: [ pre-commit, commit-msg ]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        stages: ["pre-commit"]
+        stages: [ "pre-commit" ]
       - id: end-of-file-fixer
-        stages: ["pre-commit"]
+        stages: [ "pre-commit" ]
       - id: mixed-line-ending
         name: LF for all files
-        args: [--fix=lf]
+        args: [ --fix=lf ]
       - id: check-json
         exclude: '.devcontainer/devcontainer.json'
       - id: check-added-large-files
@@ -21,7 +21,7 @@ repos:
     rev: v0.48.0
     hooks:
       - id: markdownlint
-        args: ["--fix"]
+        args: [ "--fix" ]
   # TOML formatter
   - repo: https://github.com/ComPWA/taplo-pre-commit
     rev: v0.9.3
@@ -31,10 +31,24 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
+  # Insert copyright header
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.6
+    hooks:
+      - id: insert-license
+        name: insert MIT copyright header
+        files: \.py$
+        # exclude QGIS plugin files, since it is licensed under GPLv3
+        exclude: ^(components/qgis_plugin/.*\.py)$
+        args:
+          - --license-filepath
+          - .mit-copyright.txt
+          - --use-current-year
+
 
   # commit-msg hooks
   - repo: https://github.com/jorisroovers/gitlint
     rev: v0.19.1
     hooks:
       - id: gitlint
-        stages: [commit-msg]
+        stages: [ commit-msg ]
