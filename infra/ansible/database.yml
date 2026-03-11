@@ -20,3 +20,16 @@
       loop_control:
         loop_var: db_init_database
         label: "{{ db_init_database.name | default(db_init_database) }}"
+
+- name: Run migrations
+  hosts: server[0]
+  run_once: true
+  tasks:
+    - name: Install DB component
+      ansible.builtin.include_role:
+        name: install_component
+      vars:
+        install_component_path: "{{ local_repository_path }}/components/db"
+        install_component_dest_path: "{{ dest_repository_path }}"
+        install_component_name: db
+        install_component_dev_deps: true
