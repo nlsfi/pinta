@@ -1,0 +1,50 @@
+- name: Install dependencies
+  when: true # install_dependencies | bool
+  block:
+    - name: Install pip
+      ansible.builtin.dnf:
+        name: "python3.12-pip"
+        state: present
+      become: true
+
+    - name: Install uv
+      ansible.builtin.pip:
+        name: uv
+        state: present
+      environment:
+        PIP_INDEX_URL: "{{ install_component_pip_index_url }}"
+      become: true
+
+
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ install_component_dest_path }}"
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+  become: true
+
+- name: Upload application component {{ install_component_name }}
+  ansible.posix.synchronize:
+    src: "{{ install_component_path }}"
+    dest: "{{ install_component_dest_path }}"
+    delete: true
+  become: true
+
+# TODO: should lock file should be generated for each component?
+- name: Generate application lock file
+  ansible.builtin.command: "/usr/local/bin/uv lock"
+  environment:
+    UV_DEFAULT_INDEX: "{{ install_component_pip_index_url }}"
+  args:
+    chdir: "{{ install_component_dest_path }}/{{ install_component_name }}"
+  become: true
+  changed_when: true
+
+- name: Install application component {{ install_component_name }}
+  ansible.builtin.command: "/usr/local/bin/uv sync --no-cache {{ install_component_dev_deps | ternary('--group=dev', '') }}"
+  environment:
+    UV_DEFAULT_INDEX: "{{ install_component_pip_index_url }}"
+  args:
+    chdir: "{{ install_component_dest_path }}/{{ install_component_name }}"
+  become: true
+  changed_when: true
