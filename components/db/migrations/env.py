@@ -48,15 +48,15 @@ target_metadata = SQLModel.metadata
 load_dotenv()
 
 # Read env variables
-ADMIN_DB_USERNAME = os.getenv("DB_ADMIN_USER")
-ADMIN_PASSWORD = os.getenv("DB_ADMIN_PASSWORD")
-HOST = os.getenv("DB_HOST")
-PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+ADMIN_DB_USERNAME = os.environ["DB_ADMIN_USER"]
+ADMIN_PASSWORD = os.environ["DB_ADMIN_PASSWORD"]
+HOST = os.environ["DB_HOST"]
+PORT = os.environ["DB_PORT"]
+DB_NAME = os.environ["DB_NAME"]
 
-DB_OWNER_ROLE = os.getenv("DB_OWNER_ROLE")
-DB_WRITER_ROLE = os.getenv("DB_WRITER_ROLE")
-DB_READER_ROLE = os.getenv("DB_READER_ROLE")
+DB_OWNER_ROLE = os.environ["DB_OWNER_ROLE"]
+DB_WRITER_ROLE = os.environ["DB_WRITER_ROLE"]
+DB_READER_ROLE = os.environ["DB_READER_ROLE"]
 
 config.set_main_option(
     "sqlalchemy.url",
