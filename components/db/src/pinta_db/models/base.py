@@ -14,6 +14,7 @@ from sqlalchemy.orm import declared_attr
 from sqlmodel import Field, SQLModel
 
 from pinta_db.exceptions import MissingFieldError
+from pinta_db.schemas import Schema
 
 if TYPE_CHECKING:
     from shapely import Geometry
@@ -50,10 +51,10 @@ class BaseModel(SQLModel):
         return to_shape(self.geom)  # type: ignore[assignment,attr-defined]
 
 
-class PublicModel(BaseModel):
-    """Base model for tables in public schema."""
+class TemporaryBaseModel(BaseModel):
+    """Base model for tables in temporary schema (delete later)."""
 
-    __table_args__ = {"schema": "public"}
+    __table_args__ = {"schema": Schema.TEMPORARY.value}
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 

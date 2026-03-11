@@ -22,3 +22,8 @@ qgis
 Qgis
 teardown
 utils
+geospatial
+sqltypes
+Geoalchemy
+poolclass
+dotenv
