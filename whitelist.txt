@@ -1,0 +1,7 @@
+i18n
+iface
+Pinta
+qgis
+Qgis
+teardown
+utils
