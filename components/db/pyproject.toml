@@ -1,5 +1,5 @@
 [project]
-name = "pinta_db"
+name = "pinta-db"
 version = "0.1.0"
 description = "Database component of the elevation production system"
 readme = "README.md"
@@ -16,6 +16,7 @@ default-groups = ["dev", "lint"]
 [dependency-groups]
 dev = [
   "alembic>=1.18.4",
+  "psycopg[binary]>=3.3.3",
 ]
 lint = [
   "prek>=0.3.5",
@@ -34,9 +35,12 @@ where = ["src"]
 [tool.setuptools.package-data]
 pinta_db = ["py.typed"]
 
-[tool.mypy]
-python_version = "3.12"
-follow_imports = "normal"
-show_column_numbers = true
-namespace_packages = true
-exclude = "^test"
+[tool.ruff]
+# Extend the root `pyproject.toml`
+extend = "../../pyproject.toml"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"*/versions/*" = [
+  "D", # pydocstyle
+
+]
