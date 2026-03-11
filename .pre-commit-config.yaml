@@ -66,6 +66,7 @@ repos:
       - id: mypy
         additional_dependencies:
           - sqlmodel
+        args: [ --explicit-package-bases ] # for monorepo components
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.38.0
     hooks:

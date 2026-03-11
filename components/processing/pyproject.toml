@@ -1,0 +1,42 @@
+[project]
+name = "pinta_processing"
+requires-python = ">=3.12"
+dynamic = [
+  "version",
+]
+dependencies = [
+]
+
+[tool.uv]
+default-groups = ["development", "linting"]
+
+[dependency-groups]
+development = [
+  # testing
+  "pytest",
+  "pytest-mock",
+  "pytest-dotenv",
+]
+linting = [
+]
+
+
+[tool.setuptools.dynamic]
+version = { attr = "pinta_processing.__version__" }
+
+[build-system]
+requires = ["setuptools>=82", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pinte_test_utils = ["py.typed"]
+
+# extend required for isort action to pick up correct config
+[tool.ruff]
+extend = "../../pyproject.toml"

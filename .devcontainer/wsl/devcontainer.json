@@ -23,7 +23,6 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/git" : {},
-    "ghcr.io/devcontainers/features/docker-cli:1": {},
     "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
   },
   "postCreateCommand": "bash .devcontainer/setup_venv.sh"
