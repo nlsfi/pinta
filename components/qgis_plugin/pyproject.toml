@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pinta_qgis_plugin"
+requires-python = ">=3.12"
+dynamic = [
+  "version",
+]
+dependencies = [
+  "qgis_plugin_tools",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "pinta_qgis_plugin.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+"pinta_qgis_plugin" = [
+  "metadata.txt",
+  "resources/**/*",
+  "**/*.qm",
+  "**/*.ui",
+  ".BUILD",
+]
+
+[tool.uv]
+default-groups = ["dev", "lint"]
+
+[dependency-groups]
+dev = [
+  "qgis-plugin-dev-tools",
+  # testing
+  "pytest",
+  "pytest-qt",
+  "pytest-mock",
+  "pytest-qgis",
+  "pytest-timeout",
+  "pytest-dotenv",
+  "coverage[toml]",
+  "coverage-enable-subprocess",
+  # pytest-qt<4 depends on py implicitly provided by pytest<7, require manually
+  "py",
+]
+lint = [
+  # linting tools
+  "mypy",
+  # flake8 plugins
+  "flake8-qgis",
+  # stubs for type checks
+  "PyQt5-stubs",
+  "types-requests",
+]
+
+[tool.flake8]
+select = [
+  "QGS",
+]
+
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = [
+  "test",
+]
+addopts = "--import-mode=importlib"
+
+[tool.coverage.paths]
+source = ["src", "**/site-packages"]
+
+[tool.coverage.run]
+source_pkgs = ["pinta_qgis_plugin"]
+# generate distinct coverage files with relative paths
+parallel = true
+relative_files = false
+# TODO: set branch=true and remove core="sysmon" when python 3.14
+# is used (coverage will use sysmon by default)
+branch = false
+core = "sysmon"
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
+
+# extend required for isort action to pick up correct config
+[tool.ruff]
+extend = "../../pyproject.toml"
+
+[tool.qgis_plugin_dev_tools]
+plugin_package_name = "pinta_qgis_plugin"
+version_number_source = "distribution"
+runtime_requires = [
+  "qgis_plugin_tools",
+]
+auto_add_recursive_runtime_dependencies = false

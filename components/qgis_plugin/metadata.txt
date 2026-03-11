@@ -1,0 +1,17 @@
+[general]
+name=Pinta QGIS Plugin
+description=
+about=
+version=0.0.1
+qgisMinimumVersion=3.22
+icon=
+author=National Land Survey of Finland
+email=os@nls.fi
+changelog=
+tags=
+repository=https://github.com/nlsfi/pinta
+homepage=https://github.com/nlsfi/pinta
+tracker=https://github.com/nlsfi/pinta/issues
+category=Plugins
+experimental=True
+deprecated=False
