@@ -7,6 +7,7 @@ members = [
     "pinta",
     "pinta-db",
     "pinta-lib",
+    "pinta-processing",
     "pinta-qgis-plugin",
 ]
 
@@ -707,6 +708,27 @@ requires-dist = [{ name = "pinta-db", editable = "components/db" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+
+[[package]]
+name = "pinta-processing"
+source = { editable = "components/processing" }
+
+[package.dev-dependencies]
+development = [
+    { name = "pytest" },
+    { name = "pytest-dotenv" },
+    { name = "pytest-mock" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+development = [
+    { name = "pytest" },
+    { name = "pytest-dotenv" },
+    { name = "pytest-mock" },
+]
+linting = []
 
 [[package]]
 name = "pinta-qgis-plugin"

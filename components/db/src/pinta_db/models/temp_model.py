@@ -18,7 +18,7 @@ from pinta_db.models.base import TemporaryBaseModel
 from pinta_db.utils.model_utils import foreign_key
 
 
-class TemporaryModel(TemporaryBaseModel, table=True):
+class TemporaryModel(TemporaryBaseModel, table=True):  # type: ignore[call-arg]
     """Temp model, remove when adding real models."""
 
     geom: Any = Field(sa_column=Column(Geometry(POINT, srid=SRID, nullable=False)))
@@ -30,7 +30,7 @@ class TemporaryModel(TemporaryBaseModel, table=True):
     )
 
 
-class TemporaryModelWithForeignKey(TemporaryBaseModel, table=True):
+class TemporaryModelWithForeignKey(TemporaryBaseModel, table=True):  # type: ignore[call-arg]
     """Temp model, remove when adding real models."""
 
     geom: Any = Field(sa_column=Column(Geometry(LINESTRING, srid=SRID, nullable=False)))
