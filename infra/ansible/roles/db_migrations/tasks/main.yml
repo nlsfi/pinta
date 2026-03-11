@@ -1,0 +1,22 @@
+- name: Run migrations
+  ansible.builtin.command: "/usr/local/bin/uv run alembic -c {{ db_migrations_alembic_ini }} upgrade {{ db_migrations_version }}"
+  args:
+    chdir: "{{ db_migrations_component_path }}"
+  environment:
+    DB_ADMIN_USER: "{{ db_migrations_db_user }}"
+    DB_ADMIN_PASSWORD: "{{ db_migrations_db_password }}"
+    DB_HOST: "{{ db_migrations_db_host }}"
+    DB_PORT: "{{ db_migrations_db_port }}"
+    DB_NAME: "{{ db_migrations_db_name }}"
+    DB_OWNER_ROLE: "{{ db_migrations_owner_role }}"
+    DB_WRITER_ROLE: "{{ db_migrations_writer_role }}"
+    DB_READER_ROLE: "{{ db_migrations_reader_role }}"
+
+  become: true
+  changed_when: true
+  register: db_migrations_alembic_output
+
+# TODO: print just migration output
+- name: Print migration output
+  ansible.builtin.debug:
+    var: db_migrations_alembic_output

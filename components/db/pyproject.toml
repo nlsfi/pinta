@@ -16,6 +16,7 @@ default-groups = ["dev", "lint"]
 [dependency-groups]
 dev = [
   "alembic>=1.18.4",
+  "dotenv>=0.9.9",
   "psycopg[binary]>=3.3.3",
 ]
 lint = [

@@ -33,3 +33,23 @@
         install_component_dest_path: "{{ dest_repository_path }}"
         install_component_name: db
         install_component_dev_deps: true
+    - name: Run migrations
+      ansible.builtin.include_role:
+        name: db_migrations
+      vars:
+        db_migrations_version: "{{ db_version }}"
+        db_migrations_component_path: "{{ dest_repository_path }}/db"
+        db_migrations_database_name: "{{ db_init_database.name | default(db_init_database) }}"
+        db_migrations_alembic_ini: "{{ dest_repository_path }}/db/alembic.ini"
+        db_migrations_db_user: "{{ db_admin_user }}"
+        db_migrations_db_password: "{{ db_admin_password }}"
+        db_migrations_db_host: "{{ db_host }}"
+        db_migrations_db_port: "{{ db_port }}"
+        db_migrations_db_name: "{{ db_init_database.name | default(db_init_database) }}"
+        db_migrations_owner_role: "{{ db_owner_role_name }}"
+        db_migrations_writer_role: "{{ db_writer_role_name }}"
+        db_migrations_reader_role: "{{ db_reader_role_name }}"
+      loop: "{{ application_dbs }}"
+      loop_control:
+        loop_var: db_init_database
+        label: "{{ db_init_database.name | default(db_init_database) }}"
