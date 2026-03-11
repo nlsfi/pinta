@@ -11,21 +11,23 @@
         db_init_admin_user: "{{ db_admin_user }}"
         db_init_admin_password: "{{ db_admin_password }}"
         db_init_template_name: "{{ db_postgis_template_name | default('template_postgis') }}"
-        db_init_database_name: "{{ db_init_database.name | default(db_init_database) }}"
+        db_init_database_name: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
         db_init_required_extensions: [postgis]
         db_init_owner_role: "{{ db_owner_role_name }}"
         db_init_application_roles: "{{ application_db_roles }}"
         db_init_application_users: "{{ application_db_users }}"
+        db_init_is_template: "{{ is_template | default(false) }}"
       loop: "{{ application_dbs }}"
       loop_control:
         loop_var: db_init_database
-        label: "{{ db_init_database.name | default(db_init_database) }}"
+        label: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
 
 - name: Run migrations
   hosts: server[0]
   run_once: true
   tasks:
     - name: Install DB component
+      when: install_db_app | default(true)
       ansible.builtin.include_role:
         name: install_component
       vars:
@@ -45,11 +47,11 @@
         db_migrations_db_password: "{{ db_admin_password }}"
         db_migrations_db_host: "{{ db_host }}"
         db_migrations_db_port: "{{ db_port }}"
-        db_migrations_db_name: "{{ db_init_database.name | default(db_init_database) }}"
+        db_migrations_db_name: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
         db_migrations_owner_role: "{{ db_owner_role_name }}"
         db_migrations_writer_role: "{{ db_writer_role_name }}"
         db_migrations_reader_role: "{{ db_reader_role_name }}"
       loop: "{{ application_dbs }}"
       loop_control:
         loop_var: db_init_database
-        label: "{{ db_init_database.name | default(db_init_database) }}"
+        label: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"

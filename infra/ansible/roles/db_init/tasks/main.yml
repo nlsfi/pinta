@@ -130,6 +130,17 @@
     owner: "{{ db_init_owner_role }}"
     template: "{{ db_init_template_name }}"
 
+- name: Set database as template
+  when: db_init_is_template
+  community.postgresql.postgresql_query:
+    query: ALTER DATABASE {{ db_init_database_name }} WITH is_template TRUE;
+    login_host: "{{ db_init_host }}"
+    login_port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    login_db: "{{ db_init_maintenance_db }}"
+
+
 - name: Set database privileges
   community.postgresql.postgresql_privs:
     login_host: "{{ db_init_host }}"
