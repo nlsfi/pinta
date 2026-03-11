@@ -1,2 +1,10 @@
-- name: Setup the database
+- name: Setup the databases
   import_playbook: database.yml
+
+- name: Setup test databases
+  when: create_test_databases | default(False)
+  import_playbook: database.yml
+  vars:
+    is_template: true
+    db_name_suffix: _test_template
+    install_db_app: false

@@ -9,6 +9,7 @@ db_init_maintenance_db: postgres
 db_init_template_name: template_postgis
 db_init_database_name: application
 db_init_required_extensions: []
+db_init_is_template: false
 
 db_init_owner_role: "{{ db_init_database_name }}_owner"
 
