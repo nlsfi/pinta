@@ -1,0 +1,58 @@
+name: Database Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'components/db/**'
+      - '.github/workflows/db.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/db/**'
+      - '.github/workflows/db.yml'
+
+jobs:
+  unit_tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: components/db
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python3 -m pip install uv
+          uv sync --all-packages --all-groups --active
+
+      - name: Run unit tests
+        run: |
+          uv run pytest -v test
+
+  integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run migrations via docker compose
+        run: docker compose run --rm ansible
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python3 -m pip install uv
+          uv sync --all-packages --all-groups --active
+        working-directory: components/db
+
+      - name: Run integration tests
+        run: |
+          uv run pytest -v test_integration
+        working-directory: components/db
