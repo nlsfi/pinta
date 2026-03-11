@@ -27,3 +27,11 @@ sqltypes
 Geoalchemy
 poolclass
 dotenv
+xdist
+maxprocesses
+psutil
+numprocesses
+sched
+getaffinity
+hookimpl
+params
