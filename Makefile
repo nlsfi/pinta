@@ -20,6 +20,9 @@ restart-fully: down build up
 
 restart: down up
 
+sync:
+	uv sync --all-packages --all-groups
+
 # Infra targets
 # =================
 

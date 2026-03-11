@@ -18,10 +18,15 @@ dev = [
   "alembic>=1.18.4",
   "dotenv>=0.9.9",
   "psycopg[binary]>=3.3.3",
+  "pytest-dotenv>=0.5.2",
+  "pytest-xdist>=3.8.0",
 ]
 lint = [
   "prek>=0.3.5",
 ]
+
+[tool.uv.sources]
+pinta-test-utils = { workspace = true }
 
 [build-system]
 requires = ["setuptools>=82", "wheel"]
@@ -45,3 +50,6 @@ extend = "../../pyproject.toml"
   "D", # pydocstyle
 
 ]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib -n auto"
