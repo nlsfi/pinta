@@ -20,6 +20,17 @@ lint = [
   "ruff>=0.15.5",
 ]
 
+[tool.flake8]
+spellcheck-targets = "names"
+dictionaries = "en_US,python,technical"
+select = ["SC"]
+extend-exclude = ".venv"
+per-file-ignores = [
+  "**/test/*:SC200",
+  "**/test_integration/*:SC200",
+]
+
+
 [tool.ruff]
 target-version = "py312"
 line-length = 88
