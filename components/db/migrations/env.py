@@ -19,22 +19,18 @@ from typing import TYPE_CHECKING
 from alembic import context
 from dotenv import load_dotenv
 from geoalchemy2 import alembic_helpers
-from sqlalchemy import engine_from_config, pool, text
+from sqlalchemy import Connection, engine_from_config, pool, text
 from sqlmodel import SQLModel
 
 from pinta_db.models.all import *  # noqa: F403
 from pinta_db.schemas import (
     SCHEMA_CONFIGURATIONS,
-    Privilege,
-    Role,
-    RolePrivileges,
     Schema,
-    SchemaConfig,
 )
+from pinta_db_utils import schema_utils
+from pinta_db_utils.engine_utils import Credentials
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from sqlalchemy.engine.base import Connection
 
 config = context.config
@@ -48,95 +44,30 @@ target_metadata = SQLModel.metadata
 load_dotenv()
 
 # Read env variables
-ADMIN_DB_USERNAME = os.environ["DB_ADMIN_USER"]
-ADMIN_PASSWORD = os.environ["DB_ADMIN_PASSWORD"]
-HOST = os.environ["DB_HOST"]
-PORT = os.environ["DB_PORT"]
-DB_NAME = os.environ["DB_NAME"]
+ADMIN_CREDENTIALS = Credentials(
+    os.environ["DB_ADMIN_USER"],
+    os.environ["DB_ADMIN_PASSWORD"],
+    os.environ["DB_HOST"],
+    os.environ["DB_PORT"],
+    os.environ["DB_NAME"],
+)
 
 DB_OWNER_ROLE = os.environ["DB_OWNER_ROLE"]
 DB_WRITER_ROLE = os.environ["DB_WRITER_ROLE"]
 DB_READER_ROLE = os.environ["DB_READER_ROLE"]
 
-config.set_main_option(
-    "sqlalchemy.url",
-    f"postgresql+psycopg://{ADMIN_DB_USERNAME}:{ADMIN_PASSWORD}@{HOST}:{PORT}/{DB_NAME}",
-)
+config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())
 
 
-def _grant_list(privileges: "Iterable[Privilege]") -> str:
-    return ", ".join(x.name for x in privileges)
-
-
-def _get_create_schema_statement(schema_config: "SchemaConfig") -> list[str]:
-    schema = schema_config.schema.value
-    return [
-        f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {DB_OWNER_ROLE}",
-        f"GRANT {_grant_list(schema_config.owner_privileges)} "
-        f"ON SCHEMA {schema} TO {DB_OWNER_ROLE}",
-    ]
-
-
-def _get_set_schema_role_privileges(
-    schema_config: "SchemaConfig", role_config: "RolePrivileges"
-) -> list[str]:
-    schema = schema_config.schema.value
-    if role_config.role == Role.WRITER:
-        role = DB_WRITER_ROLE
-    elif role_config.role == Role.READER:
-        role = DB_OWNER_ROLE
-    else:
-        raise ValueError
-
-    statements: list[str] = []
-
-    if role_config.usage:
-        statements.append(f"GRANT USAGE ON SCHEMA {schema} TO {role}")
-
-    if role_config.table_privileges:
-        statements.append(
-            f"GRANT {_grant_list(role_config.table_privileges)} "
-            f"ON ALL TABLES IN SCHEMA {schema} TO {role}"
-        )
-
-    if role_config.sequence_privileges:
-        statements.append(
-            f"GRANT {_grant_list(role_config.sequence_privileges)} "
-            f"ON ALL SEQUENCES IN SCHEMA {schema} TO {role}"
-        )
-
-    if role_config.default_table_privileges:
-        statements.append(
-            f"ALTER DEFAULT PRIVILEGES FOR ROLE "
-            f"{DB_OWNER_ROLE} IN SCHEMA {schema} "
-            f"GRANT {_grant_list(role_config.default_table_privileges)} "
-            f"ON TABLES TO {role}"
-        )
-
-    if role_config.default_sequence_privileges:
-        statements.append(
-            f"ALTER DEFAULT PRIVILEGES FOR ROLE "
-            f"{DB_OWNER_ROLE} IN SCHEMA {schema} "
-            f"GRANT {_grant_list(role_config.default_sequence_privileges)} "
-            f"ON SEQUENCES TO {role}"
-        )
-
-    return statements
-
-
-def create_schemas_and_schema_privileges(
-    connection: "Connection",
-) -> None:
-    """Ensure that the schemas and shcmea privileges are set up."""
-    statements: list[str] = []
-
-    for schema_config in SCHEMA_CONFIGURATIONS:
-        statements.extend(_get_create_schema_statement(schema_config))
-
-        for role_config in schema_config.role_privileges:
-            statements.extend(
-                _get_set_schema_role_privileges(schema_config, role_config)
-            )
+def _setup_schemas(connection: "Connection") -> None:
+    statements = schema_utils.get_set_schema_role_privileges_statements(
+        SCHEMA_CONFIGURATIONS,
+        schema_utils.Roles(
+            owner=DB_OWNER_ROLE,
+            writer=DB_WRITER_ROLE,
+            reader=DB_READER_ROLE,
+        ),
+    )
 
     for statement in statements:
         connection.execute(text(statement))
@@ -158,7 +89,7 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
 
-        create_schemas_and_schema_privileges(connection)
+        _setup_schemas(connection)
         connection.commit()
 
         context.configure(

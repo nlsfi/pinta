@@ -7,7 +7,6 @@
 
 import re
 import uuid
-from typing import TYPE_CHECKING
 
 from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import declared_attr
@@ -15,9 +14,6 @@ from sqlmodel import Field, SQLModel
 
 from pinta_db.exceptions import MissingFieldError
 from pinta_db.schemas import Schema
-
-if TYPE_CHECKING:
-    from shapely import Geometry
 
 NAMING_CONVENTION = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -43,12 +39,12 @@ class BaseModel(SQLModel):
         return _camel_to_snake(self.__name__)
 
     @property
-    def geom_shapely(self) -> "Geometry":
-        """Return the geometry as a shapely object."""
+    def geom_wkt(self) -> str:
+        """Return the geometry as wkt."""
         field = "geom"
         if not hasattr(self, field):
             raise MissingFieldError(field)
-        return to_shape(self.geom)  # type: ignore[assignment,attr-defined]
+        return to_shape(self.geom).wkt  # type: ignore[assignment,attr-defined]
 
 
 class TemporaryBaseModel(BaseModel):

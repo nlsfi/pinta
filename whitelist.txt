@@ -35,3 +35,5 @@ sched
 getaffinity
 hookimpl
 params
+wkt
+autocommit
