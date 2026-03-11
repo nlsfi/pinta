@@ -46,7 +46,9 @@ lint.ignore = [
   "D203",   # one-blank-line-before-class, D211 used (no-blank-line-before-class)
   "D213",   # multi-line-summary-second-line, D212 used (multi-line-summary-first-line)
   "COM812", # missing-trailing-comma (formatter will enforce this)
-  "ISC001", # single-line-implicit-string-concatenation
+  "ISC001", # single-line-implicit-string-concatenation,
+  "EXE002", # The file is executable but no shebang is present
+  "D100",   # docstring in public module
 ]
 
 # List of all rules https://docs.astral.sh/ruff/rules/
