@@ -1,11 +1,12 @@
 [project]
-name = "pinta-utils"
+name = "pinta-test-utils"
 version = "0.0.0"
 description = "Common utils for the project"
 readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
+  "pinta-db",
 ]
 
 [tool.uv]
