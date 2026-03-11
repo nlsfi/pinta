@@ -2,12 +2,12 @@ name: QGIS Plugin Tests
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
     paths:
       - 'components/qgis_plugin/**'
       - '.github/workflows/qgis_plugin.yml'
   pull_request:
-    branches: [main]
+    branches: [ main ]
     paths:
       - 'components/qgis_plugin/**'
       - '.github/workflows/qgis_plugin.yml'
