@@ -17,6 +17,9 @@ repos:
         exclude: '.devcontainer/devcontainer.json'
       - id: check-added-large-files
       - id: check-merge-conflict
+      - id: check-json
+      - id: check-xml
+
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.48.0
     hooks:
@@ -61,7 +64,11 @@ repos:
     rev: v1.19.1
     hooks:
       - id: mypy
-
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [ --strict, -c=.yamllint ]
 
   # commit-msg hooks
   # Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary).
