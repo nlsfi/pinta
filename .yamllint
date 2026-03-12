@@ -15,3 +15,8 @@ rules:
     max-spaces-inside-empty: 0
   truthy:
     check-keys: false
+  braces:
+    max-spaces-inside: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true

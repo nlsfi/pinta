@@ -11,8 +11,8 @@
         db_init_admin_user: "{{ db_admin_user }}"
         db_init_admin_password: "{{ db_admin_password }}"
         db_init_template_name: "{{ db_postgis_template_name | default('template_postgis') }}"
-        db_init_database_name: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
-        db_init_required_extensions: [postgis]
+        db_init_database_name: "{{ db_init_database.name | default(db_init_database) }}{{ db_name_suffix | default('') }}"
+        db_init_required_extensions: [ postgis ]
         db_init_owner_role: "{{ db_owner_role_name }}"
         db_init_application_roles: "{{ application_db_roles }}"
         db_init_application_users: "{{ application_db_users }}"
@@ -20,7 +20,7 @@
       loop: "{{ application_dbs }}"
       loop_control:
         loop_var: db_init_database
-        label: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
+        label: "{{ db_init_database.name | default(db_init_database) }}{{ db_name_suffix | default('') }}"
 
 - name: Run migrations
   hosts: server[0]
@@ -35,6 +35,7 @@
         install_component_dest_path: "{{ dest_repository_path }}"
         install_component_name: db
         install_component_dev_deps: true
+        install_component_uv_path: "{{ uv_path }}"
     - name: Run migrations
       ansible.builtin.include_role:
         name: db_migrations
@@ -47,11 +48,12 @@
         db_migrations_db_password: "{{ db_admin_password }}"
         db_migrations_db_host: "{{ db_host }}"
         db_migrations_db_port: "{{ db_port }}"
-        db_migrations_db_name: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
+        db_migrations_db_name: "{{ db_init_database.name | default(db_init_database) }}{{ db_name_suffix | default('') }}"
         db_migrations_owner_role: "{{ db_owner_role_name }}"
         db_migrations_writer_role: "{{ db_writer_role_name }}"
         db_migrations_reader_role: "{{ db_reader_role_name }}"
+        db_migrations_uv_path: "{{ uv_path }}"
       loop: "{{ application_dbs }}"
       loop_control:
         loop_var: db_init_database
-        label: "{{ db_init_database.name | default(db_init_database) }}{{db_name_suffix | default('')}}"
+        label: "{{ db_init_database.name | default(db_init_database) }}{{ db_name_suffix | default('') }}"

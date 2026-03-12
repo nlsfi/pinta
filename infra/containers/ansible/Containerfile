@@ -3,6 +3,7 @@ FROM redhat/ubi9-minimal:9.5
 # hadolint ignore=DL3041
 RUN microdnf update -y \
   && microdnf --disableplugin=subscription-manager install -y \
+  sudo \
   openssh-clients \
   sshpass \
   python312 \
@@ -11,7 +12,6 @@ RUN microdnf update -y \
   rsync \
   git \
   vi \
-  nano \
   tar \
   python3-dnf \
   && microdnf --disableplugin=subscription-manager clean all
@@ -24,11 +24,38 @@ RUN python3.12 -m pip install --no-cache-dir --upgrade pip \
   "docker==7.1.0" \
   "dnspython==2.8.0"
 
+# Install ansible extensions
 RUN ansible-galaxy collection install community.postgresql:3.10.2 \
     && ansible-galaxy collection install community.general:10.3.0 \
     && ansible-galaxy collection install ansible.posix:1.6.2
 
-ENV ANSIBLE_SSH_RETRIES=5
 
+
+# add a non-root nopasswd sudoer as a deploy login user to use for ansible playbooks
+# also generate the host keys here since startup will happen seemingly too fast sometimes
+# and ansible will hit a changed host key error, even when checking is disabled
+# hadolint ignore=DL3033
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN useradd deployer \
+  && echo "deployer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+  && echo "Defaults:deployer !requiretty" >> /etc/sudoers \
+  && (echo "deployer:deployer" | chpasswd)
+
+# START OF SERVER DEPENDENCIES
+
+# hadolint ignore=DL3041
+RUN microdnf --disableplugin=subscription-manager install -y \
+  # Next dependencies have to be installed on ansible host and on server \
+  unzip \
+  rsync \
+  # Next dependencies have to be installed on server \
+  python3.12-psycopg2 \
+  && microdnf --disableplugin=subscription-manager clean all
+
+RUN pip install --no-cache-dir uv==0.10.9
+
+# END OF SERVER DEPENDENCIES
+
+ENV ANSIBLE_SSH_RETRIES=5
 WORKDIR /ansible
 CMD [ "echo", "nothing to do by default" ]

@@ -1,5 +1,5 @@
 - name: Run migrations
-  ansible.builtin.command: "/usr/local/bin/uv run alembic -c {{ db_migrations_alembic_ini }} upgrade {{ db_migrations_version }}"
+  ansible.builtin.command: "{{ db_migrations_uv_path }} run alembic -c {{ db_migrations_alembic_ini }} upgrade {{ db_migrations_version }}"
   args:
     chdir: "{{ db_migrations_component_path }}"
   environment:
