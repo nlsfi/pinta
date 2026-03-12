@@ -40,3 +40,4 @@ autocommit
 iterdir
 autogenerate
 autogen
+MULTIPOLYGON

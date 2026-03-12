@@ -47,10 +47,10 @@ class BaseModel(SQLModel):
         return to_shape(self.geom).wkt  # type: ignore[assignment,attr-defined]
 
 
-class TemporaryBaseModel(BaseModel):
-    """Base model for tables in temporary schema (delete later)."""
+class ManagementBase(BaseModel):
+    """Base model for tables in management schema."""
 
-    __table_args__ = {"schema": Schema.TEMPORARY.value}
+    __table_args__ = {"schema": Schema.MANAGEMENT.value}
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 
