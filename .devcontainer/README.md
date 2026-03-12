@@ -53,8 +53,16 @@ from linux) from the list.
 
 ### Idea
 
-TODO
+Setup the following advanced settings: Settings > Advanced Settings
 
-## Linux
+* Open WSL projects natively as local projects
+* Open devcontainer project natively
 
-TODO
+### WSL
+
+* File -> Remote Development -> Start remote development using WSL
+* In the new opened windows start remote development using Dev Container and select WSL devcontainer file.
+
+### Linux
+
+Just start remote development using Dev Container and select WSL devcontainer file.
