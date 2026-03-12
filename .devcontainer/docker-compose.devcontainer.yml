@@ -5,8 +5,13 @@ services:
       dockerfile: Containerfile
     image: localhost/pinta-devcontainer:latest
     network_mode: host
+    volumes:
+      - type: bind
+        source: ${CONTAINER_ENGINE_SOCKET:-/var/run/docker.sock}
+        target: /var/run/docker.sock
     entrypoint: []
     command: /bin/sh -c "while sleep 1000; do :; done"
     environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
       DISPLAY: :0
       NO_PROXY: localhost,127.0.0.1

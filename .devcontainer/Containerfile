@@ -2,5 +2,10 @@ FROM qgis/qgis:3.44.8-noble
 
 # hadolint ignore=DL3008
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends vim nano \
+    apt-get install -y --no-install-recommends \
+    vim \
+    nano \
+    docker.io \
+    docker-compose \
+    openssh-client \
     && rm -rf /var/lib/apt/lists/*
