@@ -6,8 +6,8 @@ requires-python = ">=3.12"
 members = [
     "pinta",
     "pinta-db",
+    "pinta-lib",
     "pinta-qgis-plugin",
-    "pinta-test-utils",
 ]
 
 [[package]]
@@ -663,6 +663,7 @@ dependencies = [
 dev = [
     { name = "alembic" },
     { name = "dotenv" },
+    { name = "pinta-lib" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest-dotenv" },
     { name = "pytest-xdist" },
@@ -681,11 +682,31 @@ requires-dist = [
 dev = [
     { name = "alembic", specifier = ">=1.18.4" },
     { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [{ name = "prek", specifier = ">=0.3.5" }]
+
+[[package]]
+name = "pinta-lib"
+version = "0.0.0"
+source = { editable = "components/lib" }
+dependencies = [
+    { name = "pinta-db" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pinta-db", editable = "components/db" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
 
 [[package]]
 name = "pinta-qgis-plugin"
@@ -736,25 +757,6 @@ lint = [
     { name = "pyqt5-stubs" },
     { name = "types-requests" },
 ]
-
-[[package]]
-name = "pinta-test-utils"
-version = "0.0.0"
-source = { editable = "components/common_test_utils" }
-dependencies = [
-    { name = "pinta-db" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pinta-db", editable = "components/db" }]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
 
 [[package]]
 name = "pluggy"
