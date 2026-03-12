@@ -19,16 +19,20 @@ from typing import TYPE_CHECKING
 from alembic import context
 from dotenv import load_dotenv
 from geoalchemy2 import alembic_helpers
-from sqlalchemy import Connection, engine_from_config, pool, text
-from sqlmodel import SQLModel
 
-from pinta_db.models.all import *  # noqa: F403
-from pinta_db.schemas import (
+# Get env variables before importing models
+load_dotenv()
+
+from sqlalchemy import Connection, engine_from_config, pool, text  # noqa: E402
+from sqlmodel import SQLModel  # noqa: E402
+
+from pinta_db.models.all import *  # noqa: F403, E402
+from pinta_db.schemas import (  # noqa: E402
     SCHEMA_CONFIGURATIONS,
     Schema,
 )
-from pinta_db_utils import schema_utils
-from pinta_db_utils.engine_utils import Credentials
+from pinta_db_utils import schema_utils  # noqa: E402
+from pinta_db_utils.engine_utils import Credentials  # noqa: E402
 
 if TYPE_CHECKING:
     from sqlalchemy.engine.base import Connection
@@ -41,7 +45,6 @@ if config.config_file_name is not None:
 
 target_metadata = SQLModel.metadata
 
-load_dotenv()
 
 # Read env variables
 ADMIN_CREDENTIALS = Credentials(

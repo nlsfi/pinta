@@ -12,7 +12,8 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship
 
-from pinta_db.constants import LINESTRING, POINT, SRID
+from pinta_db.constants import LINESTRING, POINT
+from pinta_db.env import SRID
 from pinta_db.models.base import TemporaryBaseModel
 from pinta_db.utils.model_utils import foreign_key
 

@@ -663,7 +663,6 @@ dependencies = [
 dev = [
     { name = "alembic" },
     { name = "dotenv" },
-    { name = "pinta-test-utils" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest-dotenv" },
     { name = "pytest-xdist" },
@@ -682,7 +681,6 @@ requires-dist = [
 dev = [
     { name = "alembic", specifier = ">=1.18.4" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "pinta-test-utils", editable = "components/common_test_utils" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
