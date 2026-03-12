@@ -2,6 +2,7 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
+from pathlib import Path
 
 import pytest
 
@@ -42,7 +43,10 @@ def _get_available_cpu_count(config: pytest.Config) -> int:
 
 
 @pytest.hookimpl
-def get_number_of_workers(config: "pytest.Config") -> int:
+def get_number_of_workers(
+    config: "pytest.Config",
+    run_package_tests_with_one_worker: bool = False,
+) -> int:
     """Determine how many workers to use when running tests.
 
     This hook is called only if using -n auto.
@@ -55,4 +59,17 @@ def get_number_of_workers(config: "pytest.Config") -> int:
     # Running single test
     if "::" in invocation_string:
         return 0
-    return _get_optimal_worker_number_for_pytest_xdist(config)
+
+    optimal_count = _get_optimal_worker_number_for_pytest_xdist(config)
+    if not run_package_tests_with_one_worker:
+        return optimal_count
+
+    path = Path(invocation_string)
+    if path.is_dir():
+        for child in path.iterdir():
+            if child.is_dir() and child.name != "__pycache__":
+                # Running package which contains directories
+                return optimal_count
+
+    # Running single package, probably 0 workers will do just fine
+    return 0

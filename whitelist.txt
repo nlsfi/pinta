@@ -37,3 +37,4 @@ hookimpl
 params
 wkt
 autocommit
+iterdir
