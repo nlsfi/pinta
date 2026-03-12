@@ -14,9 +14,14 @@ See the instructions for developing individual components in their respective RE
 
 ### Development infra
 
-* Install docker and docker-compose (or podman and podman-docker)
+#### In host machine (not in Dev Container)
+
+* Install docker and docker-compose (or podman and podman-docker) on your host machine (not in devcontainer)
 * Build containers with `docker-compose --profile ansible build` or `make build`
 * Initialize infra with `docker-compose run --rm ansible` or `make infra-full`
+
+#### In Dev Container
+
 * Run all tests with: `uv run pytest` or `make test`
 
 ### Updating dependencies

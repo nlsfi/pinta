@@ -18,7 +18,7 @@ Check the created migration file and make sure it is correct. Remember to commit
 
 ## Running migrations
 
-To run migrations in development, in root of the project, run:
+To run migrations in development, in root of the project in your host machine (not in Dev Container), run:
 
 ```bash
 docker-compose run --rm ansible
