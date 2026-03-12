@@ -22,10 +22,20 @@ restart: down up
 sync:
 	uv sync --all-packages --all-groups
 
+test:
+	uv run pytest
+
 # Infra targets
 # =================
 
 infra-full:
 	docker-compose run --rm ansible
 
+migrations:
+	docker-compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
+
 infra-restart: restart ansible-full
+
+
+# Tests
+# ======

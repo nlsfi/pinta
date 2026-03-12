@@ -1,5 +1,7 @@
 - name: Setup the databases
   import_playbook: database.yml
+  vars:
+    skip_init_db: "{{ skip_db_initialization | default( false ) | bool }}"
 
 - name: Setup test databases
   when: create_test_databases | default(False)
@@ -8,3 +10,4 @@
     is_template: true
     db_name_suffix: _test_template
     install_db_app: false
+    skip_init_db: "{{ skip_db_initialization | default( false ) | bool }}"
