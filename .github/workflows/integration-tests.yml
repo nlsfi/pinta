@@ -38,6 +38,9 @@ jobs:
           uv sync --all-groups
         working-directory: ${{ inputs.component-path }}
 
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
       # The test directory has to be named "test_integration"
       - name: Run tests
         run: |

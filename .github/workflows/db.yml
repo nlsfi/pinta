@@ -6,11 +6,15 @@ on:
     paths:
       - 'components/db/**'
       - '.github/workflows/db.yml'
+      - '.github/workflows/integration-tests.yml'
+      - '.github/workflows/unit-tests.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'components/db/**'
       - '.github/workflows/db.yml'
+      - '.github/workflows/integration-tests.yml'
+      - '.github/workflows/unit-tests.yml'
 
 jobs:
   unittests:
