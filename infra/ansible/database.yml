@@ -53,6 +53,7 @@
         db_migrations_writer_role: "{{ db_writer_role_name }}"
         db_migrations_reader_role: "{{ db_reader_role_name }}"
         db_migrations_uv_path: "{{ uv_path }}"
+        db_migrations_srid: "{{ db_srid }}"
       loop: "{{ application_dbs }}"
       loop_control:
         loop_var: db_init_database

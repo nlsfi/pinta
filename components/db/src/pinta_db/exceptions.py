@@ -13,3 +13,10 @@ class MissingFieldError(RuntimeError):
 class MissingSchemaError(RuntimeError):
     def __init__(self, model: type[SQLModel]) -> None:
         super().__init__(f"Schema is missing from the model {model.__name__}")
+
+
+class MissingEnvironmentError(RuntimeError):
+    def __init__(self, env_variable_name: str) -> None:
+        super().__init__(
+            f"Environment configuration error: {env_variable_name}",
+        )

@@ -11,6 +11,8 @@
     DB_OWNER_ROLE: "{{ db_migrations_owner_role }}"
     DB_WRITER_ROLE: "{{ db_migrations_writer_role }}"
     DB_READER_ROLE: "{{ db_migrations_reader_role }}"
+    # TODO: use dynamic way of passing extra env vars
+    DB_SRID: "{{ db_migrations_srid }}"
 
   become: true
   changed_when: true
