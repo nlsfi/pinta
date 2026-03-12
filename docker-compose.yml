@@ -40,11 +40,11 @@ services:
       - inventories/local
     volumes:
       - type: bind
-        source: ./infra/ansible
+        source: ${REPO_DIR:-.}/infra/ansible
         target: /ansible
         read_only: true
       - type: bind
-        source: .
+        source: ${REPO_DIR:-.}
         target: /repository
         read_only: true
 
