@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
-  "pinta-db",
 ]
 
 [tool.uv]
@@ -16,9 +15,6 @@ default-groups = ["dev"]
 dev = [
   "pytest>=9.0.2",
 ]
-
-[tool.uv.sources]
-pinta-db = { workspace = true }
 
 [build-system]
 requires = ["setuptools>=82", "wheel"]

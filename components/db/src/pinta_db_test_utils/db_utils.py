@@ -5,9 +5,10 @@
 
 import os
 
+from sqlmodel import text
+
 from pinta_db.schemas import SCHEMA_CONFIGURATIONS
 from pinta_db_utils import engine_utils, schema_utils
-from sqlmodel import text
 
 
 def get_admin_credentials(

@@ -7,10 +7,10 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 import pytest
-from pinta_test_utils import db_utils
 from sqlalchemy.exc import IntegrityError
 
 from pinta_db.models.temp_model import TemporaryModel, TemporaryModelWithForeignKey
+from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
 
 if TYPE_CHECKING:
