@@ -1,6 +1,7 @@
 db_migrations_version: head # replace with version number in inventory
 db_migrations_component_path: /path/to/db/on/server
 db_migrations_alembic_ini: /path/to/alembic.ini
+db_migrations_uv_path: /path/to/your/uv/bin
 
 db_migrations_db_user: postgres
 db_migrations_db_password: postgres

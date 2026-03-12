@@ -21,20 +21,11 @@ services:
         target: /pgdata
 
 
-  server:
-    depends_on:
-      - db
-    build:
-      context: infra/containers/server
-      dockerfile: Containerfile
-    image: localhost/pinta-server:latest
-
   ansible:
     profiles:
       - ansible
     depends_on:
       - db
-      - server
     build:
       context: infra/containers/ansible
       dockerfile: Containerfile
