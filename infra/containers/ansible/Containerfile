@@ -1,61 +1,59 @@
-FROM redhat/ubi9-minimal:9.5
+FROM alpine:3.23.3
 
-# hadolint ignore=DL3041
-RUN microdnf update -y \
-  && microdnf --disableplugin=subscription-manager install -y \
-  sudo \
-  openssh-clients \
-  sshpass \
-  python312 \
-  python3.12-pip \
-  unzip \
-  rsync \
-  git \
-  vi \
-  tar \
-  python3-dnf \
-  && microdnf --disableplugin=subscription-manager clean all
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+    sudo \
+    openssh-client \
+    sshpass \
+    python3 \
+    py3-pip \
+    unzip \
+    rsync \
+    git \
+    vim \
+    tar \
+    bash \
+    shadow
 
+# Upgrade pip and install Python dependencies
 # hadolint ignore=DL3013
-RUN python3.12 -m pip install --no-cache-dir --upgrade pip \
-  && python3.12 -m pip install --no-cache-dir \
-  "ansible==13.4.0 " \
-  "jmespath==1.1.0" \
-  "docker==7.1.0" \
-  "dnspython==2.8.0"
+RUN python3 -m pip install --no-cache-dir --break-system-packages --upgrade pip \
+ && pip install --no-cache-dir --break-system-packages \
+    ansible==13.4.0 \
+    jmespath==1.1.0 \
+    docker==7.1.0 \
+    dnspython==2.8.0
 
-# Install ansible extensions
+# Install Ansible collections
 RUN ansible-galaxy collection install community.postgresql:3.10.2 \
-    && ansible-galaxy collection install community.general:10.3.0 \
-    && ansible-galaxy collection install ansible.posix:1.6.2
+ && ansible-galaxy collection install community.general:10.3.0 \
+ && ansible-galaxy collection install ansible.posix:1.6.2
 
-
-
-# add a non-root nopasswd sudoer as a deploy login user to use for ansible playbooks
-# also generate the host keys here since startup will happen seemingly too fast sometimes
-# and ansible will hit a changed host key error, even when checking is disabled
-# hadolint ignore=DL3033
+# Create deploy user with passwordless sudo
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN useradd deployer \
-  && echo "deployer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
-  && echo "Defaults:deployer !requiretty" >> /etc/sudoers \
-  && (echo "deployer:deployer" | chpasswd)
+RUN adduser -D deployer \
+ && echo "deployer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+ && echo "Defaults:deployer !requiretty" >> /etc/sudoers \
+ && echo "deployer:deployer" | chpasswd
 
-# START OF SERVER DEPENDENCIES
+# ---- SERVER DEPENDENCIES ----
 
-# hadolint ignore=DL3041
-RUN microdnf --disableplugin=subscription-manager install -y \
-  # Next dependencies have to be installed on ansible host and on server \
-  unzip \
-  rsync \
-  # Next dependencies have to be installed on server \
-  python3.12-psycopg2 \
-  && microdnf --disableplugin=subscription-manager clean all
+# runtime dependencies used by playbooks
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+    unzip \
+    rsync
 
-RUN pip install --no-cache-dir uv==0.10.9
+# required python packages
+# hadolint ignore=DL3059
+RUN pip install --no-cache-dir --break-system-packages \
+    psycopg2-binary==2.9.11 \
+    uv==0.10.9
 
-# END OF SERVER DEPENDENCIES
+# ---- END SERVER DEPENDENCIES ----
 
 ENV ANSIBLE_SSH_RETRIES=5
+
 WORKDIR /ansible
-CMD [ "echo", "nothing to do by default" ]
+
+CMD ["echo", "nothing to do by default"]
