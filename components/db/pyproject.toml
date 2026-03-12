@@ -54,3 +54,16 @@ extend = "../../pyproject.toml"
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib -n auto"
+
+[tool.mypy]
+python_version = "3.12"
+follow_imports = "normal"
+show_column_numbers = true
+namespace_packages = true
+ignore_missing_imports = true
+exclude = "^test"
+
+
+[[tool.mypy.overrides]]
+module = "src.pinta_db.models.*"
+disable_error_code = ["call-arg"]
