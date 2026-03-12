@@ -87,7 +87,6 @@ repos:
           - ansible==13.4.0
 
 
-
   # commit-msg hooks
   # Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary).
   - repo: https://github.com/jorisroovers/gitlint
