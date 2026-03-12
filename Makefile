@@ -34,7 +34,7 @@ infra-full:
 migrations:
 	docker-compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
 
-infra-restart: restart ansible-full
+infra-restart: restart infra-full
 
 
 # Tests
