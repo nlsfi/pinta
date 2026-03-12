@@ -12,6 +12,18 @@
     delete: true
   become: true
 
+# TODO: remove this when lock file problem is solved
+- name: Remove tool.uv.sources section and pinta-lib dependency using sed
+  ansible.builtin.shell: |
+    # Remove the [tool.uv.sources] section completely
+    sed -i '/^\[tool\.uv\.sources\]/,/^\[/ { /^\[/!d; }' pyproject.toml
+    # Remove 'pinta-lib' from project.dependencies
+    sed -i 's/\(["'\'']\?pinta-lib["'\'']\?,\?\s*\)//g' pyproject.toml
+  args:
+    executable: /bin/bash
+    chdir: "{{ install_component_dest_path }}/{{ install_component_name }}"
+  changed_when: true
+
 # TODO: should lock file should be generated for each component?
 - name: Generate application lock file
   ansible.builtin.command: "{{ install_component_uv_path }} lock"
