@@ -1,7 +1,12 @@
-FROM postgis/postgis:17-3.5
+FROM postgis/postgis:17-3.5-alpine
 
-RUN localedef -i fi_FI -c -f UTF-8 -A /usr/share/locale/locale.alias fi_FI.UTF-8
-ENV LANG=fi_FI.UTF8
+# Install locale support for musl
+# hadolint ignore=DL3018
+RUN apk add --no-cache musl-locales musl-locales-lang
+
+ENV LANG=fi_FI.UTF-8
+ENV LC_ALL=fi_FI.UTF-8
+
 ENV POSTGRES_INITDB_ARGS=--encoding=UTF8
 ENV PGPORT=5432
 
