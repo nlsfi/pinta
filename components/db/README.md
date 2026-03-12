@@ -24,6 +24,10 @@ To run migrations in development, in root of the project, run:
 docker-compose run --rm ansible
 ```
 
+or `make infra-full`.
+
+If you want to skip database initialization, just run `make migrations`.
+
 In development, you can also run migrations manually by running:
 
 ```bash

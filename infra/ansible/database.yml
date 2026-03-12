@@ -3,6 +3,7 @@
   run_once: true
   tasks:
     - name: Initialize databases
+      when: not skip_init_db
       ansible.builtin.include_role:
         name: db_init
       vars:
