@@ -3,6 +3,10 @@ services:
     build:
       context: infra/containers/postgis
       dockerfile: Containerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     image: localhost/pinta-db:latest
     healthcheck:
       test: pg_isready -U postgres || exit 1
@@ -29,9 +33,16 @@ services:
     build:
       context: infra/containers/ansible
       dockerfile: Containerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     image: localhost/pinta-ansible:latest
     environment:
       ANSIBLE_CONFIG: /ansible/ansible.cfg
+      HTTP_PROXY: ${HTTP_PROXY}
+      HTTPS_PROXY: ${HTTPS_PROXY}
+      NO_PROXY: ${NO_PROXY}
     working_dir: /ansible
     command:
       - ansible-playbook
@@ -40,11 +51,11 @@ services:
       - inventories/local
     volumes:
       - type: bind
-        source: ./infra/ansible
+        source: ${REPO_DIR:-.}/infra/ansible
         target: /ansible
         read_only: true
       - type: bind
-        source: .
+        source: ${REPO_DIR:-.}
         target: /repository
         read_only: true
 
