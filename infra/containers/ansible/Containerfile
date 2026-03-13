@@ -1,5 +1,9 @@
 FROM alpine:3.23.3
 
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
     sudo \
