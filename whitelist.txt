@@ -38,3 +38,4 @@ params
 wkt
 autocommit
 iterdir
+MULTIPOLYGON

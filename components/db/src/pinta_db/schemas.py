@@ -14,7 +14,7 @@ class Schema(enum.Enum):
     """Schemas used in the database."""
 
     MIGRATIONS = "alembic"
-    TEMPORARY = "temp_schema"
+    MANAGEMENT = "management"
 
 
 # Role placeholders
@@ -63,7 +63,7 @@ class SchemaConfig:
 
 SCHEMA_CONFIGURATIONS = [
     SchemaConfig(
-        schema=Schema.TEMPORARY,
+        schema=Schema.MANAGEMENT,
         role_privileges=(
             RolePrivileges(
                 role=Role.WRITER,
