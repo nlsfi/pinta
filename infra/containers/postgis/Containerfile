@@ -1,8 +1,12 @@
 FROM postgis/postgis:17-3.5-alpine
 
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
 # Install locale support for musl
 # hadolint ignore=DL3018
-RUN apk add --no-cache musl-locales musl-locales-lang
+# RUN apk add --no-cache musl-locales musl-locales-lang
 
 ENV LANG=fi_FI.UTF-8
 ENV LC_ALL=fi_FI.UTF-8

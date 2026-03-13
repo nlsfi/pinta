@@ -7,8 +7,7 @@ Install one of the following on your host:
 * Docker
 * Podman + podman-docker
 
-The devcontainer image includes `docker` and `docker-compose` CLIs and connects to your host
-container engine through a mounted socket.
+The devcontainer image includes `docker` and `docker-compose` CLIs and connects to your host container engine through a mounted socket.
 
 ### Docker
 

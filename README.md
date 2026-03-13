@@ -8,6 +8,7 @@
 * Copy .env.example to .env and adjust settings
 * Open project in devcontainer, see [instructions](.devcontainer/README.md)
 * Activate virtual environment: `source .venv/bin/activate`
+* Create a `.env` from `.env.example` and add needed configurations
 
 Now all dependencies and Git hooks are automatically installed in your virtual environment when using Dev Containers.
 See the instructions for developing individual components in their respective README files.
