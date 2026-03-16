@@ -35,7 +35,7 @@
         install_component_path: "{{ local_repository_path }}/components/db"
         install_component_dest_path: "{{ dest_repository_path }}"
         install_component_name: db
-        install_component_dev_deps: true
+        install_component_extras: true
         install_component_uv_path: "{{ uv_path }}"
     - name: Run migrations
       ansible.builtin.include_role:

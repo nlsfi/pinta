@@ -697,9 +697,13 @@ dependencies = [
     { name = "sqlmodel" },
 ]
 
+[package.optional-dependencies]
+migrations = [
+    { name = "alembic" },
+]
+
 [package.dev-dependencies]
 dev = [
-    { name = "alembic" },
     { name = "dotenv" },
     { name = "pinta-lib" },
     { name = "psycopg", extra = ["binary"] },
@@ -712,13 +716,14 @@ lint = [
 
 [package.metadata]
 requires-dist = [
+    { name = "alembic", marker = "extra == 'migrations'", specifier = ">=1.18.4" },
     { name = "geoalchemy2", extras = ["shapely"], specifier = ">=0.18.4" },
     { name = "sqlmodel", specifier = ">=0.0.37" },
 ]
+provides-extras = ["migrations"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "alembic", specifier = ">=1.18.4" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },

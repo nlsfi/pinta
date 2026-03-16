@@ -3,6 +3,6 @@ install_component_dest_path: /path/to/app/on/server
 install_component_name: component_name
 
 install_component_pip_index_url: https://pypi.python.org/simple
-install_component_dev_deps: false
+install_component_extras: false
 
 install_component_uv_path: /path/to/your/uv/bin
