@@ -42,9 +42,14 @@ RUN python -m pip install --upgrade pip --no-cache-dir \
 #     libzstd-dev libgeotiff-dev libwebp-dev
 
 WORKDIR /code
-# TODO: install dependecies from pyproject.toml before copying code
-COPY . .
 
-RUN uv sync --no-dev --active
+COPY components/processing/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
-CMD ["uv", "run", "python"]
+COPY uv.lock ./
+COPY components/processing/pyproject.toml ./pyproject.toml
+RUN uv sync --no-dev --active --no-install-project
+COPY components/processing/src ./src
+RUN uv pip install -e .
+
+ENTRYPOINT ["./entrypoint.sh"]
