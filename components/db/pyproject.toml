@@ -10,12 +10,16 @@ dependencies = [
   "sqlmodel>=0.0.37",
 ]
 
+[project.optional-dependencies]
+migrations = [
+  "alembic>=1.18.4",
+]
+
 [tool.uv]
 default-groups = ["dev", "lint"]
 
 [dependency-groups]
 dev = [
-  "alembic>=1.18.4",
   "dotenv>=0.9.9",
   "psycopg[binary]>=3.3.3",
   "pytest-dotenv>=0.5.2",

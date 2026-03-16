@@ -20,10 +20,7 @@ restart-fully: down build up
 restart: down up
 
 sync:
-	uv sync --all-packages --all-groups
-
-test:
-	uv run pytest
+	uv sync --all-packages --all-groups --all-extras
 
 # Infra targets
 # =================
@@ -34,8 +31,11 @@ infra-full:
 migrations:
 	docker-compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
 
-infra-restart: restart ansible-full
+infra-restart: restart infra-full
 
 
 # Tests
 # ======
+
+test:
+	uv run pytest

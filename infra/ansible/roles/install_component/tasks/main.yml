@@ -35,7 +35,7 @@
   changed_when: true
 
 - name: Install application component {{ install_component_name }}
-  ansible.builtin.command: "{{ install_component_uv_path }} sync --no-cache {{ install_component_dev_deps | ternary('--group=dev', '') }}"
+  ansible.builtin.command: "{{ install_component_uv_path }} sync --no-cache {{ install_component_extras | ternary('--all-extras', '') }}"
   environment:
     UV_DEFAULT_INDEX: "{{ install_component_pip_index_url }}"
   args:
