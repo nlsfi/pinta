@@ -9,10 +9,24 @@ ENV HTTP_PROXY=$HTTP_PROXY
 ENV HTTPS_PROXY=$HTTPS_PROXY
 ENV NO_PROXY=$NO_PROXY
 
-# hadolint ignore=DL3033, SC3009
-RUN yum update -y \
-  && yum --disableplugin=subscription-manager install -y python3.12 python3.12-pip \
-  && yum --disableplugin=subscription-manager clean all \
+ARG ENABLE_REPOS="*"
+ARG DISABLE_REPOS=""
+ARG ADDITIONAL_REPO_CONTENTS=""
+
+# hadolint ignore=DL3041, SC3009
+RUN if [ -n "$ADDITIONAL_REPO_CONTENTS" ]; then \
+      echo "$ADDITIONAL_REPO_CONTENTS" > /etc/yum.repos.d/extra.repo; \
+  fi && \
+  dnf update \
+    -y \
+    --disablerepo="${DISABLE_REPOS}" \
+    --enablerepo="${ENABLE_REPOS}" \
+  && dnf \
+      --disableplugin=subscription-manager \
+      --disablerepo="${DISABLE_REPOS}" \
+      --enablerepo="${ENABLE_REPOS}" \
+      install -y -vv python3.12 python3.12-pip \
+  && dnf --disableplugin=subscription-manager clean all \
   && ln -s /usr/bin/python3.12 /usr/bin/python \
   && mv /usr/bin/python3{,9} \
   && ln -s /usr/bin/python3.12 /usr/bin/python3
