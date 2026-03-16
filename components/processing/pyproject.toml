@@ -5,6 +5,8 @@ dynamic = [
   "version",
 ]
 dependencies = [
+  "laspy",
+  "lazrs",
 ]
 
 [tool.uv]

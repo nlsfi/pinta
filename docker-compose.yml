@@ -59,5 +59,15 @@ services:
         target: /repository
         read_only: true
 
+  processing:
+    build:
+      context: components/processing
+      dockerfile: Containerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    image: localhost/pinta-processing:latest
+
 volumes:
   db-data:
