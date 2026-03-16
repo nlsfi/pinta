@@ -1,0 +1,36 @@
+FROM redhat/ubi9:9.7
+
+# Proxy args
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+ENV NO_PROXY=$NO_PROXY
+
+# hadolint ignore=DL3033, SC3009
+RUN yum update -y \
+  && yum --disableplugin=subscription-manager install -y python3.12 python3.12-pip \
+  && yum --disableplugin=subscription-manager clean all \
+  && ln -s /usr/bin/python3.12 /usr/bin/python \
+  && mv /usr/bin/python3{,9} \
+  && ln -s /usr/bin/python3.12 /usr/bin/python3
+
+# hadolint ignore=DL3013
+RUN python -m pip install --upgrade pip --no-cache-dir \
+  && pip install uv --no-cache-dir
+
+# Lastools dependecies from debian based image
+# RUN apt-get update && apt-get install -y \
+#     libjpeg62 libpng-dev libtiff-dev libjpeg-dev \
+#     libz-dev libproj-dev liblzma-dev libjbig-dev \
+#     libzstd-dev libgeotiff-dev libwebp-dev
+
+WORKDIR /code
+# TODO: install dependecies from pyproject.toml before copying code
+COPY . .
+
+RUN uv sync --no-dev --active
+
+CMD ["uv", "run", "python"]
