@@ -7,7 +7,7 @@
 
 Revision ID: 001
 Revises:
-Create Date: 2026-03-11 08:41:20.573743
+Create Date: 2026-03-16 11:10:27.081847
 
 """
 
@@ -18,6 +18,8 @@ import sqlmodel
 import sqlmodel.sql.sqltypes
 from alembic import op
 from geoalchemy2 import Geometry
+
+from pinta_db.env import SRID
 
 # revision identifiers, used by Alembic.
 revision: str = "001"
@@ -36,7 +38,7 @@ def upgrade() -> None:
             "geom",
             Geometry(
                 geometry_type="POINT",
-                srid=3067,
+                srid=SRID,
                 dimension=2,
                 spatial_index=False,
                 from_text="ST_GeomFromEWKT",
@@ -66,7 +68,7 @@ def upgrade() -> None:
             "geom",
             Geometry(
                 geometry_type="LINESTRING",
-                srid=3067,
+                srid=SRID,
                 dimension=2,
                 spatial_index=False,
                 from_text="ST_GeomFromEWKT",

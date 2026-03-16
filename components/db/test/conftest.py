@@ -9,4 +9,4 @@ from pinta_test_utils.xdist_utils import get_number_of_workers
 
 @pytest.hookimpl
 def pytest_xdist_auto_num_workers(config: "pytest.Config"):
-    return get_number_of_workers(config)
+    return get_number_of_workers(config, run_package_tests_with_one_worker=True)
