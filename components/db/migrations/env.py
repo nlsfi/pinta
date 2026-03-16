@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 from alembic import context
 from dotenv import load_dotenv
-from geoalchemy2 import alembic_helpers
+from geoalchemy2 import alembic_helpers as geoalchemy_alembic_helpers
 
 # Get env variables before importing models
 load_dotenv()
@@ -31,7 +31,10 @@ from pinta_db.schemas import (  # noqa: E402
     SCHEMA_CONFIGURATIONS,
     Schema,
 )
-from pinta_db_utils import schema_utils  # noqa: E402
+from pinta_db_utils import (  # noqa: E402
+    alembic_helpers,
+    schema_utils,
+)
 from pinta_db_utils.engine_utils import Credentials  # noqa: E402
 
 if TYPE_CHECKING:
@@ -103,8 +106,8 @@ def run_migrations_online() -> None:
             include_schemas=True,
             version_table_schema=Schema.MIGRATIONS.value,
             # PostGIS and Geoalchemy stuff
-            include_object=alembic_helpers.include_object,
-            process_revision_directives=alembic_helpers.writer,
+            include_object=geoalchemy_alembic_helpers.include_object,
+            process_revision_directives=geoalchemy_alembic_helpers.writer,
             render_item=alembic_helpers.render_item,
         )
 
