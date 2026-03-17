@@ -1,3 +1,3 @@
 #!/bin/bash
-source /code/.venv/bin/activate
+source /venv/bin/activate
 exec "$@"

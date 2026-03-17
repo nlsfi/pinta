@@ -70,7 +70,7 @@ services:
     image: localhost/pinta-processing:latest
     volumes:
       - type: bind
-        source: ${REPO_DIR:-.}
+        source: ${REPO_DIR:-.}/components/processing
         target: /code
         read_only: true
 
