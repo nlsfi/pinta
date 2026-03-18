@@ -45,6 +45,8 @@ dev = [
   "coverage-enable-subprocess",
   # pytest-qt<4 depends on py implicitly provided by pytest<7, require manually
   "py",
+  "pydevd-pycharm~=253.31033.139", # debugger for jetbrains ides
+  "debugpy>=1.8.20",               # debugger for VSCode
 ]
 lint = [
   # linting tools
