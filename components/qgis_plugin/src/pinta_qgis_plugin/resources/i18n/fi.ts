@@ -9,7 +9,7 @@
         <translation>Tervehdys Pinnasta!</translation>
     </message>
     <message>
-        <location filename="../../plugin.py" line="51"/>
+        <location filename="../../plugin.py" line="55"/>
         <source>Pinta plugin</source>
         <translation>Pinta lisäosa</translation>
     </message>

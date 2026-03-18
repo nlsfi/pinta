@@ -101,3 +101,10 @@ runtime_requires = [
   "qgis_plugin_tools",
 ]
 auto_add_recursive_runtime_dependencies = false
+translation_language_codes = [
+  "fi",
+]
+translation_search_paths = [
+  "src/pinta_qgis_plugin",
+]
+translation_destination_path = "src/pinta_qgis_plugin/resources/i18n"
