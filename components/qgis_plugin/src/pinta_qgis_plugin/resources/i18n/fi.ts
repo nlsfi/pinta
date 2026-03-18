@@ -2,14 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fi" sourcelanguage="en">
 <context>
-    <name>i18n</name>
+    <name>@default</name>
     <message>
-        <location filename="../../plugin.py" line="46"/>
+        <location filename="../../plugin.py" line="48"/>
         <source>Hello from Pinta!</source>
         <translation>Tervehdys Pinnasta!</translation>
     </message>
     <message>
-        <location filename="../../plugin.py" line="55"/>
+        <location filename="../../plugin.py" line="53"/>
         <source>Pinta plugin</source>
         <translation>Pinta lisäosa</translation>
     </message>
