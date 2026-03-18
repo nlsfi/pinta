@@ -24,7 +24,7 @@ from qgis_plugin_tools.tools import i18n
 
 
 def setup_all_translators() -> list[QtCore.QTranslator]:
-    """Initialize trasnlators."""
+    """Initialize translators."""
     translators = []
     _, main_file_path = i18n.setup_translation()
     if main_file_path:

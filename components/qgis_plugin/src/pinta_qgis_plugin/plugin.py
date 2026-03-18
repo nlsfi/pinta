@@ -20,7 +20,8 @@ import typing
 
 import qgis_plugin_tools
 from qgis.utils import iface as utils_iface
-from qgis_plugin_tools.tools import custom_logging, i18n
+from qgis_plugin_tools.tools import custom_logging
+from qgis_plugin_tools.tools.i18n import tr
 
 import pinta_qgis_plugin
 from pinta_qgis_plugin.utils import i18n_utils
@@ -37,6 +38,7 @@ class Plugin:
     """QGIS Plugin Implementation."""
 
     def __init__(self) -> None:
+        self._teardown_loggers = lambda: None
         self.translators = i18n_utils.setup_all_translators()
 
     def initGui(self) -> None:  # noqa: N802
@@ -45,13 +47,13 @@ class Plugin:
 
         iface.messageBar().pushMessage(
             "Info",
-            i18n.tr("Hello from Pinta!"),
+            tr("Hello from Pinta!"),
         )
 
         self._teardown_loggers = custom_logging.setup_loggers(
             pinta_qgis_plugin.__name__,
             qgis_plugin_tools.__name__,
-            message_log_name=i18n.tr("Pinta plugin"),
+            message_log_name=tr("Pinta plugin"),
         )
 
     def unload(self) -> None:
