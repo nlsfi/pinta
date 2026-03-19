@@ -845,7 +845,7 @@ dev = [
     { name = "pytest-qgis" },
     { name = "pytest-qt" },
     { name = "pytest-timeout" },
-    { name = "qgis-plugin-dev-tools" },
+    { name = "qgis-plugin-dev-tools", specifier = ">=0.11.0" },
 ]
 lint = [
     { name = "flake8-qgis" },
@@ -1185,7 +1185,7 @@ wheels = [
 
 [[package]]
 name = "qgis-plugin-dev-tools"
-version = "0.10.0"
+version = "0.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "importlib-metadata" },
@@ -1194,9 +1194,9 @@ dependencies = [
     { name = "requests" },
     { name = "tomli" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/11/bc/2fde5b2da0dd0061922d15a359e7b86510c46fd0ed471f13bfcd4e2b30c1/qgis_plugin_dev_tools-0.10.0.tar.gz", hash = "sha256:025ff018cc1327b511476d286abbd9dbb4ebe43a798fd66e2f35267f5b6a48a2", size = 41858, upload-time = "2026-03-14T21:06:41.998Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/1e/0702f3099ae78f1e1e845f5b172abde742bb008b602e4ffe93f899287ca8/qgis_plugin_dev_tools-0.11.0.tar.gz", hash = "sha256:cb683a5db85194fe1eff1ffdf732f48db0be7546d8beff3ecfa619a72706aa4e", size = 48023, upload-time = "2026-03-19T08:45:48.676Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/96/4c42b0601b27978512d1fee26c7a436e413183de8f6401805988ac8d1fcc/qgis_plugin_dev_tools-0.10.0-py3-none-any.whl", hash = "sha256:ebdfad804f225ff1f34fe2e17ffdd054ac4303c8797393a697e5825f74250c43", size = 46623, upload-time = "2026-03-14T21:06:40.672Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/fb/cea61b988b24d75803a159606edef2af68e2163d2999c2de7381bae4ed38/qgis_plugin_dev_tools-0.11.0-py3-none-any.whl", hash = "sha256:f2851a2160987f69e9bd5d9cf074c78043626a7d28bcacf5956afdda7751b934", size = 50579, upload-time = "2026-03-19T08:45:47.577Z" },
 ]
 
 [[package]]
