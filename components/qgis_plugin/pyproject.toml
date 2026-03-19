@@ -99,6 +99,7 @@ extend = "../../pyproject.toml"
 [tool.qgis_plugin_dev_tools]
 plugin_package_name = "pinta_qgis_plugin"
 version_number_source = "distribution"
+changelog_file_path = "../../CHANGELOG.md"
 runtime_requires = [
   "qgis_plugin_tools",
 ]
