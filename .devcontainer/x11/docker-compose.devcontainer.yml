@@ -6,8 +6,9 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - type: bind
-        source: ..
+        source: ../..
         target: /home/ubuntu/workspace
         read_only: false
     environment:
+      DISPLAY: ${DISPLAY}
       QT_QPA_PLATFORM: xcb

@@ -3,6 +3,7 @@
   "dockerComposeFile": [
     "docker-compose.devcontainer.yml"
   ],
+  "workspaceFolder": "/home/ubuntu/workspace",
   "service": "devcontainer",
   "customizations": {
     "vscode": {
