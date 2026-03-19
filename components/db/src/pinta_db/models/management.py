@@ -27,7 +27,9 @@ class ProductionArea(ManagementBase, table=True):
         sa_column=Column(Geometry(MULTIPOLYGON, srid=SRID, nullable=False))
     )
 
-    tiles: list["PointCloudTile"] = Relationship(back_populates="production_area")
+    tiles: list["PointCloudTile"] = Relationship(
+        back_populates="production_area", cascade_delete=True
+    )
 
 
 class PointCloudTile(ManagementBase, table=True):
