@@ -17,6 +17,6 @@ repos:
           - flake8-qgis==1.0.0
 
   - repo: https://github.com/nlsfi/qgis-plugin-dev-tools
-    rev: update-translations-hook
+    rev: v0.11.0
     hooks:
       - id: update-translations

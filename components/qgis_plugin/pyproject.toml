@@ -33,7 +33,7 @@ default-groups = ["dev", "lint"]
 
 [dependency-groups]
 dev = [
-  "qgis-plugin-dev-tools",
+  "qgis-plugin-dev-tools>=0.11.0",
   # testing
   "pytest",
   "pytest-qt",
