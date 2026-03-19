@@ -2,6 +2,9 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
+from collections.abc import Generator
+from contextlib import contextmanager
+from typing import Any
 
 from pydantic.dataclasses import dataclass
 from sqlalchemy import Connection, create_engine
@@ -32,18 +35,27 @@ def get_connection_string(
     return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
 
 
-def get_session(credentials: Credentials) -> Session:
-    """Get SQLModel Session.
-
-    Use with with statement.
-    """
-    return Session(create_engine(credentials.get_connection_string()))
-
-
-def get_autocommit_connection(credentials: Credentials) -> Connection:
-    """Get sqlalchemy Connection with autocommit isolation level.
-
-    Use with with statement.
-    """
+@contextmanager
+def get_session(credentials: Credentials) -> Generator[Session, Any, None]:
+    """Get SQLModel Session."""
     engine = create_engine(credentials.get_connection_string())
-    return engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        yield Session(engine)
+    finally:
+        engine.dispose()
+
+
+@contextmanager
+def get_autocommit_connection(
+    credentials: Credentials,
+) -> Generator[Connection, Any, None]:
+    """Get sqlalchemy Connection with autocommit isolation level."""
+    engine = create_engine(credentials.get_connection_string())
+    try:
+        connection = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+        try:
+            yield connection
+        finally:
+            connection.close()
+    finally:
+        engine.dispose()
