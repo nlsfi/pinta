@@ -17,7 +17,6 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 # Do not import this module anywhere except root __init__.py
-# and plugin.py.
 
 from qgis.PyQt import QtCore
 from qgis_plugin_tools.tools import i18n

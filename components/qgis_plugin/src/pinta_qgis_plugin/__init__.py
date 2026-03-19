@@ -18,6 +18,7 @@
 
 import typing
 
+from qgis.PyQt import QtCore
 from qgis.utils import plugins
 
 from pinta_qgis_plugin.utils import i18n_utils
@@ -27,10 +28,12 @@ if typing.TYPE_CHECKING:
 
 __version__ = "0.0.0"
 
+TRANSLATORS: list[QtCore.QTranslator] = []
+
 
 def classFactory(_):  # noqa: ANN201, ANN001, N802
     """Class factory."""
-    translators = i18n_utils.setup_all_translators()  # noqa: F841 (has to be assigned)
+    TRANSLATORS.extend(i18n_utils.setup_all_translators())
 
     from pinta_qgis_plugin.plugin import Plugin  # noqa: PLC0415
 

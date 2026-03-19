@@ -24,7 +24,6 @@ from qgis_plugin_tools.tools import custom_logging
 from qgis_plugin_tools.tools.i18n import tr
 
 import pinta_qgis_plugin
-from pinta_qgis_plugin.utils import i18n_utils
 
 if typing.TYPE_CHECKING:
     from qgis.gui import QgisInterface
@@ -39,7 +38,6 @@ class Plugin:
 
     def __init__(self) -> None:
         self._teardown_loggers = lambda: None
-        self.translators = i18n_utils.setup_all_translators()
 
     def initGui(self) -> None:  # noqa: N802
         """Init gui."""
