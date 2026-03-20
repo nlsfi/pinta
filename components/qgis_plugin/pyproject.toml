@@ -9,6 +9,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
+  "pinta-db",
   "qgis_plugin_tools",
 ]
 
@@ -41,6 +42,9 @@ where = ["src"]
 
 [tool.uv]
 default-groups = ["dev", "lint"]
+
+[tool.uv.sources]
+pinta-db = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -113,6 +117,7 @@ extend = "../../pyproject.toml"
 plugin_package_name = "pinta_qgis_plugin"
 version_number_source = "distribution"
 changelog_file_path = "../../CHANGELOG.md"
+env_file_path = "../../.env"
 runtime_requires = [
   "qgis_plugin_tools",
 ]
