@@ -18,12 +18,14 @@ development = [
   "pytest",
   "pytest-mock",
   "pytest-dotenv",
+  "pinta-lib",
 ]
 linting = [
 ]
 
 [tool.uv.sources]
 pinta-db = { workspace = true }
+pinta-lib = { workspace = true }
 
 [build-system]
 requires = ["setuptools>=82", "wheel"]

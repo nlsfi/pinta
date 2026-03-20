@@ -22,6 +22,9 @@ jobs:
           pip install uv
           uv sync --all-groups --all-extras
 
+      - name: Copy .env.example to .env
+        run: cp ../../.env.example ../../.env
+
       # The test directory has to be named "test"
       - name: Run tests
         run: |
