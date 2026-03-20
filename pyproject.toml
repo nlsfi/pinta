@@ -42,6 +42,7 @@ lint.ignore = [
   "D104",  # Missing docstring in public package
   "D105",  # Missing docstring in magic method
   "D107",  # Missing docstring in `__init__`
+  "D417",  # Missing argument description
   # Conflicting rules (formatter)
   "D203",   # one-blank-line-before-class, D211 used (no-blank-line-before-class)
   "D213",   # multi-line-summary-second-line, D212 used (multi-line-summary-first-line)
@@ -64,6 +65,9 @@ lint.unfixable = [
   "F401", # Unused imports
   "F841", # Unused variables
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

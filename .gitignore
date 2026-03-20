@@ -13,3 +13,6 @@ __pycache__
 .idea
 # But not .vscode inside components/
 !components/**/.vscode
+
+# Cloud Optimized Point Cloud files inside test_data
+test_data/**/*.copc.laz

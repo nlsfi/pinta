@@ -41,3 +41,10 @@ iterdir
 autogenerate
 autogen
 MULTIPOLYGON
+laspy
+bbox
+mins
+maxs
+unary
+pytestconfig
+rootpath

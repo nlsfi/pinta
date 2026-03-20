@@ -59,20 +59,35 @@ def test_production_area_model_update(db: sqlmodel.Session, point_cloud_file: Pa
     assert point_cloud_tile.geom_wkt == "POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))"
     assert production_area.tiles == [point_cloud_tile]
 
+    # get area from db and update tile
+    production_area_in_db = db.exec(
+        sqlmodel.select(ProductionArea).where(ProductionArea.name == "area 1")
+    ).first()
+    assert production_area_in_db
+
     point_cloud_tile2 = PointCloudTile(
         geom="Polygon((0 0, 20 0, 20 20, 0 20, 0 0))",
-        production_area=production_area,
+        production_area=production_area_in_db,
         file_path=str(point_cloud_file),
     )
+    db.add(point_cloud_tile2)
+
+    point_cloud_tile3 = PointCloudTile(
+        geom="Polygon((0 0, 30 0, 30 30, 0 30, 0 0))",
+        production_area=production_area_in_db,
+        file_path=str(point_cloud_file),
+    )
+    db.add(point_cloud_tile3)
 
     # Update production area geom and tiles
-    production_area.geom = "MultiPolygon(((0 0, 20 0, 20 20, 0 20, 0 0)))"
-    production_area.tiles = [point_cloud_tile2]
+    production_area_in_db.geom = "MultiPolygon(((0 0, 30 0, 30 30, 0 30, 0 0)))"
+    production_area_in_db.tiles = [point_cloud_tile2, point_cloud_tile3]
     db.commit()
 
-    results = db.exec(sqlmodel.select(ProductionArea)).all()
-    assert len(results) == 1
-    assert results[0].geom_wkt == "MULTIPOLYGON (((0 0, 20 0, 20 20, 0 20, 0 0)))"
-    results = db.exec(sqlmodel.select(PointCloudTile)).all()
-    assert len(results) == 1
-    assert results[0].geom_wkt == "POLYGON ((0 0, 20 0, 20 20, 0 20, 0 0))"
+    all_areas = db.exec(sqlmodel.select(ProductionArea)).all()
+    assert len(all_areas) == 1
+    assert all_areas[0].geom_wkt == "MULTIPOLYGON (((0 0, 30 0, 30 30, 0 30, 0 0)))"
+    all_tiles = db.exec(sqlmodel.select(PointCloudTile)).all()
+    assert len(all_tiles) == 2
+    assert all_tiles[0].geom_wkt == "POLYGON ((0 0, 20 0, 20 20, 0 20, 0 0))"
+    assert all_tiles[1].geom_wkt == "POLYGON ((0 0, 30 0, 30 30, 0 30, 0 0))"

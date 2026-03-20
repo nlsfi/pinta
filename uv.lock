@@ -782,6 +782,7 @@ dependencies = [
 
 [package.dev-dependencies]
 development = [
+    { name = "pinta-lib" },
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
@@ -796,6 +797,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 development = [
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
