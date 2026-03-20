@@ -41,6 +41,8 @@ iterdir
 autogenerate
 autogen
 MULTIPOLYGON
+Qgs
+Wkb
 laspy
 bbox
 mins

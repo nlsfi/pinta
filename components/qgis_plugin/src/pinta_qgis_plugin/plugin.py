@@ -20,10 +20,10 @@ import typing
 
 import qgis_plugin_tools
 from qgis.utils import iface as utils_iface
-from qgis_plugin_tools.tools import custom_logging
-from qgis_plugin_tools.tools.i18n import tr
+from qgis_plugin_tools.tools import custom_logging, i18n
 
 import pinta_qgis_plugin
+from pinta_qgis_plugin.layers import manager
 
 if typing.TYPE_CHECKING:
     from qgis.gui import QgisInterface
@@ -43,16 +43,13 @@ class Plugin:
         """Init gui."""
         global iface  # noqa: PLW0602
 
-        iface.messageBar().pushMessage(
-            "Info",
-            tr("Hello from Pinta!"),
-        )
-
         self._teardown_loggers = custom_logging.setup_loggers(
             pinta_qgis_plugin.__name__,
             qgis_plugin_tools.__name__,
-            message_log_name=tr("Pinta plugin"),
+            message_log_name=i18n.tr("Pinta plugin"),
         )
+
+        manager.initialize_layers()
 
     def unload(self) -> None:
         """Unload plugin."""

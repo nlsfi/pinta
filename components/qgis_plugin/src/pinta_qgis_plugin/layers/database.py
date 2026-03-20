@@ -17,5 +17,20 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 
-def test_foo():
-    assert True
+from qgis.core import QgsDataSourceUri
+
+from pinta_qgis_plugin import env
+
+
+def get_database_uri() -> QgsDataSourceUri:
+    """Get QgsDataSourceUri from environment variables."""
+    uri = QgsDataSourceUri()
+    uri.setConnection(
+        env.PINTA_DB_HOST,
+        env.PINTA_DB_PORT,
+        env.PINTA_DB_NAME,
+        env.PINTA_DB_EDITOR_USER,
+        env.PINTA_DB_EDITOR_PASSWORD,
+    )
+
+    return uri
