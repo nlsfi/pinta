@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
   "laspy",
   "lazrs",
+  "pinta-db",
 ]
 
 [tool.uv]
@@ -20,6 +21,9 @@ development = [
 ]
 linting = [
 ]
+
+[tool.uv.sources]
+pinta-db = { workspace = true }
 
 [build-system]
 requires = ["setuptools>=82", "wheel"]

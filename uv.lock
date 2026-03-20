@@ -777,6 +777,7 @@ source = { editable = "components/processing" }
 dependencies = [
     { name = "laspy" },
     { name = "lazrs" },
+    { name = "pinta-db" },
 ]
 
 [package.dev-dependencies]
@@ -790,6 +791,7 @@ development = [
 requires-dist = [
     { name = "laspy" },
     { name = "lazrs" },
+    { name = "pinta-db", editable = "components/db" },
 ]
 
 [package.metadata.requires-dev]
