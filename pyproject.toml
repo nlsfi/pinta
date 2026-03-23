@@ -6,6 +6,12 @@ dependencies = []
 
 [tool.uv]
 package = false
+conflicts = [
+  [
+    { package = "pinta_qgis_plugin", extra = "qgis" },
+    { package = "pinta-db", extra = "shapely" },
+  ],
+]
 default-groups = ["lint"]
 
 [tool.uv.workspace]

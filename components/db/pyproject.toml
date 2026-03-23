@@ -6,13 +6,17 @@ readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
-  "geoalchemy2[shapely]>=0.18.4",
+  "geoalchemy2>=0.18.4",
   "sqlmodel>=0.0.37",
 ]
 
 [project.optional-dependencies]
 migrations = [
   "alembic>=1.18.4",
+]
+shapely = [
+  "geoalchemy2[shapely]",
+  "numpy>=2",
 ]
 
 [tool.uv]

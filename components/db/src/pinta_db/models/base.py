@@ -8,7 +8,6 @@
 import re
 import uuid
 
-from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import declared_attr
 from sqlmodel import Field, SQLModel
 
@@ -41,6 +40,12 @@ class BaseModel(SQLModel):
     @property
     def geom_wkt(self) -> str:
         """Return the geometry as wkt."""
+        try:
+            from geoalchemy2.shape import to_shape  # noqa: PLC0415
+        except ImportError as e:
+            message = "Install pinta-db[shapely] extra to use this feature"
+            raise ImportError(message) from e
+
         field = "geom"
         if not hasattr(self, field):
             raise MissingFieldError(field)
