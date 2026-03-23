@@ -20,7 +20,7 @@ restart-fully: down build up
 restart: down up
 
 sync:
-	uv sync --all-packages --all-groups --all-extras
+	uv sync --all-packages --all-groups --all-extras --no-extra qgis
 
 # Infra targets
 # =================
@@ -33,6 +33,17 @@ migrations:
 
 infra-restart: restart infra-full
 
+
+# QGIS plugin targets
+# =================
+
+start-qgis:
+	# Start qgis with plugin in development mode
+	uv run --directory $(QGIS_DIR) --extra qgis qpdt s
+
+start-qgis-no-extras:
+	# To start QGIS with plugin in development mode without installing qgis extras (works better with native linux development)
+	uv run --directory $(QGIS_DIR) qpdt s
 
 # Tests
 # ======

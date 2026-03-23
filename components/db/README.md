@@ -1,5 +1,7 @@
 # Database component
 
+Install all dependencies and extras with `uv sync --all-extras`.
+
 ## Creating migrations
 
 To create migrations modify database models first.

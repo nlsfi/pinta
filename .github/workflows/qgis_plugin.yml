@@ -30,7 +30,7 @@ jobs:
           python3 -m venv .venv
           source .venv/bin/activate
           python3 -m pip install uv
-          uv sync --all-packages --all-groups --active
+          uv sync --active
 
       - name: Run tests
         run: |
