@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
   "laspy",
   "lazrs",
-  "pinta-db",
+  "pinta-db[shapely]",
 ]
 
 [tool.uv]
