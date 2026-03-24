@@ -21,6 +21,9 @@ development = [
   "pinta-lib",
 ]
 linting = [
+  "prek",
+  "mypy",
+  "ruff",
 ]
 
 [tool.uv.sources]

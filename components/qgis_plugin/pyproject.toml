@@ -61,7 +61,9 @@ dev = [
 ]
 lint = [
   # linting tools
+  "prek",
   "mypy",
+  "ruff",
   # flake8 plugins
   "flake8-qgis",
   # stubs for type checks

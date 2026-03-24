@@ -22,8 +22,9 @@ lint = [
   "flake8>=7.3.0",
   "flake8-pyproject>=1.2.4",
   "flake8-spellcheck>=0.28.0",
-  "prek==0.3.5",
+  "prek>=0.3.5",
   "ruff>=0.15.5",
+  "mypy>=1.19.1",
 ]
 
 [tool.flake8]

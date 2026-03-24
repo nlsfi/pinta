@@ -815,6 +815,7 @@ lint = [
     { name = "flake8" },
     { name = "flake8-pyproject" },
     { name = "flake8-spellcheck" },
+    { name = "mypy" },
     { name = "prek" },
     { name = "ruff" },
 ]
@@ -826,7 +827,8 @@ lint = [
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "flake8-pyproject", specifier = ">=1.2.4" },
     { name = "flake8-spellcheck", specifier = ">=0.28.0" },
-    { name = "prek", specifier = "==0.3.5" },
+    { name = "mypy", specifier = ">=1.19.1" },
+    { name = "prek", specifier = ">=0.3.5" },
     { name = "ruff", specifier = ">=0.15.5" },
 ]
 
@@ -858,7 +860,9 @@ dev = [
     { name = "pytest-xdist" },
 ]
 lint = [
+    { name = "mypy" },
     { name = "prek" },
+    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -880,7 +884,11 @@ dev = [
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
-lint = [{ name = "prek", specifier = ">=0.3.5" }]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
 
 [[package]]
 name = "pinta-lib"
@@ -891,11 +899,21 @@ source = { editable = "components/lib" }
 dev = [
     { name = "pytest" },
 ]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
 
 [package.metadata]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
 
 [[package]]
 name = "pinta-processing"
@@ -915,6 +933,11 @@ development = [
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
 ]
+linting = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -930,7 +953,11 @@ development = [
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
 ]
-linting = []
+linting = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
 
 [[package]]
 name = "pinta-qgis-plugin"
@@ -965,7 +992,9 @@ dev = [
 lint = [
     { name = "flake8-qgis" },
     { name = "mypy" },
+    { name = "prek" },
     { name = "pyqt5-stubs" },
+    { name = "ruff" },
     { name = "types-requests" },
 ]
 
@@ -997,7 +1026,9 @@ dev = [
 lint = [
     { name = "flake8-qgis" },
     { name = "mypy" },
+    { name = "prek" },
     { name = "pyqt5-stubs" },
+    { name = "ruff" },
     { name = "types-requests" },
 ]
 
