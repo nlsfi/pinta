@@ -9,11 +9,16 @@ dependencies = [
 ]
 
 [tool.uv]
-default-groups = ["dev"]
+default-groups = ["dev", "lint"]
 
 [dependency-groups]
 dev = [
   "pytest>=9.0.2",
+]
+lint = [
+  "prek",
+  "mypy",
+  "ruff",
 ]
 
 [build-system]
