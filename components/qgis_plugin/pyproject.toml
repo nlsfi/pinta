@@ -16,11 +16,11 @@ dependencies = [
 # QGIS requirements are marked here to allow starting QGIS from venv without conflicting dependencies
 qgis = [
   # "GDAL==3.8.4", # Cannot be installed via pip
-  "numpy==1.26.4",
-  # "matplotlib==3.6.3", # Slow to isntall, uncomment if we really need this...
+  "numpy>=1, <2",
+  # "matplotlib==3.6.3", # Slow to install, uncomment if we really need this...
   "OWSLib==0.29.3",
-  "psycopg2-binary==2.9.9",
-  "requests==2.31.0",
+  "psycopg2-binary>=2, <3",
+  "requests>=2, <3",
 ]
 
 [tool.setuptools.dynamic]
