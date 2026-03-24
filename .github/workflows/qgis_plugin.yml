@@ -16,7 +16,11 @@ jobs:
   unit_tests:
     runs-on: ubuntu-latest
     container:
-      image: qgis/qgis:3.44.8-noble
+      image: qgis/qgis:${{ matrix.qgis-image-tags }}
+    strategy:
+      matrix:
+        qgis-image-tags: [ "3.44.8-noble", "4.0-questing" ]
+      fail-fast: false
     defaults:
       run:
         working-directory: components/qgis_plugin
