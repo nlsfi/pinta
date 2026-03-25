@@ -52,13 +52,16 @@ Check [component](./components) related instructions in each component's README.
 Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary).
 
 Commit messages are used by [Python Semantic Release (PSR)](https://python-semantic-release.readthedocs.io)
- to generate and update component-specific changelogs. By default, PSR can detect which commits are
+to generate and update component-specific changelogs. By default, PSR can detect which commits are
 related to which component by update file path. However, you can specifically define when the commit is relevant to the
 package using commit scope that equals the component directory name:
 
 ```shell
 git commit -m "fix(db): fix something somewhere not in directly componen's path".
 ```
+
+To trigger a major release for the component, the commit message body must contain a paragraph that begins with
+"BREAKING CHANGE:".
 
 ### Imports
 
@@ -74,6 +77,14 @@ If you want to use the ansible playbooks to deploy the infra to your own environ
 check the dependencies listed in [ansible Containerfile](./infra/containers/ansible/Containerfile)
 in SERVER DEPENDENCIES. Make sure to install those to your server first
 preferably via separate playbook and provide your own inventories.
+
+## Release steps
+
+Component releases are automatized with [Python Semantic Release (PSR)](https://python-semantic-release.readthedocs.io).
+
+When the branch is in a releasable state, trigger the `[release.yml](.github/workflows/release.yml)` workflow from
+GitHub Actions. Workflow checks which components need releasing automatically based on commits in the repository.
+For each component the tag will be created, and a new version to PyPI will be published.
 
 ## License
 

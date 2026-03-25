@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      no_operation_mode:
+        description: 'No Operation Mode'
+        required: true
+        default: false
+        type: boolean
+      components:
+        description: 'Components to release given as a array (e.g. ["db","processing"]). Leave empty to release all components.'
+        required: true
+        default: '["db","processing", "qgis_plugin"]'
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi-release
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      NO_OP: ${{ inputs.no_operation_mode || 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJSON(inputs.components || '["db"]') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Release component ${{ matrix.component }}
+        id: release
+        uses: python-semantic-release/python-semantic-release@v10.5.3
+        with:
+          directory: components/${{ matrix.component }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vcs_release: false # TODO: set to true if we want to have github releases
+          push: ${{ env.NO_OP != 'true' }}
+
+      # Publsh to PyPI only if release was made
+      - name: Install uv
+        if: steps.release.outputs.released == 'true'
+        uses: astral-sh/setup-uv@v5
+      - name: Install Python
+        if: steps.release.outputs.released == 'true'
+        run: uv python install 3.13
+      - name: Publish package (DRY RUN)
+        if: steps.release.outputs.released == 'true'
+        working-directory: components/${{ matrix.component }}
+        run: uv publish --dry-run dist/*
+      - name: Publish package to PyPI
+        if: steps.release.outputs.released == 'true' && env.NO_OP != 'true'
+        working-directory: components/${{ matrix.component }}
+        run: uv publish dist/*
