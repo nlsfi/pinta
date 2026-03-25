@@ -25,6 +25,8 @@ repos:
     rev: v0.48.0
     hooks:
       - id: markdownlint
+        files: \.md$
+        exclude: CHANGELOG\.md$
         args: [ "--fix" ]
   # TOML formatter
   - repo: https://github.com/ComPWA/taplo-pre-commit

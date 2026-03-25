@@ -51,6 +51,15 @@ Check [component](./components) related instructions in each component's README.
 
 Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary).
 
+Commit messages are used by [Python Semantic Release (PSR)](https://python-semantic-release.readthedocs.io)
+ to generate and update component-specific changelogs. By default, PSR can detect which commits are
+related to which component by update file path. However, you can specifically define when the commit is relevant to the
+package using commit scope that equals the component directory name:
+
+```shell
+git commit -m "fix(db): fix something somewhere not in directly componen's path".
+```
+
 ### Imports
 
 Imports should follow the [Google style guide](https://google.github.io/styleguide/pyguide.html#22-imports) except for

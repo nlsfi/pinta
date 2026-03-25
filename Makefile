@@ -20,7 +20,7 @@ restart-fully: down build up
 restart: down up
 
 sync:
-	uv sync --all-packages --all-groups --all-extras --no-extra qgis
+	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
 
 # Infra targets
 # =================
