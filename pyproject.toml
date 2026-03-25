@@ -17,6 +17,17 @@ default-groups = ["lint"]
 [tool.uv.workspace]
 members = ["components/*"]
 
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
+
 [dependency-groups]
 lint = [
   "flake8>=7.3.0",
