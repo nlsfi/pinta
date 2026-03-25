@@ -1,13 +1,7 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "pinta_qgis_plugin"
+name = "pinta-qgis-plugin"
 requires-python = ">=3.12"
-dynamic = [
-  "version",
-]
+version = "0.0.0"
 dependencies = [
   "pinta-db",
   "qgis_plugin_tools",
@@ -24,18 +18,18 @@ qgis = [
   "requests>=2, <3",
 ]
 
-[tool.setuptools.dynamic]
-version = { attr = "pinta_qgis_plugin.__version__" }
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-"*" = ["py.typed"]
-"pinta_qgis_plugin" = [
+[tool.uv.build-backend]
+module-name = "pinta_qgis_plugin"
+include = [
+  "py.typed",
   "metadata.txt",
   "resources/**/*",
-  "**/*.qm",
+  "**/*.svg",
+  "**/*.ts",
   "**/*.ui",
   ".BUILD",
 ]
