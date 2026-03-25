@@ -4,11 +4,12 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import re
-from typing import TYPE_CHECKING, Any
+import typing
+from typing import Any
 
-from geoalchemy2 import alembic_helpers as geoalchemy_alembic_helpers
+import geoalchemy2.alembic_helpers
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from alembic.autogenerate.api import AutogenContext
 
 
@@ -23,7 +24,7 @@ def render_item(
     SRID from environment variable.
     """
     if not (
-        rendered := geoalchemy_alembic_helpers.render_item(
+        rendered := geoalchemy2.alembic_helpers.render_item(
             obj_type, obj, autogen_context
         )
     ):

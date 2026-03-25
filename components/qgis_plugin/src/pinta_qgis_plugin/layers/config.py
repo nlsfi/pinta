@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
-from dataclasses import dataclass
+import dataclasses
 
 from pinta_db import env as db_env
 from pinta_db.models.all import PointCloudTile, ProductionArea
@@ -25,7 +25,7 @@ from qgis.core import QgsWkbTypes
 from qgis_plugin_tools.tools import i18n
 
 
-@dataclass
+@dataclasses.dataclass
 class LayerConfig:
     """Configuration for a QGIS layer."""
 

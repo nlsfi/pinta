@@ -6,12 +6,13 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 
-from pydantic.dataclasses import dataclass
-from sqlalchemy import Connection, create_engine
+import sqlalchemy
+from pydantic import dataclasses
+from sqlalchemy import Connection
 from sqlmodel import Session
 
 
-@dataclass
+@dataclasses.dataclass
 class Credentials:
     """DB credentials."""
 
@@ -38,7 +39,7 @@ def get_connection_string(
 @contextmanager
 def get_session(credentials: Credentials) -> Generator[Session, Any, None]:
     """Get SQLModel Session."""
-    engine = create_engine(credentials.get_connection_string())
+    engine = sqlalchemy.create_engine(credentials.get_connection_string())
     try:
         yield Session(engine)
     finally:
@@ -50,7 +51,7 @@ def get_autocommit_connection(
     credentials: Credentials,
 ) -> Generator[Connection, Any, None]:
     """Get sqlalchemy Connection with autocommit isolation level."""
-    engine = create_engine(credentials.get_connection_string())
+    engine = sqlalchemy.create_engine(credentials.get_connection_string())
     try:
         connection = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
         try:

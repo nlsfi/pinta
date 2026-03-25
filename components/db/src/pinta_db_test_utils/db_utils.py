@@ -5,9 +5,9 @@
 
 import os
 
-from sqlmodel import text
+import sqlmodel
 
-from pinta_db.schemas import SCHEMA_CONFIGURATIONS
+from pinta_db import schemas
 from pinta_db_utils import engine_utils, schema_utils
 
 
@@ -47,7 +47,7 @@ def create_db(worker_id: str) -> str:
         reader=os.environ["DB_READER_ROLE"],
     )
 
-    kill_connections_query = text(
+    kill_connections_query = sqlmodel.text(
         "SELECT pg_terminate_backend(pg_stat_activity.pid) "  # noqa: S608
         "FROM pg_stat_activity "
         f"WHERE pg_stat_activity.datname = '{db_name}' "
@@ -58,19 +58,19 @@ def create_db(worker_id: str) -> str:
         get_admin_credentials(os.environ["DB_NAME"])
     ) as connection:
         connection.execute(kill_connections_query)
-        connection.execute(text(f"DROP DATABASE IF EXISTS {db_name}"))
+        connection.execute(sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name}"))
         connection.execute(
-            text(f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}")
+            sqlmodel.text(f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}")
         )
 
     schema_statements = schema_utils.get_set_schema_role_privileges_statements(
-        SCHEMA_CONFIGURATIONS, db_roles
+        schemas.SCHEMA_CONFIGURATIONS, db_roles
     )
 
     with engine_utils.get_autocommit_connection(
         get_admin_credentials(db_name)
     ) as connection:
         for statement in schema_statements:
-            connection.execute(text(statement))
+            connection.execute(sqlmodel.text(statement))
 
     return db_name

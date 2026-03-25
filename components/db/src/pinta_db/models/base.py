@@ -8,7 +8,7 @@
 import re
 import uuid
 
-from sqlalchemy.orm import declared_attr
+from sqlalchemy import orm
 from sqlmodel import Field, SQLModel
 
 from pinta_db.exceptions import MissingFieldError
@@ -33,7 +33,7 @@ def _camel_to_snake(name: str) -> str:
 class BaseModel(SQLModel):
     """Base model for everything."""
 
-    @declared_attr.directive
+    @orm.declared_attr.directive
     def __tablename__(self) -> str:
         return _camel_to_snake(self.__name__)
 
@@ -41,7 +41,7 @@ class BaseModel(SQLModel):
     def geom_wkt(self) -> str:
         """Return the geometry as wkt."""
         try:
-            from geoalchemy2.shape import to_shape  # noqa: PLC0415
+            import geoalchemy2.shape  # noqa: PLC0415
         except ImportError as e:
             message = "Install pinta-db[shapely] extra to use this feature"
             raise ImportError(message) from e
@@ -49,7 +49,13 @@ class BaseModel(SQLModel):
         field = "geom"
         if not hasattr(self, field):
             raise MissingFieldError(field)
-        return to_shape(self.geom).wkt  # type: ignore[assignment,attr-defined]
+
+        # Geometry can be either a string (unsaved model) or a
+        # geoalchemy2.WKBElement | WKTElement (saved model)
+        geom = getattr(self, field)
+        if isinstance(geom, str):
+            return geom  # type: ignore[assignment,attr-defined]
+        return geoalchemy2.shape.to_shape(geom).wkt  # type: ignore[assignment,attr-defined]
 
 
 class ManagementBase(BaseModel):

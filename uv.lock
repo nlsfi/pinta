@@ -1001,9 +1001,14 @@ lint = [
 
 [package.metadata]
 requires-dist = [
+    { name = "numpy", marker = "extra == 'qgis'", specifier = ">=1,<2" },
+    { name = "owslib", marker = "extra == 'qgis'", specifier = "==0.29.3" },
     { name = "pinta-db", editable = "components/db" },
+    { name = "psycopg2-binary", marker = "extra == 'qgis'", specifier = ">=2,<3" },
     { name = "qgis-plugin-tools" },
+    { name = "requests", marker = "extra == 'qgis'", specifier = ">=2,<3" },
 ]
+provides-extras = ["qgis"]
 
 [package.metadata.requires-dev]
 dev = [

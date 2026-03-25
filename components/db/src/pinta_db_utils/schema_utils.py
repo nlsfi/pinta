@@ -3,7 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-from typing import TYPE_CHECKING
+import typing
 
 from pydantic.dataclasses import dataclass
 
@@ -15,7 +15,7 @@ from pinta_db.schemas import (
     SchemaConfig,
 )
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
 

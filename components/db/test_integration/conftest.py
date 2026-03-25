@@ -3,22 +3,22 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import typing
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
 
 import pytest
-from pinta_test_utils.xdist_utils import get_number_of_workers
+from pinta_test_utils import xdist_utils
 
 from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from sqlmodel import Session
 
 
 @pytest.hookimpl
 def pytest_xdist_auto_num_workers(config: "pytest.Config"):
-    return get_number_of_workers(config)
+    return xdist_utils.get_number_of_workers(config)
 
 
 @pytest.fixture

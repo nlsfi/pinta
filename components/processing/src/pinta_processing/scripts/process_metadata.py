@@ -7,11 +7,12 @@
 from pathlib import Path
 
 import laspy
+import shapely
+import sqlmodel
 from pinta_db.models.management import PointCloudTile, ProductionArea
-from shapely import box, wkt
+from shapely import ops
 from shapely.geometry import MultiPolygon
-from shapely.ops import unary_union
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 POINT_CLOUD_BBOX_BUFFER_M = 0.1
 
@@ -35,7 +36,7 @@ def create_point_cloud_tile(file_path: Path) -> PointCloudTile:
         mins = las.header.mins
         maxs = las.header.maxs
 
-        bbox = box(mins[0], mins[1], maxs[0], maxs[1])
+        bbox = shapely.box(mins[0], mins[1], maxs[0], maxs[1])
         return PointCloudTile(file_path=str(file_path), geom=bbox.wkt)
 
 
@@ -70,14 +71,14 @@ def add_tiles_to_production_area(
     polygons = []
 
     for tile in tiles:
-        polygon = wkt.loads(tile.geom)
+        polygon = shapely.wkt.loads(tile.geom)
         polygons.append(polygon.buffer(POINT_CLOUD_BBOX_BUFFER_M))
         tile.production_area = production_area
         session.add(tile)
 
     production_area.tiles = tiles
 
-    geom = unary_union(polygons)
+    geom = ops.unary_union(polygons)
     if geom.geom_type == "Polygon":
         geom = MultiPolygon([geom])
     production_area.geom = geom.wkt
@@ -85,7 +86,9 @@ def add_tiles_to_production_area(
 
 def find_production_area(folder_path: Path, session: Session) -> ProductionArea:
     """Find a ProductionArea from the database or create a new one."""
-    statement = select(ProductionArea).where(ProductionArea.name == folder_path.name)
+    statement = sqlmodel.select(ProductionArea).where(
+        ProductionArea.name == folder_path.name
+    )
     area_in_db = session.exec(statement).first()
     if area_in_db:
         return area_in_db
