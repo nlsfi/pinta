@@ -6,22 +6,22 @@
     <message>
         <location filename="../../layers/config.py" line="71"/>
         <source>Identifier</source>
-        <translation type="unfinished">Tunniste</translation>
+        <translation>Tunniste</translation>
     </message>
     <message>
         <location filename="../../layers/config.py" line="74"/>
         <source>Production area</source>
-        <translation type="unfinished">Tuotantoalue</translation>
+        <translation>Tuotantoalue</translation>
     </message>
     <message>
         <location filename="../../layers/config.py" line="82"/>
         <source>Point cloud tile</source>
-        <translation type="unfinished">Pistepilvitiilet</translation>
+        <translation>Pistepilvitiilet</translation>
     </message>
     <message>
         <location filename="../../plugin.py" line="47"/>
         <source>Pinta plugin</source>
-        <translation type="unfinished">Pinta lisäosa</translation>
+        <translation>Pinta lisäosa</translation>
     </message>
 </context>
 </TS>

@@ -51,6 +51,11 @@ Check [component](./components) related instructions in each component's README.
 
 Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary).
 
+### Imports
+
+Imports should follow the [Google style guide](https://google.github.io/styleguide/pyguide.html#22-imports) except for
+classes. Classes could be imported directly from the module.
+
 ## Adapting to a different environment
 
 The ansible infra in this repository is meant to be lightweight and adaptible to any (linux) envrionment.

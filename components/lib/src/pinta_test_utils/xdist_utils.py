@@ -42,7 +42,6 @@ def _get_available_cpu_count(config: pytest.Config) -> int:
     return n or 1
 
 
-@pytest.hookimpl
 def get_number_of_workers(
     config: "pytest.Config",
     run_package_tests_with_one_worker: bool = False,
@@ -56,7 +55,7 @@ def get_number_of_workers(
     comment out line "addopts = ..." in pytest.ini.
     """
     invocation_string = config.invocation_params.args[0]
-    # Running single test
+    # Running a single test
     if "::" in invocation_string:
         return 0
 
@@ -71,5 +70,5 @@ def get_number_of_workers(
                 # Running package which contains directories
                 return optimal_count
 
-    # Running single package, probably 0 workers will do just fine
+    # Running a single package, probably 0 workers will do just fine
     return 0

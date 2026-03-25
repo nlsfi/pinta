@@ -7,7 +7,7 @@
 
 import enum
 
-from pydantic.dataclasses import dataclass
+from pydantic import dataclasses
 
 
 class Schema(enum.Enum):
@@ -40,7 +40,7 @@ class Privilege(enum.Enum):
     EXECUTE = enum.auto()
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class RolePrivileges:
     """Role privileges for a specific schema."""
 
@@ -52,7 +52,7 @@ class RolePrivileges:
     default_sequence_privileges: tuple[Privilege, ...] = ()
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class SchemaConfig:
     """Schema configuration."""
 
