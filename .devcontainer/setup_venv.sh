@@ -6,7 +6,7 @@ COMPONENTS_DIR="components"
 uv venv --system-site-packages --clear
 source .venv/bin/activate
 # Cache (most) of the dependencies
-uv sync --all-packages --all-groups --all-extras --no-extra qgis
+uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
 # Keep only the root dependencies initially
 uv sync
 prek install
