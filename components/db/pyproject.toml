@@ -1,6 +1,6 @@
 [project]
 name = "pinta-db"
-version = "0.1.0"
+version = "0.0.0"
 description = "Database component of the elevation production system"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -41,17 +41,12 @@ lint = [
 pinta-lib = { workspace = true }
 
 [build-system]
-requires = ["setuptools>=82", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
 
-[tool.setuptools]
-package-dir = { "" = "src" }
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-pinta_db = ["py.typed"]
+[tool.uv.build-backend]
+module-name = "pinta_db"
+include = ["py.typed"]
 
 [tool.ruff]
 # Extend the root `pyproject.toml`
