@@ -9,6 +9,8 @@ dependencies = [
   "laspy",
   "lazrs",
   "pinta-db[shapely]",
+  "affine",
+  "rasterio",
 ]
 
 [project.urls]
@@ -29,7 +31,9 @@ development = [
   "pytest",
   "pytest-mock",
   "pytest-dotenv",
+  "pytest-xdist",
   "pinta-lib",
+  "psycopg[binary]",
 ]
 linting = [
   "prek",
