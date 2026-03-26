@@ -18,7 +18,7 @@ jobs:
     with:
       component-path: components/processing
 
-  # integration_tests:
-  #   uses: ./.github/workflows/integration-tests.yml
-  #   with:
-  #     component-path: components/processing
+  integration_tests:
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      component-path: components/processing

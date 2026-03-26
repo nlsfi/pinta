@@ -50,3 +50,14 @@ maxs
 unary
 pytestconfig
 rootpath
+rasterio
+dtype
+nodata
+crs
+dataset
+geotiff
+affine
+ndarray
+numpy
+src
+astype

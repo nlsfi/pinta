@@ -31,7 +31,9 @@ def session(worker_id: str) -> Iterator["Session"]:
 def test_create_and_update_production_area(
     pytestconfig: pytest.Config, session: "Session"
 ):
-    folder_path = pinta_utils.get_test_data_path(pytestconfig, "2025/production_area_1")
+    folder_path = pinta_utils.get_test_data_path(
+        pytestconfig, "point_clouds/2025/production_area_1"
+    )
 
     # store 5 tiles
     tiles = process_metadata.create_point_cloud_tiles_from_folder(folder_path)

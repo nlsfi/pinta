@@ -69,6 +69,7 @@ lint.ignore = [
   "ISC001", # single-line-implicit-string-concatenation,
   "EXE002", # The file is executable but no shebang is present
   "D100",   # docstring in public module
+  "EM102",  # f-string-in-exception
 ]
 
 # List of all rules https://docs.astral.sh/ruff/rules/
