@@ -63,7 +63,7 @@ build_command = """
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add ../../uv.lock
     uv build
-    mv ../../dist/pinta_qgis_plugin* dist/
+    mv ../../dist/pinta_processing* dist/
 """
 
 [tool.semantic_release.commit_parser_options]
