@@ -2,6 +2,8 @@
 name = "pinta-qgis-plugin"
 requires-python = ">=3.12"
 version = "0.0.0"
+description = "QGIS plugin component of the elevation production system"
+readme = "README.md"
 dependencies = [
   "pinta-db",
   "qgis_plugin_tools",
@@ -18,6 +20,11 @@ qgis = [
   "requests>=2, <3",
 ]
 build = ["uv ~= 0.11.1"]
+
+[project.urls]
+Homepage = "https://github.com/nlsfi/pinta"
+Repository = "https://github.com/nlsfi/pinta"
+Changelog = "https://github.com/nlsfi/pinta/blob/main/db/qgis_plugin/CHANGELOG.md/"
 
 [build-system]
 requires = ["uv_build>=0.11.1,<0.12.0"]

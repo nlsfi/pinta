@@ -2,6 +2,8 @@
 name = "pinta-processing"
 # Version can't be dynamic as docker build layer caching breaks
 version = "0.0.0"
+description = "Processing component of the elevation production system"
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "laspy",
@@ -9,8 +11,14 @@ dependencies = [
   "pinta-db[shapely]",
 ]
 
+[project.urls]
+Homepage = "https://github.com/nlsfi/pinta"
+Repository = "https://github.com/nlsfi/pinta"
+Changelog = "https://github.com/nlsfi/pinta/blob/main/components/processing/CHANGELOG.md/"
+
 [project.optional-dependencies]
 build = ["uv ~= 0.11.1"]
+
 
 [tool.uv]
 default-groups = ["development", "linting"]

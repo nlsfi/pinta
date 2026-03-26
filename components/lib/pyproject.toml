@@ -1,12 +1,17 @@
 [project]
 name = "pinta-lib"
 version = "0.0.0"
-description = "Common library for the project"
+description = "Common library for the elevation production system"
 readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
 ]
+
+[project.urls]
+Homepage = "https://github.com/nlsfi/pinta"
+Repository = "https://github.com/nlsfi/pinta"
+Changelog = "https://github.com/nlsfi/pinta/blob/main/lib/qgis_plugin/CHANGELOG.md/"
 
 [tool.uv]
 default-groups = ["dev", "lint"]

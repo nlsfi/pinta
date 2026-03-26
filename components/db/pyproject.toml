@@ -20,6 +20,12 @@ shapely = [
 ]
 build = ["uv ~= 0.11.1"]
 
+[project.urls]
+Homepage = "https://github.com/nlsfi/pinta"
+Repository = "https://github.com/nlsfi/pinta"
+Changelog = "https://github.com/nlsfi/pinta/blob/main/db/processing/CHANGELOG.md/"
+
+
 [tool.uv]
 default-groups = ["dev", "lint"]
 
