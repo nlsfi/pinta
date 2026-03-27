@@ -8,6 +8,7 @@ import copy
 import numpy as np
 import pytest
 import pytest_mock
+from components.processing.test import conftest
 
 from pinta_processing import core
 
@@ -34,9 +35,13 @@ class TrackingStage(core.Stage):
 
     def process(self, data: core.RasterDataset | None) -> core.RasterDataset | None:
         self.received_data = copy.deepcopy(data)
-        if data is not None:
-            data.array[0, 0] = 999.0
-        return data
+        array = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=conftest.DEFAULT_DTYPE)
+        return core.RasterDataset(
+            array=array,
+            transform=conftest.DEFAULT_TRANSFORM,
+            crs=conftest.DEFAULT_CRS,
+            nodata=conftest.DEFAULT_NODATA,
+        )
 
 
 def test_pipeline_stops_on_error(mocker: pytest_mock.MockerFixture):
@@ -80,7 +85,7 @@ def test_tee_sends_independent_copies(dataset: core.RasterDataset):
     # Test that each branch receives an independent copy of the data
     branch1 = TrackingStage()
     branch2 = TrackingStage()
-    pipeline = DummyStage() | core.Tee(branch1, branch2) | DummyStage()
+    pipeline = DummyStage() | core.Tee(branch1 | DummyStage()) | branch2
     original_array = dataset.array.copy()
     pipeline.process(dataset)
 
@@ -89,7 +94,9 @@ def test_tee_sends_independent_copies(dataset: core.RasterDataset):
 
     # Each branch received independent copies
     assert branch1.received_data is not None
+    assert branch1.received_data is not dataset
     assert branch2.received_data is not None
+    assert branch2.received_data is not dataset
     assert branch1.received_data is not branch2.received_data
     # Arrays have identical content but are different objects
     assert np.array_equal(branch1.received_data.array, branch2.received_data.array)
