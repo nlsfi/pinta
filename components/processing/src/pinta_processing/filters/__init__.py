@@ -3,6 +3,6 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-from pinta_processing.filter.multiply import MultiplyValues
+from pinta_processing.filters.multiply import MultiplyValues
 
 __all__ = ["MultiplyValues"]
