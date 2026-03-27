@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from pinta_processing import core, exceptions
-from pinta_processing.filter import MultiplyValues
+from pinta_processing.filters import MultiplyValues
 
 
 def test_multiply_values(dataset: core.RasterDataset):

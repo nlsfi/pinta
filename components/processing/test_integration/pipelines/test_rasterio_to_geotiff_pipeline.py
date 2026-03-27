@@ -12,7 +12,18 @@ import pytest
 import rasterio
 from pinta_test_utils import pinta_utils
 
-from pinta_processing import pipelines
+from pinta_processing import core, filters, pipelines, reader, writer
+
+
+def rasterio_to_geotiff_with_tee_pipeline(
+    input_path: str, output_path: str, tee_output_path: str
+) -> core.Pipeline:
+    """Read rasterio input and write it as geotiff."""
+    return (
+        reader.RasterioReader(input_path)
+        | core.Tee(filters.MultiplyValues(2.0) | writer.GeotiffWriter(tee_output_path))
+        | writer.GeotiffWriter(output_path)
+    )
 
 
 def _verify_pipeline_output(input_path: str, output_path: Path) -> None:
@@ -69,3 +80,24 @@ def test_rasterio_to_geotiff_pipeline_with_asc_input(pytestconfig: pytest.Config
         pipeline.execute()
 
         _verify_pipeline_output(str(unzipped_path), output_path)
+
+
+def test_rasterio_to_geotiff_pipeline_with_tee(pytestconfig: pytest.Config):
+    file_path = pinta_utils.get_test_data_path(pytestconfig, "processing/dem.tif")
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        main_output_path = tmp_path / "main_output.tif"
+        tee_output_path = tmp_path / "tee_output.tif"
+        pipeline = rasterio_to_geotiff_with_tee_pipeline(
+            str(file_path), str(main_output_path), str(tee_output_path)
+        )
+        pipeline.execute()
+
+        # Verify both outputs are valid GeoTIFF files
+        assert main_output_path.exists()
+        with rasterio.open(str(main_output_path)):
+            pass
+
+        assert tee_output_path.exists()
+        with rasterio.open(str(tee_output_path)):
+            pass
