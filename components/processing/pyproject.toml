@@ -19,7 +19,7 @@ Repository = "https://github.com/nlsfi/pinta"
 Changelog = "https://github.com/nlsfi/pinta/blob/main/components/processing/CHANGELOG.md/"
 
 [project.optional-dependencies]
-build = ["uv ~= 0.11.1"]
+build = ["uv"]
 
 
 [tool.uv]
@@ -46,7 +46,7 @@ pinta-db = { workspace = true }
 pinta-lib = { workspace = true }
 
 [build-system]
-requires = ["uv_build>=0.11.1,<0.12.0"]
+requires = ["uv_build>=0.10.9,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

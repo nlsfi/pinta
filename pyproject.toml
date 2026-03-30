@@ -8,8 +8,12 @@ dependencies = []
 package = false
 conflicts = [
   [
-    { package = "pinta_qgis_plugin", extra = "qgis" },
+    { package = "pinta-qgis-plugin", extra = "qgis" },
     { package = "pinta-db", extra = "shapely" },
+  ],
+  [
+    { package = "pinta-qgis-plugin", extra = "qgis" },
+    { package = "pinta-dags", extra = "airflow" },
   ],
 ]
 default-groups = ["lint"]
@@ -142,6 +146,27 @@ banned-module-level-imports = ["pinta"]
   "PLR0913", # Too many arguments in function definition
   "ARG001",  # Unused function argument
   "ERA001",  # Found commented-out code
+]
+"!**/pinta_dags/**/*.py" = [
+  # ignore banned top level import except for dag modules, since config
+  # is always read from root toml and cannot easily extend this for subdirs
+  "TID253", # banned-module-level-imports
+]
+"!**/pinta_dags/dags/**/*.py" = [
+  # ignore banned logging import except for dag modules, since config
+  # is always read from root toml and cannot easily extend this for subdirs
+  "TID251", # banned-api
+]
+"*/dags/*" = [
+  "PLC0415", # `import` should be at the top-level of a file
+  "D103",    # Missing docstring in public function
+]
+"*/dag_utils/*" = [
+  "PLC0415", # `import` should be at the top-level of a file
+]
+"infra/ansible/**/*.py" = [
+  # Ignore all rules from ansible filter plugins for now
+  "ALL",
 ]
 
 [tool.mypy]

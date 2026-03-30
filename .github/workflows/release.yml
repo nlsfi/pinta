@@ -11,7 +11,7 @@ on:
       components:
         description: 'Components to release given as an array.'
         required: true
-        default: '["db","processing", "qgis_plugin"]'
+        default: '["db", "processing", "qgis_plugin", "dags"]'
         type: string
 
 jobs:

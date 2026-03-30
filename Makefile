@@ -5,6 +5,14 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 COMPONENTS_DIR := $(ROOT_DIR)/components
 DB_DIR := $(COMPONENTS_DIR)/db
 QGIS_DIR := $(COMPONENTS_DIR)/qgis_plugin
+DAGS_DIR := $(COMPONENTS_DIR)/dags
+
+# Env variables
+export AIRFLOW_HOME := $(DAGS_DIR)/.airflow/
+export AIRFLOW_CONN_PINTA_PROCESSING_DB :=postgres://$(PINTA_DB_EDITOR_USER):$(PINTA_DB_EDITOR_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
+export AIRFLOW__CORE__DAGS_FOLDER := $(DAGS_DIR)/src/pinta_dags/dags
+export AIRFLOW__CORE__LOAD_EXAMPLES := false
+export AIRFLOW__API__EXPOSE_CONFIG := true
 
 down:
 	docker-compose down -v --remove-orphans
@@ -44,6 +52,22 @@ start-qgis:
 start-qgis-no-extras:
 	# To start QGIS with plugin in development mode without installing qgis extras (works better with native linux development)
 	uv run --directory $(QGIS_DIR) qpdt s
+
+
+# Airflow targets
+# ===============
+
+airflow-clean:
+	rm -r $(AIRFLOW_HOME)
+
+airflow-migrate:
+	uv run --directory $(DAGS_DIR) airflow db migrate
+
+airflow-start: airflow-migrate
+	uv run --directory $(DAGS_DIR) airflow standalone
+
+airflow-reserialize:
+	uv run --directory $(DAGS_DIR) airflow dags reserialize
 
 # Tests
 # ======
