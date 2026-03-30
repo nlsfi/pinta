@@ -16,3 +16,4 @@ __pycache__
 
 # Cloud Optimized Point Cloud files inside test_data
 test_data/**/*.copc.laz
+/components/dags/.airflow/
