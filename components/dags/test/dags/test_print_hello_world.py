@@ -58,23 +58,26 @@ def mock_task(
     )
 
 
-def test_print_hello_world_dag_all_tasks_run_with_external_python(
+def test_print_hello_world_dag_all_tasks(
     mock_task: "MagicMock",
 ):
-    dag = create_dag_to_test()
+    create_dag_to_test()
 
-    # Asset some named task runs in plain airflow env instead
-    assert mock_task.call_count == sum(
-        1
-        for task in dag.tasks
-        if task.task_id not in ["some_task_name"]  # noqa: FURB171
-    )
+    mock_task.assert_called_once()
+    mock_task.docker.assert_called_once()
 
 
 def test_print_hello_world_dag_runs_workflow_log_call(
     mock_log_hello_world: "MagicMock",
+    mock_task_docker: "MagicMock",
+    mocker: "MockerFixture",
 ):
     dag = create_dag_to_test()
     dag.test()
 
-    mock_log_hello_world.assert_called_once()
+    mock_log_hello_world.assert_has_calls(
+        [
+            mocker.call("postgresql+psycopg://mockaddr:123/db"),
+            mocker.call("postgresql+psycopg://mockaddr:123/db"),
+        ]
+    )

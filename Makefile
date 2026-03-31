@@ -63,10 +63,14 @@ airflow-clean:
 airflow-migrate:
 	uv run --directory $(DAGS_DIR) airflow db migrate
 
-airflow-start: airflow-migrate
+airflow-set-variables:
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_task_log_level DEBUG
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_mount_dir $(ROOT_DIR)
+
+airflow-start: airflow-migrate airflow-set-variables
 	uv run --directory $(DAGS_DIR) airflow standalone
 
-airflow-reserialize:
+airflow-reserialize: airflow-set-variables
 	uv run --directory $(DAGS_DIR) airflow dags reserialize
 
 # Tests

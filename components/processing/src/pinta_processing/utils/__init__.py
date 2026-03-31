@@ -2,11 +2,3 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
-
-from importlib import metadata
-
-from pinta_processing.utils import logging
-
-__version__ = metadata.version(__package__)
-
-logging.setup_airflow_task_logging()

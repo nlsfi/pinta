@@ -10,4 +10,5 @@ LOGGER = logging.getLogger(__name__)
 
 def log_hello_world(log_text: str) -> None:
     """Log hello world with given text."""
+    LOGGER.debug("Debug message")
     LOGGER.info("Hello world with %s", log_text)
