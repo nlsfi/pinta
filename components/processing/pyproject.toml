@@ -57,6 +57,9 @@ include = ["py.typed"]
 [tool.ruff]
 extend = "../../pyproject.toml"
 
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib -p no:pytest-qgis"
+
 [tool.semantic_release]
 commit_parser = "conventional-monorepo"
 major_on_zero = false

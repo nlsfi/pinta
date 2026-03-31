@@ -51,7 +51,7 @@ lint = [
 testpaths = [
   "test",
 ]
-addopts = "-n 0 --import-mode=importlib"
+addopts = "-n 0 --import-mode=importlib -p no:pytest-qgis"
 
 [tool.coverage.paths]
 
