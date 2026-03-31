@@ -16,9 +16,9 @@ from sqlmodel import Session
 from pinta_processing.scripts import process_metadata
 
 
-def test_create_point_cloud_tile(pytestconfig: pytest.Config):
+def test_create_point_cloud_tile():
     file_path = pinta_utils.get_test_data_path(
-        pytestconfig, "point_clouds/2025/production_area_1/T5124H1_1.laz"
+        "point_clouds/2025/production_area_1/T5124H1_1.laz"
     )
 
     tile = process_metadata.create_point_cloud_tile(file_path)
@@ -30,10 +30,8 @@ def test_create_point_cloud_tile(pytestconfig: pytest.Config):
     )
 
 
-def test_create_point_cloud_tiles_from_folder(pytestconfig: pytest.Config):
-    folder_path = pinta_utils.get_test_data_path(
-        pytestconfig, "point_clouds/2025/production_area_1"
-    )
+def test_create_point_cloud_tiles_from_folder():
+    folder_path = pinta_utils.get_test_data_path("point_clouds/2025/production_area_1")
     tiles = process_metadata.create_point_cloud_tiles_from_folder(folder_path)
 
     assert len(tiles) == 18

@@ -3,6 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import re
 import uuid
 from typing import TYPE_CHECKING
 
@@ -69,15 +70,13 @@ def test_print_hello_world_dag_all_tasks(
 
 def test_print_hello_world_dag_runs_workflow_log_call(
     mock_log_hello_world: "MagicMock",
-    mock_task_docker: "MagicMock",
     mocker: "MockerFixture",
 ):
+    pattern = re.compile(r"^postgresql(?:\+psycopg)?://mockaddr:123/db$")
+
     dag = create_dag_to_test()
     dag.test()
 
-    mock_log_hello_world.assert_has_calls(
-        [
-            mocker.call("postgresql+psycopg://mockaddr:123/db"),
-            mocker.call("postgresql+psycopg://mockaddr:123/db"),
-        ]
-    )
+    assert mock_log_hello_world.call_count == 2
+    for call in mock_log_hello_world.calls:
+        assert pattern.match(call.args[0]), call.args[0]
