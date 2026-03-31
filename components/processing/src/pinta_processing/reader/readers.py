@@ -2,10 +2,14 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
+from typing import TYPE_CHECKING
 
 import rasterio
 
 from pinta_processing import core
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class RasterioReader(core.Stage):
@@ -15,7 +19,7 @@ class RasterioReader(core.Stage):
     (transform, CRS, nodata values) from the file metadata.
     """
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: "str | Path") -> None:
         """Initialize RasterioReader."""
         self.path = path
 

@@ -8,23 +8,24 @@ import rasterio
 from pinta_test_utils import pinta_utils
 
 from pinta_processing import core, reader
+from pinta_processing_test_utils import constants
 
 
-def test_rasterio_reader(pytestconfig: pytest.Config):
-    file_path = pinta_utils.get_test_data_path(pytestconfig, "processing/dem.tif")
+def test_rasterio_reader():
+    file_path = pinta_utils.get_test_data_path("processing/dem.tif")
     stage = reader.RasterioReader(file_path)
     dataset = stage.process(None)
 
     assert isinstance(dataset, core.RasterDataset)
     assert dataset.array.shape == (512, 512)
     assert dataset.transform is not None
-    assert dataset.crs == "EPSG:3067"
-    assert dataset.nodata == -9999
+    assert dataset.crs == constants.DEFAULT_CRS
+    assert dataset.nodata == constants.DEFAULT_NODATA
 
 
-def test_rasterio_reader_file_not_found(pytestconfig: pytest.Config):
+def test_rasterio_reader_file_not_found():
     file_path = pinta_utils.get_test_data_path(
-        pytestconfig, "processing/non-existent-file.tif"
+        "processing/non-existent-file.tif", check_if_exists=False
     )
     stage = reader.RasterioReader(file_path)
     with pytest.raises(rasterio.RasterioIOError):

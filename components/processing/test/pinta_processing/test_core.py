@@ -8,9 +8,9 @@ import copy
 import numpy as np
 import pytest
 import pytest_mock
-from components.processing.test import conftest
 
 from pinta_processing import core
+from pinta_processing_test_utils import constants
 
 
 class DummyStage(core.Stage):
@@ -35,12 +35,12 @@ class TrackingStage(core.Stage):
 
     def process(self, data: core.RasterDataset | None) -> core.RasterDataset | None:
         self.received_data = copy.deepcopy(data)
-        array = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=conftest.DEFAULT_DTYPE)
+        array = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=constants.DEFAULT_DTYPE)
         return core.RasterDataset(
             array=array,
-            transform=conftest.DEFAULT_TRANSFORM,
-            crs=conftest.DEFAULT_CRS,
-            nodata=conftest.DEFAULT_NODATA,
+            transform=constants.DEFAULT_TRANSFORM,
+            crs=constants.DEFAULT_CRS,
+            nodata=constants.DEFAULT_NODATA,
         )
 
 

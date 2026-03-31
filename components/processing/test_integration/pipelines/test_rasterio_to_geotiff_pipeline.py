@@ -8,7 +8,6 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
-import pytest
 import rasterio
 from pinta_test_utils import pinta_utils
 
@@ -50,10 +49,8 @@ def _verify_pipeline_output(input_path: str, output_path: Path) -> None:
     assert output_nodata == input_nodata, "Nodata not preserved"
 
 
-def test_rasterio_to_geotiff_pipeline_with_geotiff_input(
-    pytestconfig: pytest.Config,
-):
-    file_path = pinta_utils.get_test_data_path(pytestconfig, "processing/dem.tif")
+def test_rasterio_to_geotiff_pipeline_with_geotiff_input():
+    file_path = pinta_utils.get_test_data_path("processing/dem.tif")
     with tempfile.TemporaryDirectory() as tmp:
         output_path = Path(tmp) / "output.tif"
         pipeline = pipelines.rasterio_to_geotiff_pipeline(
@@ -63,8 +60,8 @@ def test_rasterio_to_geotiff_pipeline_with_geotiff_input(
         _verify_pipeline_output(str(file_path), output_path)
 
 
-def test_rasterio_to_geotiff_pipeline_with_asc_input(pytestconfig: pytest.Config):
-    zip_path = pinta_utils.get_test_data_path(pytestconfig, "processing/dem.asc.zip")
+def test_rasterio_to_geotiff_pipeline_with_asc_input():
+    zip_path = pinta_utils.get_test_data_path("processing/dem.asc.zip")
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         output_path = tmp_path / "output.tif"
@@ -82,8 +79,8 @@ def test_rasterio_to_geotiff_pipeline_with_asc_input(pytestconfig: pytest.Config
         _verify_pipeline_output(str(unzipped_path), output_path)
 
 
-def test_rasterio_to_geotiff_pipeline_with_tee(pytestconfig: pytest.Config):
-    file_path = pinta_utils.get_test_data_path(pytestconfig, "processing/dem.tif")
+def test_rasterio_to_geotiff_pipeline_with_tee():
+    file_path = pinta_utils.get_test_data_path("processing/dem.tif")
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         main_output_path = tmp_path / "main_output.tif"

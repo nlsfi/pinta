@@ -8,26 +8,24 @@ import numpy as np
 import pytest
 
 from pinta_processing import core
-
-DEFAULT_CRS = "EPSG:3067"
-DEFAULT_TRANSFORM = affine.Affine(1.0, 0.0, 0.0, 0.0, -1.0, 0.0)
-DEFAULT_DTYPE = np.float32
-DEFAULT_NODATA = -9999.0
+from pinta_processing_test_utils import constants
 
 
 @pytest.fixture
 def default_transform() -> affine.Affine:
     """Standard identity-like affine transform."""
-    return DEFAULT_TRANSFORM
+    return constants.DEFAULT_TRANSFORM
 
 
 @pytest.fixture
 def dataset() -> core.RasterDataset:
     """RasterDataset with georeferencing and nodata value."""
-    array = np.array([[1.0, DEFAULT_NODATA], [3.0, 4.0]], dtype=DEFAULT_DTYPE)
+    array = np.array(
+        [[1.0, constants.DEFAULT_NODATA], [3.0, 4.0]], dtype=constants.DEFAULT_DTYPE
+    )
     return core.RasterDataset(
         array=array,
-        transform=DEFAULT_TRANSFORM,
-        crs=DEFAULT_CRS,
-        nodata=DEFAULT_NODATA,
+        transform=constants.DEFAULT_TRANSFORM,
+        crs=constants.DEFAULT_CRS,
+        nodata=constants.DEFAULT_NODATA,
     )
