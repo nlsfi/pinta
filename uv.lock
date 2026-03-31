@@ -126,6 +126,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+docker = [
+    { name = "apache-airflow-providers-docker" },
+]
 postgres = [
     { name = "apache-airflow-providers-postgres" },
 ]
@@ -248,6 +251,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ea/1f/9fa029cdc6c0204df43798f5ec95b7d0e62067609adb50611002451145b8/apache_airflow_providers_common_sql-1.32.0.tar.gz", hash = "sha256:631bd9bf7fcec817eeb8fd19804f194a9c61762e4f4b7ec41674c9da7e1021bd", size = 114337, upload-time = "2026-03-02T21:05:56Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/72/dc/9560263fc80693b90fa4fd45a42afeb3df9b2f03ace8d4045f4a6ea72a74/apache_airflow_providers_common_sql-1.32.0-py3-none-any.whl", hash = "sha256:d9386e12c8f057a3a4538b88acf0c4f5b56879ce7a6677154eef884cc5adcd15", size = 74979, upload-time = "2026-03-02T20:52:10.904Z" },
+]
+
+[[package]]
+name = "apache-airflow-providers-docker"
+version = "4.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "apache-airflow" },
+    { name = "apache-airflow-providers-common-compat" },
+    { name = "docker" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/57/fc/40c4e7a65feeeb42f2c2c8836f55aa20170e23de656effee2b7f0821f097/apache_airflow_providers_docker-4.5.2.tar.gz", hash = "sha256:d611f84028e421fd88dceb52a40383a92561fb0db3176d7b35ba3067d4f2ee0d", size = 110202, upload-time = "2026-01-17T10:48:35.857Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5f/70/3899282ac7c1a7e8671cb6402bcfa34043e612f1e2ceb705525f690da4e7/apache_airflow_providers_docker-4.5.2-py3-none-any.whl", hash = "sha256:ac35685d7a16bb94ddc77e10fcf2275a3f01ece3bf77c787b8fbce396c8c0018", size = 33128, upload-time = "2026-01-17T10:46:42.362Z" },
 ]
 
 [[package]]
@@ -799,6 +817,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8c/8b/57666417c0f90f08bcafa776861060426765fdb422eb10212086fb811d26/dnspython-2.8.0.tar.gz", hash = "sha256:181d3c6996452cb1189c4046c61599b84a5a86e099562ffde77d26984ff26d0f", size = 368251, upload-time = "2025-09-07T18:58:00.022Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/5a/18ad964b0086c6e62e2e7500f7edc89e3faa45033c71c1893d34eed2b2de/dnspython-2.8.0-py3-none-any.whl", hash = "sha256:01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af", size = 331094, upload-time = "2025-09-07T18:57:58.071Z" },
+]
+
+[[package]]
+name = "docker"
+version = "7.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/9b/4a2ea29aeba62471211598dac5d96825bb49348fa07e906ea930394a83ce/docker-7.1.0.tar.gz", hash = "sha256:ad8c70e6e3f8926cb8a92619b832b4ea5299e2831c14284663184e200546fa6c", size = 117834, upload-time = "2024-05-23T11:13:57.216Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0", size = 147774, upload-time = "2024-05-23T11:13:55.01Z" },
 ]
 
 [[package]]
@@ -2004,7 +2036,7 @@ dependencies = [
 
 [package.optional-dependencies]
 airflow = [
-    { name = "apache-airflow", extra = ["postgres", "standard"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
+    { name = "apache-airflow", extra = ["docker", "postgres", "standard"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
 ]
 
 [package.dev-dependencies]
@@ -2026,7 +2058,7 @@ lint = [
 
 [package.metadata]
 requires-dist = [
-    { name = "apache-airflow", extras = ["postgres", "standard"], marker = "extra == 'airflow'", specifier = "==3.1.8" },
+    { name = "apache-airflow", extras = ["docker", "postgres", "standard"], marker = "extra == 'airflow'", specifier = "==3.1.8" },
     { name = "pinta-processing", editable = "components/processing" },
 ]
 provides-extras = ["airflow"]
@@ -2812,6 +2844,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/56/db/b8721d71d945e6a8ac63c0fc900b2067181dbb50805958d4d4661cf7d277/pytz-2026.1.post1.tar.gz", hash = "sha256:3378dde6a0c3d26719182142c56e60c7f9af7e968076f31aae569d72a0358ee1", size = 321088, upload-time = "2026-03-03T07:47:50.683Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/99/781fe0c827be2742bcc775efefccb3b048a3a9c6ce9aec0cbf4a101677e5/pytz-2026.1.post1-py2.py3-none-any.whl", hash = "sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a", size = 510489, upload-time = "2026-03-03T07:47:49.167Z" },
+]
+
+[[package]]
+name = "pywin32"
+version = "311"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/ab/01ea1943d4eba0f850c3c61e78e8dd59757ff815ff3ccd0a84de5f541f42/pywin32-311-cp312-cp312-win32.whl", hash = "sha256:750ec6e621af2b948540032557b10a2d43b0cee2ae9758c54154d711cc852d31", size = 8706543, upload-time = "2025-07-14T20:13:20.765Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/a8/a0e8d07d4d051ec7502cd58b291ec98dcc0c3fff027caad0470b72cfcc2f/pywin32-311-cp312-cp312-win_amd64.whl", hash = "sha256:b8c095edad5c211ff31c05223658e71bf7116daa0ecf3ad85f3201ea3190d067", size = 9495040, upload-time = "2025-07-14T20:13:22.543Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/3a/2ae996277b4b50f17d61f0603efd8253cb2d79cc7ae159468007b586396d/pywin32-311-cp312-cp312-win_arm64.whl", hash = "sha256:e286f46a9a39c4a18b319c28f59b61de793654af2f395c102b4f819e584b5852", size = 8710102, upload-time = "2025-07-14T20:13:24.682Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/be/3fd5de0979fcb3994bfee0d65ed8ca9506a8a1260651b86174f6a86f52b3/pywin32-311-cp313-cp313-win32.whl", hash = "sha256:f95ba5a847cba10dd8c4d8fefa9f2a6cf283b8b88ed6178fa8a6c1ab16054d0d", size = 8705700, upload-time = "2025-07-14T20:13:26.471Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/28/e0a1909523c6890208295a29e05c2adb2126364e289826c0a8bc7297bd5c/pywin32-311-cp313-cp313-win_amd64.whl", hash = "sha256:718a38f7e5b058e76aee1c56ddd06908116d35147e133427e59a3983f703a20d", size = 9494700, upload-time = "2025-07-14T20:13:28.243Z" },
+    { url = "https://files.pythonhosted.org/packages/04/bf/90339ac0f55726dce7d794e6d79a18a91265bdf3aa70b6b9ca52f35e022a/pywin32-311-cp313-cp313-win_arm64.whl", hash = "sha256:7b4075d959648406202d92a2310cb990fea19b535c7f4a78d3f5e10b926eeb8a", size = 8709318, upload-time = "2025-07-14T20:13:30.348Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/31/097f2e132c4f16d99a22bfb777e0fd88bd8e1c634304e102f313af69ace5/pywin32-311-cp314-cp314-win32.whl", hash = "sha256:b7a2c10b93f8986666d0c803ee19b5990885872a7de910fc460f9b0c2fbf92ee", size = 8840714, upload-time = "2025-07-14T20:13:32.449Z" },
+    { url = "https://files.pythonhosted.org/packages/90/4b/07c77d8ba0e01349358082713400435347df8426208171ce297da32c313d/pywin32-311-cp314-cp314-win_amd64.whl", hash = "sha256:3aca44c046bd2ed8c90de9cb8427f581c479e594e99b5c0bb19b29c10fd6cb87", size = 9656800, upload-time = "2025-07-14T20:13:34.312Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/d2/21af5c535501a7233e734b8af901574572da66fcc254cb35d0609c9080dd/pywin32-311-cp314-cp314-win_arm64.whl", hash = "sha256:a508e2d9025764a8270f93111a970e1d0fbfc33f4153b388bb649b7eec4f9b42", size = 8932540, upload-time = "2025-07-14T20:13:36.379Z" },
 ]
 
 [[package]]

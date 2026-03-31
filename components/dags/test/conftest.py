@@ -6,10 +6,17 @@
 import os
 import shutil
 import sqlite3
+from collections.abc import Callable
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
+
+    from pytest_mock import MockerFixture
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -39,11 +46,24 @@ def pytest_configure(config: pytest.Config):
         )
 
 
+@pytest.fixture(autouse=True)
+def mock_task_docker(mocker: "MockerFixture") -> "MagicMock":
+    from airflow.sdk import task
+
+    def mock_task_docker(*d_args: Any, **d_kwargs: Any) -> Callable:
+        def wrapper(func: Callable) -> Callable:
+            return task()(func)  # drop docker-specific args
+
+        return wrapper
+
+    return mocker.patch.object(task, "docker", mock_task_docker)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _initialize_airflow() -> None:
     from airflow.utils.db import initdb
 
-    shutil.rmtree(os.environ["AIRFLOW_HOME"])
+    shutil.rmtree(os.environ["AIRFLOW_HOME"], ignore_errors=True)
     Path(os.environ["AIRFLOW_HOME"]).mkdir(exist_ok=True)
 
     initdb()
