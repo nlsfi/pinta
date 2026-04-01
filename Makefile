@@ -1,6 +1,9 @@
 include .env
 
 # Repository directories
+
+# ROOT_DIR is absolute path to the root directory that resolves also in container
+# REPO_DIR on the other hand might be something like /mnt/c/... if developing in WSL
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 COMPONENTS_DIR := $(ROOT_DIR)/components
 DB_DIR := $(COMPONENTS_DIR)/db
@@ -65,7 +68,9 @@ airflow-migrate:
 
 airflow-set-variables:
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_task_log_level DEBUG
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_mount_dir $(ROOT_DIR)
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_image "localhost/pinta-processing"
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
 
 airflow-start: airflow-migrate airflow-set-variables
 	uv run --directory $(DAGS_DIR) airflow standalone

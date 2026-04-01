@@ -5,26 +5,41 @@
 
 """Airflow-related configurations."""
 
+import datetime
 from typing import Any
 
 from airflow.sdk import Variable
 from docker.types import Mount
 
-PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
-    "image": "localhost/pinta-processing",
-    # No other way to inject log level at runtime (jinja template does not work).
-    # This is not the recommended way but task decorator can't be currently overridden
-    # easily. See task.py file created in this commit (deleted afterwards) for
-    # example if it's possible to override task decorator in later Airflow versions.
-    # https://github.com/apache/airflow/issues/44779
-    "environment": {
-        "TASK_LOG_LEVEL": Variable.get("pinta_processing_task_log_level", "INFO"),
-    },
-    "tty": True,  # To be able to see the logs
-    "auto_remove": "success",
+PINTA_COMMON_TASK_ARGS: dict[str, Any] = {
+    "retries": 0,  # TODO: Set to something larger in non-local environments
+    "retry_delay": datetime.timedelta(seconds=10),
 }
 
-if mount_dir := Variable.get("pinta_processing_mount_dir", None):
-    PINTA_CONTAINER_TASK_ARGS["mounts"] = [
-        Mount(target="/code", source=mount_dir, type="bind", read_only=True)
-    ]
+PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
+    "image": "{{ var.value.pinta_processing_image }}",
+    # Cannot be templated at the moment
+    "docker_url": Variable.get(
+        "pinta_docker_socket_url", "unix:///var/run/docker.sock"
+    ),
+    "environment": {
+        "TASK_LOG_LEVEL": "{{ var.value.pinta_processing_task_log_level }}",
+    },
+    "tty": True,  # To be able to see the logs
+    # When using remote engine or docker-in-docker,
+    # mounting temporary volume from host is not supported
+    "mount_tmp_dir": False,
+    "auto_remove": "success",
+    "mounts": [],
+}
+
+# maybe not the most optimal way of setting mounts
+if mount_dir := Variable.get("pinta_processing_code_mount_dir", None):
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target="/code",
+            source=mount_dir,
+            type="bind",
+            read_only=True,
+        )
+    )
