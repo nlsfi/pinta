@@ -4,5 +4,6 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from pinta_processing.filters.multiply import MultiplyValues
+from pinta_processing.filters.overview import DownsampleOverview
 
-__all__ = ["MultiplyValues"]
+__all__ = ["DownsampleOverview", "MultiplyValues"]
