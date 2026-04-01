@@ -15,6 +15,8 @@ class Schema(enum.Enum):
 
     MIGRATIONS = "alembic"
     MANAGEMENT = "management"
+    # TODO: replace this with a schema where processing tables are stored
+    PROCESSING = "processing"
 
 
 # Role placeholders
@@ -23,6 +25,7 @@ class Role(enum.Enum):
 
     WRITER = "writer"
     READER = "reader"
+    PROCESSING_WORKER = "processing_worker"
 
 
 class Privilege(enum.Enum):
@@ -51,45 +54,51 @@ class RolePrivileges:
     default_table_privileges: tuple[Privilege, ...] = ()
     default_sequence_privileges: tuple[Privilege, ...] = ()
 
+    @staticmethod
+    def get_default_write_privileges(role: Role) -> "RolePrivileges":
+        """Get default write privileges for the role."""
+        return RolePrivileges(
+            role=role,
+            table_privileges=(
+                Privilege.SELECT,
+                Privilege.INSERT,
+                Privilege.UPDATE,
+                Privilege.DELETE,
+            ),
+            sequence_privileges=(
+                Privilege.USAGE,
+                Privilege.SELECT,
+                Privilege.UPDATE,
+            ),
+            default_table_privileges=(
+                Privilege.SELECT,
+                Privilege.INSERT,
+                Privilege.UPDATE,
+                Privilege.DELETE,
+            ),
+            default_sequence_privileges=(
+                Privilege.USAGE,
+                Privilege.SELECT,
+                Privilege.UPDATE,
+            ),
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class SchemaConfig:
     """Schema configuration."""
 
     schema: Schema
-    owner_privileges: tuple[Privilege, ...] = (Privilege.USAGE, Privilege.CREATE)  # noqa: E
+    owner_privileges: tuple[Privilege, ...] = (Privilege.USAGE, Privilege.CREATE)
     role_privileges: tuple[RolePrivileges, ...] = ()
+    extra_schema_owners: tuple[str, ...] = ()
 
 
 SCHEMA_CONFIGURATIONS = [
     SchemaConfig(
         schema=Schema.MANAGEMENT,
         role_privileges=(
-            RolePrivileges(
-                role=Role.WRITER,
-                table_privileges=(
-                    Privilege.SELECT,
-                    Privilege.INSERT,
-                    Privilege.UPDATE,
-                    Privilege.DELETE,
-                ),
-                sequence_privileges=(
-                    Privilege.USAGE,
-                    Privilege.SELECT,
-                    Privilege.UPDATE,
-                ),
-                default_table_privileges=(
-                    Privilege.SELECT,
-                    Privilege.INSERT,
-                    Privilege.UPDATE,
-                    Privilege.DELETE,
-                ),
-                default_sequence_privileges=(
-                    Privilege.USAGE,
-                    Privilege.SELECT,
-                    Privilege.UPDATE,
-                ),
-            ),
+            RolePrivileges.get_default_write_privileges(Role.WRITER),
             RolePrivileges(
                 role=Role.READER,
                 table_privileges=(Privilege.SELECT,),
@@ -98,11 +107,18 @@ SCHEMA_CONFIGURATIONS = [
                     Privilege.SELECT,
                 ),
                 default_table_privileges=(Privilege.SELECT,),
-                default_sequence_privileges=(Privilege.USAGE, Privilege.SELECT),  # noqa: E
+                default_sequence_privileges=(Privilege.USAGE, Privilege.SELECT),
             ),
         ),
     ),
     SchemaConfig(
         schema=Schema.MIGRATIONS,
+    ),
+    SchemaConfig(
+        schema=Schema.PROCESSING,
+        extra_schema_owners=("pinta_processing_worker",),
+        role_privileges=(
+            RolePrivileges.get_default_write_privileges(Role.PROCESSING_WORKER),
+        ),
     ),
 ]

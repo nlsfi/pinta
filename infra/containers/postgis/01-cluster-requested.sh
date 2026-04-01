@@ -23,4 +23,5 @@ EOSQL
 echo "Loading postgis into the template db"
 psql --dbname=template_postgis <<-'EOSQL'
   CREATE EXTENSION IF NOT EXISTS postgis;
+  CREATE EXTENSION IF NOT EXISTS postgis_raster;
 EOSQL

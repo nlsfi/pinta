@@ -24,13 +24,13 @@ def _grant_list(privileges: "Iterable[Privilege]") -> str:
 
 
 def _get_create_schema_statement(
-    schema_config: "SchemaConfig", owner_role: str
+    schema_config: "SchemaConfig", owner_roles: tuple[str, ...]
 ) -> list[str]:
     schema = schema_config.schema.value
     return [
-        f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {owner_role}",
+        f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {owner_roles[0]}",
         f"GRANT {_grant_list(schema_config.owner_privileges)} "
-        f"ON SCHEMA {schema} TO {owner_role}",
+        f"ON SCHEMA {schema} TO {','.join(owner_roles)}",
     ]
 
 
@@ -47,8 +47,10 @@ def _get_set_schema_role_privileges(
         role = writer_role
     elif role_config.role == Role.READER:
         role = reader_role
+    elif role_config.role == Role.PROCESSING_WORKER:
+        role = writer_role  # Processing worker has same privileges as writer
     else:
-        raise ValueError
+        raise ValueError(role_config.role)
 
     statements: list[str] = []
 
@@ -103,7 +105,8 @@ def get_set_schema_role_privileges_statements(
     statements: list[str] = []
 
     for schema_config in schema_configuration:
-        statements.extend(_get_create_schema_statement(schema_config, roles.owner))
+        owner_roles = (roles.owner, *schema_config.extra_schema_owners)
+        statements.extend(_get_create_schema_statement(schema_config, owner_roles))
 
         for role_config in schema_config.role_privileges:
             statements.extend(

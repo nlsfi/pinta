@@ -71,3 +71,8 @@ downsample
 enums
 resampling
 downsampled
+unlogged
+rast
+autoincrement
+checkfirst
+func
