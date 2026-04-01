@@ -37,6 +37,19 @@ def get_writer_credentials(
     )
 
 
+def get_processing_worker_credentials(
+    db_name: str,
+) -> engine_utils.Credentials:
+    """Get connection parameters for the db."""
+    return engine_utils.Credentials(
+        os.environ["DB_PROCESSING_WORKER_USER"],
+        os.environ["DB_PROCESSING_WORKER_PASSWORD"],
+        os.environ["DB_HOST"],
+        os.environ["DB_PORT"],
+        db_name,
+    )
+
+
 def create_db(worker_id: str) -> str:
     """Create a new database for the test session."""
     db_name = os.environ["DB_NAME"] + f"_test_{worker_id}"

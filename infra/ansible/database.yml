@@ -13,7 +13,7 @@
         db_init_admin_password: "{{ db_admin_password }}"
         db_init_template_name: "{{ db_postgis_template_name | default('template_postgis') }}"
         db_init_database_name: "{{ db_init_database.name | default(db_init_database) }}{{ db_name_suffix | default('') }}"
-        db_init_required_extensions: [ postgis ]
+        db_init_required_extensions: [ postgis_raster ]
         db_init_owner_role: "{{ db_owner_role_name }}"
         db_init_application_roles: "{{ application_db_roles }}"
         db_init_application_users: "{{ application_db_users }}"
