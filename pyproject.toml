@@ -61,6 +61,7 @@ line-length = 88
 lint.ignore = [
   "FIX",   # flake8-fixme
   "TD002", # Missing author in TODO
+  "TD003", # Missing TODO link
   "CPY",   # flake8-copyright (CPY)
   "D104",  # Missing docstring in public package
   "D105",  # Missing docstring in magic method
