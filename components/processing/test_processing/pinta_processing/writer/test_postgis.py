@@ -1,0 +1,134 @@
+# Copyright (c) 2026 National Land Survey of Finland
+# (https://www.maanmittauslaitos.fi/en).
+# This file is part of the Pinta.
+# Licensed under the MIT License; see the repository LICENSE file.
+
+import numpy as np
+from rasterio.transform import Affine
+
+from pinta_processing import core
+from pinta_processing.writer import PostgisWriter
+
+
+def test_postgis_writer_generate_tiles(dataset: core.RasterDataset):
+    """Test that _generate_tiles creates tiles correctly from a RasterDataset."""
+    # Create writer with small tile size for testing (4x4 tiles)
+    stage = PostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[call-arg]
+
+    # Generate tiles from the 2x2 dataset
+    tiles = stage._generate_tiles(dataset)
+
+    # With a 2x2 dataset and 4x4 tile size, should produce 1 tile
+    assert len(tiles) == 1
+
+    tile = tiles[0]
+    assert isinstance(tile, core.RasterDataset)
+
+    # Tile should preserve metadata
+    assert tile.crs == dataset.crs
+    assert tile.nodata == dataset.nodata
+
+    # Tile array should match the input (since input is smaller than tile size)
+    assert np.array_equal(tile.array, dataset.array, equal_nan=True)
+
+    # Transform should be adjusted to tile position (0, 0)
+    assert tile.transform == dataset.transform
+
+
+def test_postgis_writer_generates_multiple_tiles(dataset: core.RasterDataset):
+    """Test that _generate_tiles creates multiple tiles for larger datasets."""
+    # Create a larger dataset (8x8)
+    large_array = np.arange(64, dtype=np.float32).reshape(8, 8)
+    large_dataset = core.RasterDataset(
+        array=large_array,
+        transform=dataset.transform,
+        crs=dataset.crs,
+        nodata=dataset.nodata,
+    )
+
+    # Create writer with 4x4 tile size
+    stage = PostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[call-arg]
+
+    # Generate tiles
+    tiles = stage._generate_tiles(large_dataset)
+
+    # 8x8 dataset with 4x4 tiles should produce 4 tiles (2x2 grid)
+    assert len(tiles) == 4
+
+    # Verify all tiles are RasterDataset instances
+    for tile in tiles:
+        assert isinstance(tile, core.RasterDataset)
+        assert tile.array.shape == (4, 4)
+        assert tile.crs == dataset.crs
+        assert tile.nodata == dataset.nodata
+
+    # Verify tiles cover the entire dataset without overlap
+    # Reconstruct the original array from tiles
+    reconstructed = np.zeros_like(large_array)
+    tile_positions = [
+        (0, 0),  # top-left
+        (0, 4),  # top-right
+        (4, 0),  # bottom-left
+        (4, 4),  # bottom-right
+    ]
+
+    for (row, col), tile in zip(tile_positions, tiles, strict=False):
+        reconstructed[row : row + 4, col : col + 4] = tile.array
+
+    assert np.array_equal(reconstructed, large_array)
+
+
+def test_resolve_partition(dataset: core.RasterDataset):
+    """Test that _resolve_partition returns valid partition index."""
+    staging_tables = 3
+    stage = PostgisWriter("foo", "bar", None, staging_tables=staging_tables)  # type: ignore[call-arg]
+
+    partition = stage._resolve_partition(dataset)
+
+    # Partition should be in valid range [0, staging_tables - 1]
+    assert 0 <= partition < staging_tables
+
+    # Should be deterministic
+    assert partition == stage._resolve_partition(dataset)
+
+
+def test_resolve_partition_different_locations(dataset: core.RasterDataset):
+    """Test that different spatial locations get correct partitions with deterministic seed."""
+    staging_tables = 3
+    stage = PostgisWriter("foo", "bar", None, staging_tables=staging_tables)  # type: ignore[call-arg]
+
+    # Create random number generator with fixed seed for reproducibility
+    rng = np.random.default_rng(1337)
+
+    # Expected partition for each dataset
+    expected_partitions = [
+        1,  # dataset 0
+        2,  # dataset 1
+        1,  # ...
+        1,
+        0,
+        2,
+        2,
+        2,
+        1,
+        2,
+    ]
+
+    # Generate 10 random datasets at different locations
+    for i in range(10):
+        # Create dataset with random raster data and different location
+        raster_data = rng.random((512, 512), dtype=np.float32)
+        transform = Affine.translation(i * 100000, i * 100000) * Affine.scale(2.0, -2.0)
+
+        test_dataset = core.RasterDataset(
+            array=raster_data,
+            transform=transform,
+            crs=dataset.crs,
+            nodata=dataset.nodata,
+        )
+
+        partition = stage._resolve_partition(test_dataset)
+
+        assert partition == expected_partitions[i], (
+            f"Dataset {i}: expected partition {expected_partitions[i]}, got {partition}"
+        )

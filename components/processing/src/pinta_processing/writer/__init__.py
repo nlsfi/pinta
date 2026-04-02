@@ -4,5 +4,6 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from pinta_processing.writer.geotiff import GeotiffWriter
+from pinta_processing.writer.postgis import PostgisWriter
 
-__all__ = ["GeotiffWriter"]
+__all__ = ["GeotiffWriter", "PostgisWriter"]
