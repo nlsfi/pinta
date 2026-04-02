@@ -54,6 +54,9 @@ def get_number_of_workers(
     To enable debugging when running multiple tests,
     comment out line "addopts = ..." in pytest.ini.
     """
+    if not config.invocation_params.args:
+        return 0
+
     invocation_string = config.invocation_params.args[0]
     # Running a single test
     if "::" in invocation_string:

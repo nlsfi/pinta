@@ -43,7 +43,7 @@ include = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "lint"]
+default-groups = ["dev", "lint", "qgis"]
 
 [tool.uv.sources]
 pinta-db = { workspace = true }
@@ -53,16 +53,12 @@ dev = [
   "qgis-plugin-dev-tools>=0.11.0",
   # testing
   "pytest",
-  "pytest-qt",
   "pytest-mock",
-  "pytest-qgis",
   "pytest-timeout",
   "pytest-dotenv",
   "coverage[toml]",
   "coverage-enable-subprocess",
-  # pytest-qt<4 depends on py implicitly provided by pytest<7, require manually
-  "py",
-  "pydevd-pycharm~=253.31033.139", # debugger for jetbrains ides
+  "pydevd-pycharm~=261.22158.340", # debugger for jetbrains ides
   "debugpy>=1.8.20",               # debugger for VSCode
 ]
 lint = [
@@ -75,6 +71,11 @@ lint = [
   # stubs for type checks
   "PyQt5-stubs",
   "types-requests",
+]
+# List all dev depencies that require Qt and/or QGIS here
+qgis = [
+  "pytest-qt",
+  "pytest-qgis",
 ]
 
 [tool.flake8]
