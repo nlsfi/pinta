@@ -31,7 +31,7 @@ __version__ = metadata.version(__package__)
 TRANSLATORS: list[QtCore.QTranslator] = []
 
 
-def classFactory(_):  # noqa: ANN201, ANN001, N802
+def classFactory(_) -> "Plugin":  # noqa: ANN001, N802
     """Class factory."""
     TRANSLATORS.extend(i18n_utils.setup_all_translators())
 

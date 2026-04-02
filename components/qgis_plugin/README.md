@@ -5,7 +5,7 @@
 * Make sure you have opened project in devcontainer
 * Activate the root venv
 * Create a `.env` from `.env.example`, change configurations if needed
-* Launch development QGIS: `uv run --all-extras qpdt s` from devcontainer shell in this directory or `make start-qgis` in project root
+* Launch development QGIS: `uv run --all-extras qpdt s` from devcontainer shell in this directory or `make qgis-start` in project root
 
 ## Translating with QT Linguistic
 
