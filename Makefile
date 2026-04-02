@@ -95,6 +95,9 @@ test: sync
 test-integration: sync-all-but-qgis
 	uv run pytest -v -k test_integration --ignore=$(E2E_DIR) --ignore=$(QGIS_DIR)
 
+test-qgis: sync
+	uv run --directory $(QGIS_DIR) pytest -v
+
 test-e2e: sync
 	uv run --directory $(E2E_DIR) pytest
 
