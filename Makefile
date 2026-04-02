@@ -48,11 +48,11 @@ infra-restart: restart infra-full
 # QGIS plugin targets
 # =================
 
-start-qgis:
+qgis-start:
 	# Start qgis with plugin in development mode
 	uv run --directory $(QGIS_DIR) --extra qgis qpdt s
 
-start-qgis-no-extras:
+qgis-start-no-extras:
 	# To start QGIS with plugin in development mode without installing qgis extras (works better with native linux development)
 	uv run --directory $(QGIS_DIR) qpdt s
 

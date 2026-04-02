@@ -23,6 +23,7 @@ members = [
     "pinta",
     "pinta-dags",
     "pinta-db",
+    "pinta-e2e",
     "pinta-lib",
     "pinta-processing",
     "pinta-qgis-plugin",
@@ -2134,6 +2135,41 @@ dev = [
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
+
+[[package]]
+name = "pinta-e2e"
+version = "0.0.0"
+source = { editable = "components/e2e" }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pinta-lib" },
+    { name = "pinta-qgis-plugin" },
+    { name = "pytest" },
+    { name = "pytest-qgis" },
+    { name = "pytest-xdist" },
+]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pinta-lib", editable = "components/lib" },
+    { name = "pinta-qgis-plugin", editable = "components/qgis_plugin" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-qgis", specifier = ">=3.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [

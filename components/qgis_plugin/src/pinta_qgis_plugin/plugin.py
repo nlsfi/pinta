@@ -50,6 +50,7 @@ class Plugin:
         )
 
         manager.initialize_layers()
+        LOGGER.info("Plugin initialized")
 
     def unload(self) -> None:
         """Unload plugin."""

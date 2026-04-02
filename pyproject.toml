@@ -119,6 +119,9 @@ banned-module-level-imports = ["pinta"]
   "ARG001",  # Unused function argument
   "AIR002",  # @dag should have an explicit `schedule` argument
 ]
+"**/conftest.py" = [
+  "PLC0415", # `import` should be at the top-level of a file
+]
 "*/pinta_test_utils/*" = [
   "INP001",
   "D",       # pydocstyle
