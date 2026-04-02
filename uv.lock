@@ -2155,6 +2155,7 @@ source = { editable = "components/e2e" }
 [package.dev-dependencies]
 dev = [
     { name = "pinta-lib" },
+    { name = "psycopg" },
     { name = "pytest" },
     { name = "pytest-xdist" },
 ]
@@ -2174,6 +2175,7 @@ qgis = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pinta-lib", editable = "components/lib" },
+    { name = "psycopg" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
