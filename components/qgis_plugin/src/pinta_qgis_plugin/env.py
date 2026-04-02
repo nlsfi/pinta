@@ -20,10 +20,10 @@ import os
 from pinta_qgis_plugin.exceptions import MissingEnvironmentError
 
 try:
-    PINTA_DB_HOST = os.environ["PINTA_DB_HOST"]
-    PINTA_DB_PORT = os.environ["PINTA_DB_PORT"]
-    PINTA_DB_NAME = os.environ["PINTA_DB_NAME"]
-    PINTA_DB_EDITOR_USER = os.environ["PINTA_DB_EDITOR_USER"]
-    PINTA_DB_EDITOR_PASSWORD = os.environ["PINTA_DB_EDITOR_PASSWORD"]
+    PINTA_DB_HOST = os.environ["DB_HOST"]
+    PINTA_DB_PORT = os.environ["DB_PORT"]
+    PINTA_DB_NAME = os.environ["DB_NAME"]
+    PINTA_DB_EDITOR_USER = os.environ["DB_EDITOR_USER"]
+    PINTA_DB_EDITOR_PASSWORD = os.environ["DB_EDITOR_PASSWORD"]
 except KeyError as e:
     raise MissingEnvironmentError(e.args[0]) from None
