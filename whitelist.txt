@@ -76,3 +76,8 @@ rast
 autoincrement
 checkfirst
 func
+postgis
+epsg
+newbyteorder
+tobytes
+pixtype
