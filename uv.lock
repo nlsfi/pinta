@@ -23,6 +23,7 @@ members = [
     "pinta",
     "pinta-dags",
     "pinta-db",
+    "pinta-e2e",
     "pinta-lib",
     "pinta-processing",
     "pinta-qgis-plugin",
@@ -2005,6 +2006,9 @@ version = "0.0.1"
 source = { virtual = "." }
 
 [package.dev-dependencies]
+dev = [
+    { name = "pytest-xdist" },
+]
 lint = [
     { name = "flake8" },
     { name = "flake8-pyproject" },
@@ -2017,6 +2021,7 @@ lint = [
 [package.metadata]
 
 [package.metadata.requires-dev]
+dev = [{ name = "pytest-xdist", specifier = ">=3.8.0" }]
 lint = [
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "flake8-pyproject", specifier = ">=1.2.4" },
@@ -2143,6 +2148,49 @@ lint = [
 ]
 
 [[package]]
+name = "pinta-e2e"
+version = "0.0.0"
+source = { editable = "components/e2e" }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pinta-lib" },
+    { name = "psycopg" },
+    { name = "pytest" },
+    { name = "pytest-xdist" },
+]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
+qgis = [
+    { name = "pinta-qgis-plugin" },
+    { name = "pytest-qgis" },
+    { name = "pytest-qt" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pinta-lib", editable = "components/lib" },
+    { name = "psycopg" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+]
+lint = [
+    { name = "mypy" },
+    { name = "prek" },
+    { name = "ruff" },
+]
+qgis = [
+    { name = "pinta-qgis-plugin", editable = "components/qgis_plugin" },
+    { name = "pytest-qgis" },
+    { name = "pytest-qt" },
+]
+
+[[package]]
 name = "pinta-lib"
 version = "0.0.0"
 source = { editable = "components/lib" }
@@ -2251,13 +2299,10 @@ dev = [
     { name = "coverage" },
     { name = "coverage-enable-subprocess" },
     { name = "debugpy" },
-    { name = "py" },
     { name = "pydevd-pycharm" },
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
-    { name = "pytest-qgis" },
-    { name = "pytest-qt" },
     { name = "pytest-timeout" },
     { name = "qgis-plugin-dev-tools" },
 ]
@@ -2268,6 +2313,10 @@ lint = [
     { name = "pyqt5-stubs" },
     { name = "ruff" },
     { name = "types-requests" },
+]
+qgis = [
+    { name = "pytest-qgis" },
+    { name = "pytest-qt" },
 ]
 
 [package.metadata]
@@ -2287,13 +2336,10 @@ dev = [
     { name = "coverage", extras = ["toml"] },
     { name = "coverage-enable-subprocess" },
     { name = "debugpy", specifier = ">=1.8.20" },
-    { name = "py" },
-    { name = "pydevd-pycharm", specifier = "~=253.31033.139" },
+    { name = "pydevd-pycharm", specifier = "~=261.22158.340" },
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
-    { name = "pytest-qgis" },
-    { name = "pytest-qt" },
     { name = "pytest-timeout" },
     { name = "qgis-plugin-dev-tools", specifier = ">=0.11.0" },
 ]
@@ -2304,6 +2350,10 @@ lint = [
     { name = "pyqt5-stubs" },
     { name = "ruff" },
     { name = "types-requests" },
+]
+qgis = [
+    { name = "pytest-qgis" },
+    { name = "pytest-qt" },
 ]
 
 [[package]]
@@ -2481,15 +2531,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py"
-version = "1.11.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/98/ff/fec109ceb715d2a6b4c4a85a61af3b40c723a961e8828319fbcb15b868dc/py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719", size = 207796, upload-time = "2021-11-04T17:17:01.377Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/f0/10642828a8dfb741e5f3fbaac830550a518a775c7fff6f04a007259b0548/py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378", size = 98708, upload-time = "2021-11-04T17:17:00.152Z" },
-]
-
-[[package]]
 name = "pycodestyle"
 version = "2.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2595,9 +2636,9 @@ wheels = [
 
 [[package]]
 name = "pydevd-pycharm"
-version = "253.31033.139"
+version = "261.22158.340"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d2/d2/f9281d9130c0566bff7e7ee10ff1bb800313231239ddd52a5f859263846a/pydevd_pycharm-253.31033.139.tar.gz", hash = "sha256:afb296dc0dda381e5931c82fde1ae53c0e406f126accb93149679bd666f1bed3", size = 7635270, upload-time = "2026-02-20T08:31:45.673Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/49/828ea72dda699dbaafe6e37b05f118edaf9c5af5c51674560090188bcda5/pydevd_pycharm-261.22158.340.tar.gz", hash = "sha256:d7d4ee0cb71608c300357527ac59cbb42e4176df6f46cd699ed7a3d9c2e82fb3", size = 7635549, upload-time = "2026-03-30T12:19:30.402Z" }
 
 [[package]]
 name = "pyflakes"
