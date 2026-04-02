@@ -65,9 +65,7 @@ def qgis_plugin(
     qgis_iface: "QgisInterface",
     tmp_path: "Path",
 ) -> typing.Generator["Plugin", None, None]:
-    """
-    Initialize and return the plugin object.
-    """
+    """Initialize and return the plugin object."""
     from pinta_qgis_plugin import classFactory
 
     QgsProject.instance().setCrs(QgsCoordinateReferenceSystem(constants.SRID))

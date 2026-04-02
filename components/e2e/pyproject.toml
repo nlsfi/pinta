@@ -4,7 +4,8 @@ version = "0.0.0"
 description = "End to end tests for elevation production system"
 readme = "README.md"
 requires-python = ">=3.12"
-
+[project.optional-dependencies]
+# QGIS requirements are marked here to allow starting QGIS from venv without conflicting dependencies
 
 [project.urls]
 Homepage = "https://github.com/nlsfi/pinta"
@@ -19,7 +20,7 @@ module-name = "pinta_e2e_utils"
 include = ["py.typed"]
 
 [tool.uv]
-default-groups = ["dev", "lint"]
+default-groups = ["dev", "lint", "qgis"]
 
 [tool.uv.sources]
 pinta-qgis-plugin = { workspace = true }
@@ -28,15 +29,19 @@ pinta-lib = { workspace = true }
 [dependency-groups]
 dev = [
   "pinta-lib",
-  "pinta-qgis-plugin",
   "pytest>=9.0.2",
-  "pytest-qgis>=3.0.0",
   "pytest-xdist>=3.8.0",
 ]
 lint = [
   "prek",
   "mypy",
   "ruff",
+]
+# List all dev depencies that require Qt and/or QGIS here
+qgis = [
+  "pinta-qgis-plugin",
+  "pytest-qgis",
+  "pytest-qt",
 ]
 
 [tool.pytest.ini_options]

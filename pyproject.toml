@@ -34,6 +34,9 @@ publish-url = "https://test.pypi.org/legacy/"
 explicit = true
 
 [dependency-groups]
+dev = [
+  "pytest-xdist>=3.8.0",
+]
 lint = [
   "flake8>=7.3.0",
   "flake8-pyproject>=1.2.4",
@@ -49,8 +52,7 @@ dictionaries = "en_US,python,technical"
 select = ["SC"]
 extend-exclude = ".venv"
 per-file-ignores = [
-  "**/test/*:SC200",
-  "**/test_integration/*:SC200",
+  "**/test_*/*:SC200",
 ]
 
 
@@ -103,7 +105,7 @@ banned-module-level-imports = ["pinta"]
 "*/exceptions.py" = [
   "D", # pydocstyle
 ]
-"*/test/*" = [
+"*/test_*/*" = [
   "INP001",
   "D",       # pydocstyle
   "DTZ",     # flake8-datetimez
@@ -137,21 +139,6 @@ banned-module-level-imports = ["pinta"]
   "ARG001",  # Unused function argument
   "AIR002",  # @dag should have an explicit `schedule` argument
 ]
-"*/test_integration/*" = [
-  "INP001",
-  "D",       # pydocstyle
-  "DTZ",     # flake8-datetimez
-  "FBT",     # flake8-boolean-trap
-  "TD",      # flake8-todos
-  "S",       # flake8-bandit
-  "SLF",     # flake8-self
-  "ANN201",  # Missing return type annotation for public function
-  "E501",    # Line too long
-  "PLR2004", # Magic value used in comparison, consider replacing `2000` with a constant variable
-  "PLR0913", # Too many arguments in function definition
-  "ARG001",  # Unused function argument
-  "ERA001",  # Found commented-out code
-]
 "!**/pinta_dags/**/*.py" = [
   # ignore banned top level import except for dag modules, since config
   # is always read from root toml and cannot easily extend this for subdirs
@@ -184,4 +171,4 @@ exclude = "^test"
 
 
 [tool.pytest.ini_options]
-addopts = "--import-mode=importlib"
+addopts = "-n 0 --import-mode=importlib"

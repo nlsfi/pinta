@@ -9,6 +9,7 @@ COMPONENTS_DIR := $(ROOT_DIR)/components
 DB_DIR := $(COMPONENTS_DIR)/db
 QGIS_DIR := $(COMPONENTS_DIR)/qgis_plugin
 DAGS_DIR := $(COMPONENTS_DIR)/dags
+E2E_DIR := $(COMPONENTS_DIR)/e2e
 
 # Env variables
 export AIRFLOW_HOME := $(DAGS_DIR)/.airflow/
@@ -16,6 +17,19 @@ export AIRFLOW_CONN_PINTA_PROCESSING_DB :=postgres://$(PINTA_DB_EDITOR_USER):$(P
 export AIRFLOW__CORE__DAGS_FOLDER := $(DAGS_DIR)/src/pinta_dags/dags
 export AIRFLOW__CORE__LOAD_EXAMPLES := false
 export AIRFLOW__API__EXPOSE_CONFIG := true
+
+
+# UV targets
+# ==========
+
+sync:
+	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
+
+sync-all-but-qgis:
+	uv sync --all-packages --all-groups --no-group qgis --all-extras --no-extra qgis --no-extra build
+
+# Infra targets
+# =================
 
 down:
 	docker-compose down -v --remove-orphans
@@ -29,12 +43,6 @@ build:
 restart-fully: down build up
 
 restart: down up
-
-sync:
-	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
-
-# Infra targets
-# =================
 
 infra-full:
 	docker-compose run --rm ansible
@@ -81,5 +89,13 @@ airflow-reserialize: airflow-set-variables
 # Tests
 # ======
 
-test:
-	uv run pytest
+test: sync
+	uv run pytest -k "not test_integration" --ignore=$(E2E_DIR)
+
+test-integration: sync-all-but-qgis
+	uv run pytest -v -k test_integration --ignore=$(E2E_DIR) --ignore=$(QGIS_DIR)
+
+test-e2e: sync
+	uv run --directory $(E2E_DIR) pytest
+
+test-all: test test-integration test-e2e
