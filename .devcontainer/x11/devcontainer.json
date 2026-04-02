@@ -14,10 +14,19 @@
     "jetbrains": {
       "backend" : "IntelliJ",
       "extensions": [
-        "PythonCore",
-        "Pythonid",
-        "insyncwithfoo.ryecharm",
-        "intellij.python.dap.plugin"
+        "editorconfig.editorconfig",
+        "mikestead.dotenv",
+        "redhat.ansible",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "ms-python.python",
+        "ms-python.mypy-type-checker",
+        "ms-python.flake8",
+        "charliermarsh.ruff",
+        "dorzey.vscode-sqlfluff",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker",
+        "davidanson.vscode-markdownlint"
       ]
     }
   },
