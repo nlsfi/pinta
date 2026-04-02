@@ -171,4 +171,4 @@ exclude = "^test"
 
 
 [tool.pytest.ini_options]
-addopts = "-n 0 --import-mode=importlib"
+addopts = "-n auto --import-mode=importlib"

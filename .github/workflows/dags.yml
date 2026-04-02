@@ -17,8 +17,4 @@ jobs:
     uses: ./.github/workflows/unit-tests.yml
     with:
       component-path: components/dags
-
-#  integration_tests:
-#    uses: ./.github/workflows/integration-tests.yml
-#    with:
-#      component-path: components/dags
+      test_folder: test_dags
