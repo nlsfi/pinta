@@ -4,28 +4,17 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import typing
-from collections.abc import Iterator
 
 import geoalchemy2.shape
 import pytest
 import sqlmodel
 from pinta_db.models.management import PointCloudTile, ProductionArea
-from pinta_db_test_utils import db_utils
-from pinta_db_utils import engine_utils
 from pinta_test_utils import pinta_utils
 
 from pinta_processing.scripts import process_metadata
 
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
-
-
-@pytest.fixture
-def session(worker_id: str) -> Iterator["Session"]:
-    db_name = db_utils.create_db(worker_id)
-    with engine_utils.get_session(db_utils.get_writer_credentials(db_name)) as session:
-        yield session
-        session.close()
 
 
 def test_create_and_update_production_area(session: "Session"):
