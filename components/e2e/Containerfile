@@ -1,0 +1,30 @@
+FROM qgis/qgis:3.44.8-noble
+
+# Proxy args
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+ENV NO_PROXY=$NO_PROXY
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
+
+RUN UV_PYTHON=/usr/bin/python3 uv venv --system-site-packages /venv
+ENV VIRTUAL_ENV=/venv
+ENV PATH="/venv/bin:$PATH"
+
+WORKDIR /code
+
+COPY pyproject.toml uv.lock ./
+COPY components ./components
+
+WORKDIR /code/components/e2e
+
+RUN . /venv/bin/activate && uv sync --locked --active
+
+COPY components/e2e/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

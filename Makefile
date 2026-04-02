@@ -40,6 +40,9 @@ up:
 build:
 	docker-compose --profile ansible build
 
+build-qgis:
+	docker-compose build qgis
+
 restart-fully: down build up
 
 restart: down up
@@ -100,5 +103,8 @@ test-qgis: sync
 
 test-e2e: sync
 	uv run --directory $(E2E_DIR) pytest
+
+test-e2e-in-container:
+	docker-compose run --rm qgis uv run --active pytest
 
 test-all: test test-integration test-e2e

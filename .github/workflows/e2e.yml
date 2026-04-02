@@ -1,21 +1,19 @@
-name: Test Integration
+name: E2E tests
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'components/dags/**'
-      - 'components/processing/**'
-      - '.github/workflows/integration-tests.yml'
+      - 'components/**'
+      - '.github/workflows/e2e.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'components/dags/**'
-      - 'components/processing/**'
-      - '.github/workflows/integration-tests.yml'
+      - 'components/**'
+      - '.github/workflows/e2e.yml'
 
 jobs:
-  integration-tests:
+  e2e:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -32,7 +30,7 @@ jobs:
 
       - name: Build all compose images
         env:
-          COMPOSE_PROFILES: "ansible"
+          COMPOSE_PROFILES: "*"
         run: |
           docker buildx bake \
             --file docker-compose.yml \
@@ -42,9 +40,5 @@ jobs:
       - name: Run migrations via docker compose
         run: docker compose run --rm ansible
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
-
-      - name: Run tests
-        run: |
-          make test-integration
+      - name: Run e2e tests in QGIS container
+        run: docker compose run --rm qgis uv run --active pytest

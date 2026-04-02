@@ -74,5 +74,28 @@ services:
         target: /code
         read_only: true
 
+  qgis:
+    profiles:
+      - e2e
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: components/e2e/Containerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    image: localhost/pinta-e2e
+    env_file:
+      - ".env.example"
+      - ".env.e2e"
+    volumes:
+      - type: bind
+        source: ${REPO_DIR:-.}/components
+        target: /components
+        read_only: true
+
+
 volumes:
   db-data:
