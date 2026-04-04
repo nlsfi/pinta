@@ -81,3 +81,5 @@ epsg
 newbyteorder
 tobytes
 pixtype
+namelist
+extractall
