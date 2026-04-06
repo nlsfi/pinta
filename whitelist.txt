@@ -83,3 +83,14 @@ tobytes
 pixtype
 namelist
 extractall
+bindparams
+rastschema
+rasttable
+rastcolumn
+ovschema
+ovtable
+ovcolumn
+refschema
+reftable
+ovfactor
+refcolumn

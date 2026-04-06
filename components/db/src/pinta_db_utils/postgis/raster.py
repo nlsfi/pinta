@@ -86,17 +86,11 @@ def initialize_overlay_tables(
     """
     for level in DEFAULT_OVERLAY_LEVELS:
         overlay_name = OVERLAY_TABLE_NAME.format(level=level, table_name=table_name)
-        table = _create_raster_table(
+        _create_raster_table(
             session,
             overlay_name,
             schema=schema,
         )
-        index = sa.Index(
-            f"{overlay_name}_rast_idx",
-            sa.func.ST_Envelope(table.c.rast),
-            postgresql_using="gist",
-        )
-        index.create(bind=session.connection())
 
 
 def merge_staging_tables(
@@ -105,12 +99,16 @@ def merge_staging_tables(
     staging_tables: int = 0,
     session: sqlmodel.Session | None = None,
 ) -> None:
-    """Merge data from staging tables into main table, create index.
+    """Merge data from staging tables into main table, create raster indexes.
 
     Inserts all raster data from staging tables into the main table using UNION ALL,
     then creates a GIST index on the raster envelope and deletes the staging tables.
     """
-    if staging_tables == 0 or session is None:
+    if session is None:
+        return
+    if staging_tables == 0:
+        # No staging tables to merge, just create raster index on main table
+        _create_raster_index(session, table_name, schema)
         return
 
     meta = sa.MetaData()
@@ -129,12 +127,7 @@ def merge_staging_tables(
     insert_query = main_table.insert().from_select(["rast"], union_query)
     session.exec(insert_query)
 
-    index = sa.Index(
-        f"{table_name}_rast_idx",
-        sa.func.ST_Envelope(main_table.c.rast),
-        postgresql_using="gist",
-    )
-    index.create(bind=session.connection())
+    _create_raster_index(session, table_name, schema)
 
     for i in range(staging_tables):
         staging_name = f"{table_name}_p{i}"
@@ -142,6 +135,53 @@ def merge_staging_tables(
         staging_table.drop(bind=session.connection(), checkfirst=True)
 
     session.commit()
+
+
+def add_raster_constraints(
+    session: sqlmodel.Session, schema: str, table_name: str
+) -> None:
+    """Add constraints to the raster table."""
+    session.exec(  # type: ignore[call-overload]
+        sa.text(
+            "SELECT AddRasterConstraints("
+            ":rastschema, :rasttable, :rastcolumn, "
+            "TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, "
+            "TRUE, TRUE, TRUE, TRUE, TRUE, TRUE"
+            ")"
+        ).bindparams(
+            rastschema=schema,
+            rasttable=table_name,
+            rastcolumn="rast",
+        )
+    )
+
+
+def finalize_overview_tables(
+    session: sqlmodel.Session,
+    schema: str,
+    reference_table_name: str,
+) -> None:
+    """Register overview tables and add raster indexes."""
+    for level in DEFAULT_OVERLAY_LEVELS:
+        overview_name = OVERLAY_TABLE_NAME.format(
+            level=level, table_name=reference_table_name
+        )
+        session.exec(  # type: ignore[call-overload]
+            sa.text(
+                "SELECT AddOverviewConstraints("
+                ":ovschema, :ovtable, :ovcolumn, :refschema, "
+                ":reftable, :refcolumn, :ovfactor)"
+            ).bindparams(
+                ovschema=schema,
+                ovtable=overview_name,
+                ovcolumn="rast",
+                refschema=schema,
+                reftable=reference_table_name,
+                refcolumn="rast",
+                ovfactor=level,
+            )
+        )
+        _create_raster_index(session, overview_name, schema)
 
 
 def _set_raster_table_options(
@@ -188,3 +228,19 @@ def _create_raster_table(
             sa.text(f"ALTER TABLE {schema}.{table_name} SET (autovacuum_enabled=false)")
         )
     return table
+
+
+def _create_raster_index(
+    session: sqlmodel.Session,
+    table_name: str,
+    schema: str,
+) -> None:
+    """Create a GIST index on the raster envelope."""
+    index = sa.Index(
+        f"{table_name}_rast_idx",
+        sa.func.ST_Envelope(
+            sa.Table(table_name, sa.MetaData(), sa.Column("rast"), schema=schema).c.rast
+        ),
+        postgresql_using="gist",
+    )
+    index.create(bind=session.connection())

@@ -184,6 +184,31 @@ def test_initialize_raster_table(
             )
 
 
+def test_test_merge_staging_tables_with_no_staging_tables_creates_rast_index(
+    processing_worker_db: sqlmodel.Session,
+):
+    table_name = "test_raster_merge_no_staging"
+    schema = schemas.Schema.PROCESSING.value
+
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        staging_tables=0,
+        session=processing_worker_db,
+    )
+
+    raster.merge_staging_tables(
+        table_name=table_name,
+        schema=schema,
+        staging_tables=0,
+        session=processing_worker_db,
+    )
+
+    _assert_table_index_count(
+        processing_worker_db, schema, table_name, expected_count=2
+    )
+
+
 def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
     """Test merging staging tables into main raster table."""
     table_name = "test_raster_merge"
@@ -334,21 +359,94 @@ def test_initialize_overlay_tables(processing_worker_db: sqlmodel.Session):
         session=processing_worker_db,
     )
 
-    # Verify overlay tables are created (o_2_table_name and o_8_table_name)
-    overlay_2_name = f"o_2_{table_name}"
-    overlay_8_name = f"o_8_{table_name}"
+    overlay_table_names = [
+        raster.OVERLAY_TABLE_NAME.format(level=level, table_name=table_name)
+        for level in raster.DEFAULT_OVERLAY_LEVELS
+    ]
 
-    _assert_table_exists(processing_worker_db, schema, overlay_2_name)
-    _assert_table_exists(processing_worker_db, schema, overlay_8_name)
+    for overlay_table_name in overlay_table_names:
+        _assert_table_exists(processing_worker_db, schema, overlay_table_name)
+        _assert_table_has_default_columns(
+            processing_worker_db, schema, overlay_table_name
+        )
+        # only pk index
+        _assert_table_index_count(
+            processing_worker_db, schema, overlay_table_name, expected_count=1
+        )
 
-    # Verify both overlay tables have correct columns (rid and rast only)
-    _assert_table_has_default_columns(processing_worker_db, schema, overlay_2_name)
-    _assert_table_has_default_columns(processing_worker_db, schema, overlay_8_name)
 
-    # Verify both overlay tables have correct index count (pk + rast index = 2)
-    _assert_table_index_count(
-        processing_worker_db, schema, overlay_2_name, expected_count=2
+def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
+    table_name = "dem"
+    schema = schemas.Schema.PROCESSING.value
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        session=processing_worker_db,
     )
-    _assert_table_index_count(
-        processing_worker_db, schema, overlay_8_name, expected_count=2
+
+    _assert_table_exists(processing_worker_db, schema, table_name)
+    _assert_table_has_default_columns(processing_worker_db, schema, table_name)
+
+    raster.add_raster_constraints(
+        session=processing_worker_db, schema=schema, table_name=table_name
     )
+
+    # Assert that constraints are created and registered in raster_columns view
+    constraints_result = processing_worker_db.exec(  # type: ignore[call-overload]
+        sa.text(
+            f"""
+            SELECT COUNT(*)
+            FROM raster_columns
+            WHERE r_table_schema = '{schema}'
+            AND r_table_name = '{table_name}'
+            """
+        )
+    ).first()
+    assert constraints_result == (1,), (
+        f"Expected raster column {schema}.{table_name} to be registered "
+        "in raster_columns view after adding constraints"
+    )
+
+
+def test_register_overview(processing_worker_db: sqlmodel.Session):
+    """Test registering overview tables and verifying their constraints."""
+    table_name = "dem"
+    schema = schemas.Schema.PROCESSING.value
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        session=processing_worker_db,
+    )
+    raster.initialize_overlay_tables(
+        table_name=table_name,
+        schema=schema,
+        session=processing_worker_db,
+    )
+    raster.finalize_overview_tables(
+        session=processing_worker_db,
+        schema=schema,
+        reference_table_name=table_name,
+    )
+    # Verify overview tables are registered in raster_overviews catalog
+    overviews_result = processing_worker_db.exec(  # type: ignore[call-overload]
+        sa.text(
+            f"""
+            SELECT COUNT(*)
+            FROM raster_overviews
+            WHERE r_table_schema = '{schema}'
+            AND r_table_name = '{table_name}'
+            """
+        )
+    ).first()
+    assert overviews_result == (len(raster.DEFAULT_OVERLAY_LEVELS),), (
+        f"Expected {len(raster.DEFAULT_OVERLAY_LEVELS)} overview registrations, "
+        f"got {overviews_result[0]}"
+    )
+    # Verify each overview table has an index on rast column
+    for level in raster.DEFAULT_OVERLAY_LEVELS:
+        overview_name = raster.OVERLAY_TABLE_NAME.format(
+            level=level, table_name=table_name
+        )
+        _assert_table_index_count(
+            processing_worker_db, schema, overview_name, expected_count=2
+        )
