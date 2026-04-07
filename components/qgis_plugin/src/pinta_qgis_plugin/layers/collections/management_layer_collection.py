@@ -18,9 +18,6 @@
 
 import logging
 
-from qgis.core import QgsProject
-
-from pinta_qgis_plugin.exceptions import LayerCreationError
 from pinta_qgis_plugin.layers import config, vector_layer
 from pinta_qgis_plugin.layers.collections.base_layer_collection import (
     BaseLayerCollection,
@@ -28,24 +25,17 @@ from pinta_qgis_plugin.layers.collections.base_layer_collection import (
 
 LOGGER = logging.getLogger(__name__)
 
+PROVIDER_LIB = "postgres"
+
 
 class ManagementLayerCollection(BaseLayerCollection):
     """Collection of management layers."""
 
     collection_id = "management"
 
-    def add_to_project(self) -> None:
+    def _add_to_project(self) -> None:
         """Add layers to the project."""
-        if self.find_layers():
-            self.remove_from_project()
-
-        for layer_config in config.VECTOR_LAYERS:
-            layer_name = layer_config.layer_name
-            layer = vector_layer.create_vector_layer(layer_config)
-            layer.setCustomProperty(self.COLLECTION_ID_KEY, self.collection_id)
-
-            added_layer = QgsProject.instance().addMapLayer(layer, addToLegend=True)
-            if added_layer is not None:
-                LOGGER.info("%s layer loaded successfully", layer_name)
-            else:
-                raise LayerCreationError(layer_name)
+        for layer_config in reversed(config.VECTOR_LAYERS):
+            self._add_map_layer_to_project(
+                vector_layer.create_vector_layer(layer_config, PROVIDER_LIB)
+            )

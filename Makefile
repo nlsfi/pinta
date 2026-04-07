@@ -22,6 +22,9 @@ export AIRFLOW__API__EXPOSE_CONFIG := true
 # UV targets
 # ==========
 
+venv:
+	UV_PYTHON=/usr/bin/python3 uv venv --system-site-packages --clear
+
 sync:
 	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
 

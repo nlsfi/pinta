@@ -17,10 +17,15 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 import abc
+import logging
 import typing
 from typing import Optional
 
 from qgis.core import QgsProject, QgsRasterLayer, QgsVectorLayer
+
+from pinta_qgis_plugin.exceptions import LayerCreationError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseLayerCollection(abc.ABC):
@@ -38,9 +43,15 @@ class BaseLayerCollection(abc.ABC):
             cls._instance = cls()
         return typing.cast("BaseLayerCollection", cls._instance)
 
-    @abc.abstractmethod
     def add_to_project(self) -> None:
         """Add layers to the project."""
+        if self.find_layers():
+            self.remove_from_project()
+        self._add_to_project()
+
+    @abc.abstractmethod
+    def _add_to_project(self) -> None:
+        """Add layers and groups to the project."""
 
     def remove_from_project(self) -> None:
         """Remove layers from the project."""
@@ -54,3 +65,12 @@ class BaseLayerCollection(abc.ABC):
             for layer in QgsProject.instance().mapLayers().values()
             if layer.customProperty(self.COLLECTION_ID_KEY) == self.collection_id
         ]
+
+    def _add_map_layer_to_project(self, layer: QgsVectorLayer | QgsRasterLayer) -> None:
+        layer.setCustomProperty(self.COLLECTION_ID_KEY, self.collection_id)
+
+        added_layer = QgsProject.instance().addMapLayer(layer, addToLegend=True)
+        if added_layer is not None:
+            LOGGER.debug("%s layer loaded successfully", layer.name())
+        else:
+            raise LayerCreationError(layer.name())

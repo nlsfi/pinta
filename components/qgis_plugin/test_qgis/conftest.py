@@ -15,10 +15,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
+import typing
+from pathlib import Path
 
 import pytest
 from pinta_test_utils import xdist_utils
 from qgis.core import QgsProject, QgsVectorLayer
+
+if typing.TYPE_CHECKING:
+    from _pytest.fixtures import SubRequest
 
 """
 !!! IMPORTANT !!!
@@ -45,3 +50,8 @@ def reset_session_state(
 @pytest.fixture
 def empty_multipolygon_layer() -> QgsVectorLayer:
     return QgsVectorLayer("MultiPolygon", "Empty", "memory")
+
+
+@pytest.fixture
+def data_path(request: "SubRequest") -> Path:
+    return Path(__file__).parent / "data"

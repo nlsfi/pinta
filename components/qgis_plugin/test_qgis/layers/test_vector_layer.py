@@ -24,6 +24,8 @@ from qgis.core import QgsVectorLayer
 
 from pinta_qgis_plugin.layers import config, vector_layer
 
+PROVIDER = "postgres"
+
 
 @pytest.fixture
 def mock_uri():
@@ -57,7 +59,7 @@ def test_create_layer_with_valid_layer_returns_layer(
     mock_uri: MagicMock,
     production_area_layer: QgsVectorLayer,
 ):
-    result = vector_layer.create_vector_layer(config.PRODUCTION_AREA)
+    result = vector_layer.create_vector_layer(config.PRODUCTION_AREA, PROVIDER)
 
     assert result is production_area_layer
     mock_uri.setDataSource.assert_called_once_with(
@@ -82,6 +84,6 @@ def test_create_layer_with_invalid_layer_raises_exception(
     )
 
     with pytest.raises(vector_layer.LayerCreationError):
-        vector_layer.create_vector_layer(config.PRODUCTION_AREA)
+        vector_layer.create_vector_layer(config.PRODUCTION_AREA, PROVIDER)
 
     mock_layer.setReadOnly.assert_not_called()

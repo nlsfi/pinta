@@ -1,0 +1,19 @@
+[
+    {
+    "layer_name": "OpenStreetMap",
+    "uri_parameters": {
+      "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "type": "xyz"
+    }
+  },
+  {
+    "layer_name": "Your own basemap",
+    "uri_parameters": {
+      "url": "https://your-wmts-service/wmts/1.0.0/WMTSCapabilities.xml",
+      "crs": "EPSG:3067",
+      "layers": "layername",
+      "tileMatrixSet": "ETRS-TM35FIN",
+      "styles": "default"
+    }
+  }
+]

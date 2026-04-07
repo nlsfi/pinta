@@ -1,0 +1,9 @@
+[
+  {
+    "layer_name": "OpenStreetMap",
+    "uri_parameters": {
+      "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "type": "xyz"
+    }
+  }
+]

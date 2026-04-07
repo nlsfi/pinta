@@ -18,27 +18,24 @@
 
 import logging
 
-from qgis_plugin_tools.tools.decorations import log_if_fails
+from qgis.core import QgsRasterLayer
 
-from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
-    BasemapLayerCollection,
-)
-from pinta_qgis_plugin.layers.collections.management_layer_collection import (
-    ManagementLayerCollection,
-)
+from pinta_qgis_plugin.exceptions import LayerCreationError
+from pinta_qgis_plugin.layers.config import BasemapLayerConfig
 
 LOGGER = logging.getLogger(__name__)
 
 
-@log_if_fails
-def initialize_layers() -> None:
-    """Initialize and load all layers into QGIS project."""
-    BasemapLayerCollection.get().add_to_project()
-    ManagementLayerCollection.get().add_to_project()
+def _create_qgs_raster_layer(
+    uri_string: str, name: str, provider: str
+) -> QgsRasterLayer:
+    return QgsRasterLayer(uri_string, name, provider)
 
 
-@log_if_fails
-def remove_layers() -> None:
-    """Remove all layers from QGIS project."""
-    BasemapLayerCollection.get().remove_from_project()
-    ManagementLayerCollection.get().remove_from_project()
+def create_raster_layer(config: BasemapLayerConfig, provider: str) -> QgsRasterLayer:
+    """Create raster layer."""
+    layer = _create_qgs_raster_layer(config.uri_string, config.layer_name, provider)
+    if not layer.isValid():
+        LOGGER.error("Uri of the invalid layer %s", layer.source())
+        raise LayerCreationError(config.layer_name)
+    return layer

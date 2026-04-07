@@ -18,27 +18,23 @@
 
 import logging
 
-from qgis_plugin_tools.tools.decorations import log_if_fails
-
-from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
-    BasemapLayerCollection,
-)
-from pinta_qgis_plugin.layers.collections.management_layer_collection import (
-    ManagementLayerCollection,
+from pinta_qgis_plugin.layers import config, raster_layer
+from pinta_qgis_plugin.layers.collections.base_layer_collection import (
+    BaseLayerCollection,
 )
 
 LOGGER = logging.getLogger(__name__)
 
-
-@log_if_fails
-def initialize_layers() -> None:
-    """Initialize and load all layers into QGIS project."""
-    BasemapLayerCollection.get().add_to_project()
-    ManagementLayerCollection.get().add_to_project()
+PROVIDER = "wms"
 
 
-@log_if_fails
-def remove_layers() -> None:
-    """Remove all layers from QGIS project."""
-    BasemapLayerCollection.get().remove_from_project()
-    ManagementLayerCollection.get().remove_from_project()
+class BasemapLayerCollection(BaseLayerCollection):
+    """Collection of base map layers."""
+
+    collection_id = "base_map"
+
+    def _add_to_project(self) -> None:
+        for layer_config in reversed(config.BASEMAP_LAYERS):
+            self._add_map_layer_to_project(
+                raster_layer.create_raster_layer(layer_config, PROVIDER)
+            )
