@@ -19,6 +19,8 @@ import logging
 import typing
 
 import qgis_plugin_tools
+from pinta_db import env
+from qgis.core import QgsCoordinateReferenceSystem, QgsProject
 from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools import custom_logging, i18n
 
@@ -50,6 +52,11 @@ class Plugin:
         )
 
         manager.initialize_layers()
+
+        QgsProject.instance().setCrs(
+            QgsCoordinateReferenceSystem.fromEpsgId(int(env.SRID))
+        )
+
         LOGGER.info("Plugin initialized")
 
     def unload(self) -> None:
