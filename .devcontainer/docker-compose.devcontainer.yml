@@ -9,9 +9,29 @@ services:
       - type: bind
         source: ${CONTAINER_ENGINE_SOCKET:-/var/run/docker.sock}
         target: /var/run/docker.sock
+      - type: volume
+        source: venv-workspace
+        target: /home/ubuntu/workspace/.venv
+      - type: volume
+        source: uv-cache
+        target: /uv-cache
+      - type: volume
+        source: prek-cache
+        target: /prek-cache
+      - type: bind
+        source: ${HOME}/.ssh/config
+        target: /home/ubuntu/.ssh/config
+        read_only: true
     entrypoint: []
     command: /bin/sh -c "while sleep 1000; do :; done"
     environment:
       DOCKER_HOST: unix:///var/run/docker.sock
       DISPLAY: :0
       NO_PROXY: localhost,127.0.0.1
+      PREK_HOME: /prek-cache
+      UV_CACHE_DIR: /uv-cache
+
+volumes:
+  venv-workspace:
+  uv-cache:
+  prek-cache:

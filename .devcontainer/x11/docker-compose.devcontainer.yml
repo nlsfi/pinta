@@ -12,3 +12,8 @@ services:
     environment:
       DISPLAY: ${DISPLAY}
       QT_QPA_PLATFORM: xcb
+
+volumes:
+  prek-cache:
+  venv-workspace:
+  uv-cache:
