@@ -33,8 +33,8 @@ def get_default_columns() -> list[sa.Column]:
 
 def initialize_raster_table(
     session: sqlmodel.Session,
-    table_name: str,
     schema: str,
+    table_name: str,
     staging_tables: int = 0,
     extra_columns: abc.Callable[[], list[sa.Column]] | None = None,
 ) -> None:
@@ -55,8 +55,8 @@ def initialize_raster_table(
     """
     _create_raster_table(
         session,
+        schema,
         table_name,
-        schema=schema,
         extra_columns=extra_columns() if extra_columns else None,
     )
 
@@ -64,8 +64,8 @@ def initialize_raster_table(
         staging_name = f"{table_name}_p{i}"
         _create_raster_table(
             session,
+            schema,
             staging_name,
-            schema=schema,
             extra_columns=extra_columns() if extra_columns else None,
             table_type=TableType.UNLOGGED,
         )
@@ -75,8 +75,8 @@ def initialize_raster_table(
 
 def initialize_overview_tables(
     session: sqlmodel.Session,
-    table_name: str,
     schema: str,
+    table_name: str,
 ) -> None:
     """Initialize overview tables with rid and rast columns.
 
@@ -88,14 +88,14 @@ def initialize_overview_tables(
         overview_name = OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
         _create_raster_table(
             session,
+            schema,
             overview_name,
-            schema=schema,
         )
 
 
 def merge_staging_tables(
+    schema: str,
     table_name: str,
-    schema: str = "public",
     staging_tables: int = 0,
     session: sqlmodel.Session | None = None,
 ) -> None:
@@ -108,7 +108,7 @@ def merge_staging_tables(
         return
     if staging_tables == 0:
         # No staging tables to merge, just create raster index on main table
-        _create_raster_index(session, table_name, schema)
+        _create_raster_index(session, schema, table_name)
         return
 
     meta = sa.MetaData()
@@ -127,7 +127,7 @@ def merge_staging_tables(
     insert_query = main_table.insert().from_select(["rast"], union_query)
     session.exec(insert_query)
 
-    _create_raster_index(session, table_name, schema)
+    _create_raster_index(session, schema, table_name)
 
     for i in range(staging_tables):
         staging_name = f"{table_name}_p{i}"
@@ -181,13 +181,13 @@ def finalize_overview_tables(
                 ovfactor=level,
             )
         )
-        _create_raster_index(session, overview_name, schema)
+        _create_raster_index(session, schema, overview_name)
 
 
 def _set_raster_table_options(
-    table_name: str,
-    schema: str,
     session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
 ) -> None:
     """Set raster table options including EXTERNAL storage and TOAST optimization."""
     session.exec(  # type: ignore[call-overload]
@@ -202,8 +202,8 @@ def _set_raster_table_options(
 
 def _create_raster_table(
     session: sqlmodel.Session,
+    schema: str,
     table_name: str,
-    schema: str = "public",
     extra_columns: list[sa.Column] | None = None,
     table_type: TableType = TableType.TABLE,
 ) -> sa.Table:
@@ -222,7 +222,7 @@ def _create_raster_table(
     )
     table.create(session.connection(), checkfirst=True)
 
-    _set_raster_table_options(table_name, schema, session=session)
+    _set_raster_table_options(session, schema, table_name)
     if table_type is TableType.UNLOGGED:
         session.exec(  # type: ignore[call-overload]
             sa.text(f"ALTER TABLE {schema}.{table_name} SET (autovacuum_enabled=false)")
@@ -232,8 +232,8 @@ def _create_raster_table(
 
 def _create_raster_index(
     session: sqlmodel.Session,
-    table_name: str,
     schema: str,
+    table_name: str,
 ) -> None:
     """Create a GIST index on the raster envelope."""
     index = sa.Index(

@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
 
 
 def test_postgis_writer(processing_worker_session: "Session") -> None:
-    raster.initialize_raster_table(processing_worker_session, "dem", "processing")
+    raster.initialize_raster_table(processing_worker_session, "processing", "dem")
     file_path = pinta_utils.get_test_data_path("processing/dem.tif")
 
     # Read input raster
@@ -115,7 +115,7 @@ def test_postgis_writer_with_staging_tables(
         )
 
     raster.initialize_raster_table(
-        processing_worker_session, "dem", "processing", staging_tables=3
+        processing_worker_session, "processing", "dem", staging_tables=3
     )
 
     # Generate 10 512x512 random rasters inside finland extents (use epsg:3067) to tmp geotiffs
