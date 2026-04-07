@@ -26,7 +26,7 @@ from qgis_plugin_tools.tools import i18n
 
 
 @dataclasses.dataclass
-class LayerConfig:
+class ModelLayerConfig:
     """Configuration for a QGIS layer."""
 
     db_model: type[BaseModel]
@@ -42,10 +42,10 @@ class LayerConfig:
         db_model: type[BaseModel],
         layer_name: str,
         aliases: dict[str, str],
-    ) -> "LayerConfig":
+    ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
-        return LayerConfig(
+        return ModelLayerConfig(
             db_model=db_model,
             layer_name=layer_name,
             aliases=aliases,
@@ -70,7 +70,7 @@ COMMON_ALIASES = {
     "id": i18n.tr("Identifier"),
 }
 
-PRODUCTION_AREA = LayerConfig.create(
+PRODUCTION_AREA = ModelLayerConfig.create(
     db_model=ProductionArea,
     layer_name=i18n.tr("Production area"),
     aliases={
@@ -78,7 +78,7 @@ PRODUCTION_AREA = LayerConfig.create(
     },
 )
 
-POINT_CLOUD_TILE = LayerConfig.create(
+POINT_CLOUD_TILE = ModelLayerConfig.create(
     db_model=PointCloudTile,
     layer_name=i18n.tr("Point cloud tile"),
     aliases={
@@ -86,7 +86,7 @@ POINT_CLOUD_TILE = LayerConfig.create(
     },
 )
 
-LAYERS = [
+VECTOR_LAYERS = [
     PRODUCTION_AREA,
     POINT_CLOUD_TILE,
 ]
