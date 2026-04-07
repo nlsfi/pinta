@@ -15,33 +15,3 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
-
-import pytest
-from pinta_test_utils import xdist_utils
-from qgis.core import QgsProject, QgsVectorLayer
-
-"""
-!!! IMPORTANT !!!
-DO NOT import anything that imports qgis.utils.iface
-(or some module that imports other module that imports it) in conftest root!
-Importing those modules in fixtures is OK.
-
-The same goes with pinta_qgis_plugin.env.py.
-"""
-
-
-@pytest.hookimpl
-def pytest_xdist_auto_num_workers(config: "pytest.Config"):
-    return xdist_utils.get_number_of_workers(config)
-
-
-@pytest.fixture(autouse=True)
-def reset_session_state(
-    qgis_new_project: None,
-):
-    QgsProject.instance().clear()
-
-
-@pytest.fixture
-def empty_multipolygon_layer() -> QgsVectorLayer:
-    return QgsVectorLayer("MultiPolygon", "Empty", "memory")
