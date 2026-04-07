@@ -29,3 +29,9 @@ LOGGER = logging.getLogger(__name__)
 def initialize_layers() -> None:
     """Initialize and load all layers into QGIS project."""
     vector_layer.add_vector_layers()
+
+
+@log_if_fails
+def remove_layers() -> None:
+    """Remove all layers from QGIS project."""
+    vector_layer.remove_vector_layers()

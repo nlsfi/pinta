@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from pytest_mock import MockerFixture
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsProject, QgsVectorLayer
 
 from pinta_qgis_plugin.layers import config, manager, vector_layer
 
@@ -33,8 +33,8 @@ def mock_uri():
 
 
 @pytest.fixture
-def fake_layer(mocker: MockerFixture, mock_uri: MagicMock) -> QgsVectorLayer:
-    fake_layer = QgsVectorLayer("MultiPolygon", "empty", "memory")
+def production_area_layer(mocker: MockerFixture, mock_uri: MagicMock) -> QgsVectorLayer:
+    fake_layer = QgsVectorLayer("MultiPolygon", "Production area", "memory")
     mocker.patch.object(
         vector_layer.database,
         "get_database_uri",
@@ -64,18 +64,18 @@ def mock_qgs_project(mocker: MockerFixture) -> MagicMock:
 
 def test_create_layer_with_valid_layer_returns_layer(
     mock_uri: MagicMock,
-    fake_layer: QgsVectorLayer,
+    production_area_layer: QgsVectorLayer,
 ):
     result = vector_layer.create_vector_layer(config.PRODUCTION_AREA)
 
-    assert result is fake_layer
+    assert result is production_area_layer
     mock_uri.setDataSource.assert_called_once_with(
         "management", "production_area", "geom"
     )
     mock_uri.setKeyColumn.assert_called_once_with("id")
     mock_uri.setWkbType.assert_called_once()
     mock_uri.setSrid.assert_called_once_with("3067")
-    assert fake_layer.readOnly
+    assert production_area_layer.readOnly
 
 
 def test_create_layer_with_invalid_layer_raises_exception(
@@ -129,3 +129,10 @@ def test_initialize_layers_with_exception_does_not_add_to_project(
 
     m_create_layer.assert_called_once()
     mock_qgs_project.addMapLayer.assert_not_called()
+
+
+def test_remove_layers_removes_all_layers(production_area_layer: QgsVectorLayer):
+    assert QgsProject.instance().addMapLayer(production_area_layer)
+
+    vector_layer.remove_vector_layers()
+    assert len(QgsProject.instance().mapLayers()) == 0

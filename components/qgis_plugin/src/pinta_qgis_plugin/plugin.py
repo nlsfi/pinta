@@ -54,5 +54,6 @@ class Plugin:
 
     def unload(self) -> None:
         """Unload plugin."""
+        manager.remove_layers()
         self._teardown_loggers()
         self._teardown_loggers = lambda: None

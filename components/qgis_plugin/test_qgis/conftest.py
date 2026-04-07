@@ -16,32 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
-from unittest.mock import MagicMock
-
 import pytest
-from pytest_mock import MockerFixture
+from qgis.core import QgsProject
 
-from pinta_qgis_plugin.layers import manager
+"""
+!!! IMPORTANT !!!
+DO NOT import anything that imports qgis.utils.iface
+(or some module that imports other module that imports it) in conftest root!
+Importing those modules in fixtures is OK.
 
-
-@pytest.fixture
-def mock_vector_layer_module(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch.object(
-        manager,
-        "vector_layer",
-        autospec=True,
-    )
+The same goes with pinta_qgis_plugin.env.py.
+"""
 
 
-def test_initialize_layers_should_initialize_all_layers(
-    mock_vector_layer_module: MagicMock,
+@pytest.fixture(autouse=True)
+def reset_session_state(
+    qgis_new_project: None,
 ):
-    manager.initialize_layers()
-    mock_vector_layer_module.add_vector_layers.assert_called_once()
-
-
-def test_remove_layers_should_remove_all_layers(
-    mock_vector_layer_module: MagicMock,
-):
-    manager.remove_layers()
-    mock_vector_layer_module.remove_vector_layers.assert_called_once()
+    QgsProject.instance().clear()
