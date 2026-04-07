@@ -30,8 +30,8 @@ See the additional instructions for developing individual components in their re
 
 ### Development infra
 
-* Build containers with `docker-compose --profile ansible build` or `make build`
-* Initialize infra with `docker-compose run --rm ansible` or `make infra-full`
+* Build containers with `docker compose --profile ansible build` or `make build`
+* Initialize infra with `docker compose run --rm ansible` or `make infra-full`
 * Run all tests with: `uv run pytest` or `make test`
 
 ### Updating dependencies
