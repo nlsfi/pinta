@@ -60,6 +60,7 @@ dev = [
   "coverage-enable-subprocess",
   "pydevd-pycharm~=261.22158.340", # debugger for jetbrains ides
   "debugpy>=1.8.20",               # debugger for VSCode
+  "pytest-xdist>=3.8.0",
 ]
 lint = [
   # linting tools
@@ -89,7 +90,7 @@ minversion = "7.0"
 testpaths = [
   "test",
 ]
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib -n auto"
 
 [tool.coverage.paths]
 source = ["src", "**/site-packages"]

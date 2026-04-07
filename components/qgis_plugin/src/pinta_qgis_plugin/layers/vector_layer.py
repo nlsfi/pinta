@@ -18,10 +18,10 @@
 
 import logging
 
-from qgis.core import QgsDataSourceUri, QgsProject, QgsVectorLayer
+from qgis.core import QgsDataSourceUri, QgsVectorLayer
 
 from pinta_qgis_plugin.exceptions import LayerCreationError
-from pinta_qgis_plugin.layers import config, database
+from pinta_qgis_plugin.layers import database
 from pinta_qgis_plugin.layers.config import ModelLayerConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -52,30 +52,3 @@ def create_vector_layer(config: ModelLayerConfig) -> QgsVectorLayer:
     layer.setReadOnly(True)
 
     return layer
-
-
-def add_vector_layers() -> None:
-    """Add vector layers into the QGIS project."""
-    for layer_config in config.VECTOR_LAYERS:
-        layer_name = layer_config.layer_name
-        layer = create_vector_layer(layer_config)
-
-        added_layer = QgsProject.instance().addMapLayer(layer, addToLegend=True)
-        if added_layer is not None:
-            LOGGER.info("%s layer loaded successfully", layer_name)
-        else:
-            raise LayerCreationError(layer_name)
-
-
-def remove_vector_layers() -> None:
-    """Remove vector layers from the QGIS project."""
-    all_vector_layers = {
-        layer.name(): layer
-        for layer in QgsProject.instance().mapLayers().values()
-        if isinstance(layer, QgsVectorLayer)
-    }
-    for layer_config in config.VECTOR_LAYERS:
-        if layer_config.layer_name in all_vector_layers:
-            QgsProject.instance().removeMapLayer(
-                all_vector_layers[layer_config.layer_name].id()
-            )

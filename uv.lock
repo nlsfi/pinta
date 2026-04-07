@@ -2304,6 +2304,7 @@ dev = [
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
     { name = "pytest-timeout" },
+    { name = "pytest-xdist" },
     { name = "qgis-plugin-dev-tools" },
 ]
 lint = [
@@ -2341,6 +2342,7 @@ dev = [
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
     { name = "pytest-timeout" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "qgis-plugin-dev-tools", specifier = ">=0.11.0" },
 ]
 lint = [

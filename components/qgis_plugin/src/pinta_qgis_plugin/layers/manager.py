@@ -20,7 +20,9 @@ import logging
 
 from qgis_plugin_tools.tools.decorations import log_if_fails
 
-from pinta_qgis_plugin.layers import vector_layer
+from pinta_qgis_plugin.layers.collections.management_layer_collection import (
+    ManagementLayerCollection,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,10 +30,10 @@ LOGGER = logging.getLogger(__name__)
 @log_if_fails
 def initialize_layers() -> None:
     """Initialize and load all layers into QGIS project."""
-    vector_layer.add_vector_layers()
+    ManagementLayerCollection.get().add_to_project()
 
 
 @log_if_fails
 def remove_layers() -> None:
     """Remove all layers from QGIS project."""
-    vector_layer.remove_vector_layers()
+    ManagementLayerCollection.get().remove_from_project()

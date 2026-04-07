@@ -22,26 +22,32 @@ import pytest
 from pytest_mock import MockerFixture
 
 from pinta_qgis_plugin.layers import manager
+from pinta_qgis_plugin.layers.collections.management_layer_collection import (
+    ManagementLayerCollection,
+)
 
 
 @pytest.fixture
-def mock_vector_layer_module(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch.object(
-        manager,
-        "vector_layer",
+def mock_management_layer_collection(mocker: MockerFixture) -> MagicMock:
+    m_management_layer_collection = MagicMock(spec=ManagementLayerCollection)
+    mocker.patch.object(
+        ManagementLayerCollection,
+        "get",
         autospec=True,
+        return_value=m_management_layer_collection,
     )
+    return m_management_layer_collection
 
 
 def test_initialize_layers_should_initialize_all_layers(
-    mock_vector_layer_module: MagicMock,
+    mock_management_layer_collection: MagicMock,
 ):
     manager.initialize_layers()
-    mock_vector_layer_module.add_vector_layers.assert_called_once()
+    mock_management_layer_collection.add_to_project.assert_called_once()
 
 
 def test_remove_layers_should_remove_all_layers(
-    mock_vector_layer_module: MagicMock,
+    mock_management_layer_collection: MagicMock,
 ):
     manager.remove_layers()
-    mock_vector_layer_module.remove_vector_layers.assert_called_once()
+    mock_management_layer_collection.remove_from_project.assert_called_once()
