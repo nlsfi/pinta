@@ -32,26 +32,26 @@ sync-all-but-qgis:
 # =================
 
 down:
-	docker-compose down -v --remove-orphans
+	docker compose down -v --remove-orphans
 
 up:
-	docker-compose up -d
+	docker compose up -d
 
 build:
-	docker-compose --profile ansible build
+	docker compose --profile ansible build
 
 build-qgis:
-	docker-compose build qgis
+	docker compose build qgis
 
 restart-fully: down build up
 
 restart: down up
 
 infra-full:
-	docker-compose run --rm ansible
+	docker compose run --rm ansible
 
 migrations:
-	docker-compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
+	docker compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
 
 infra-restart: restart infra-full
 
@@ -105,6 +105,6 @@ test-e2e: sync
 	uv run --directory $(E2E_DIR) pytest
 
 test-e2e-in-container:
-	docker-compose run --rm qgis uv run --active pytest
+	docker compose run --rm qgis uv run --active pytest
 
 test-all: test test-integration test-e2e

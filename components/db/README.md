@@ -24,7 +24,7 @@ comments from the top and bottom of the functions. Remember to commit it in the 
 To run migrations in development, in root of the project run:
 
 ```bash
-docker-compose run --rm ansible
+docker compose run --rm ansible
 ```
 
 or `make infra-full`.
