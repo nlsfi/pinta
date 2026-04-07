@@ -65,3 +65,17 @@ def add_vector_layers() -> None:
             LOGGER.info("%s layer loaded successfully", layer_name)
         else:
             raise LayerCreationError(layer_name)
+
+
+def remove_vector_layers() -> None:
+    """Remove vector layers from the QGIS project."""
+    all_vector_layers = {
+        layer.name(): layer
+        for layer in QgsProject.instance().mapLayers().values()
+        if isinstance(layer, QgsVectorLayer)
+    }
+    for layer_config in config.VECTOR_LAYERS:
+        if layer_config.layer_name in all_vector_layers:
+            QgsProject.instance().removeMapLayer(
+                all_vector_layers[layer_config.layer_name].id()
+            )
