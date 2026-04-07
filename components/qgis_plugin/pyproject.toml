@@ -90,7 +90,7 @@ minversion = "7.0"
 testpaths = [
   "test",
 ]
-addopts = "--import-mode=importlib -n auto"
+addopts = "--import-mode=importlib -n 0"
 
 [tool.coverage.paths]
 source = ["src", "**/site-packages"]

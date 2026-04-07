@@ -15,21 +15,27 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
-
-from unittest.mock import MagicMock
+import typing
 
 import pytest
-from pytest_mock import MockerFixture
 
 from pinta_qgis_plugin.layers import manager
+from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
+    BasemapLayerCollection,
+)
 from pinta_qgis_plugin.layers.collections.management_layer_collection import (
     ManagementLayerCollection,
 )
 
+if typing.TYPE_CHECKING:
+    from unittest.mock import MagicMock
+
+    from pytest_mock import MockerFixture
+
 
 @pytest.fixture
-def mock_management_layer_collection(mocker: MockerFixture) -> MagicMock:
-    m_management_layer_collection = MagicMock(spec=ManagementLayerCollection)
+def mock_management_layer_collection(mocker: "MockerFixture") -> "MagicMock":
+    m_management_layer_collection = mocker.MagicMock(spec=ManagementLayerCollection)
     mocker.patch.object(
         ManagementLayerCollection,
         "get",
@@ -39,15 +45,31 @@ def mock_management_layer_collection(mocker: MockerFixture) -> MagicMock:
     return m_management_layer_collection
 
 
+@pytest.fixture
+def mock_basemap_layer_collection(mocker: "MockerFixture") -> "MagicMock":
+    mock_basemap_layer_collection = mocker.MagicMock(spec=BasemapLayerCollection)
+    mocker.patch.object(
+        BasemapLayerCollection,
+        "get",
+        autospec=True,
+        return_value=mock_basemap_layer_collection,
+    )
+    return mock_basemap_layer_collection
+
+
 def test_initialize_layers_should_initialize_all_layers(
-    mock_management_layer_collection: MagicMock,
+    mock_management_layer_collection: "MagicMock",
+    mock_basemap_layer_collection: "MagicMock",
 ):
     manager.initialize_layers()
+    mock_basemap_layer_collection.add_to_project.assert_called_once()
     mock_management_layer_collection.add_to_project.assert_called_once()
 
 
 def test_remove_layers_should_remove_all_layers(
-    mock_management_layer_collection: MagicMock,
+    mock_management_layer_collection: "MagicMock",
+    mock_basemap_layer_collection: "MagicMock",
 ):
     manager.remove_layers()
+    mock_basemap_layer_collection.remove_from_project.assert_called_once()
     mock_management_layer_collection.remove_from_project.assert_called_once()

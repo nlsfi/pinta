@@ -26,15 +26,15 @@ from pinta_qgis_plugin.layers.config import ModelLayerConfig
 
 LOGGER = logging.getLogger(__name__)
 
-PROVIDER_LIB = "postgres"
+
+def _create_qgs_vector_layer(
+    uri: QgsDataSourceUri, name: str, provider: str
+) -> QgsVectorLayer:
+    return QgsVectorLayer(uri.uri(), name, provider)
 
 
-def _create_qgs_vector_layer(uri: QgsDataSourceUri, name: str) -> QgsVectorLayer:
-    return QgsVectorLayer(uri.uri(), name, PROVIDER_LIB)
-
-
-def create_vector_layer(config: ModelLayerConfig) -> QgsVectorLayer:
-    """Create Production areas layer from database."""
+def create_vector_layer(config: ModelLayerConfig, provider: str) -> QgsVectorLayer:
+    """Create vector layer from database model configuration."""
     uri = database.get_database_uri()
 
     schema = config.db_model.__table_args__.get("schema")
@@ -44,7 +44,7 @@ def create_vector_layer(config: ModelLayerConfig) -> QgsVectorLayer:
     uri.setWkbType(config.wkb_type)
     uri.setSrid(config.srid)
 
-    layer = _create_qgs_vector_layer(uri, config.layer_name)
+    layer = _create_qgs_vector_layer(uri, config.layer_name, provider)
 
     if not layer.isValid():
         raise LayerCreationError(config.layer_name)
