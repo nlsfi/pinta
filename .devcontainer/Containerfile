@@ -31,3 +31,6 @@ RUN apt-get update && \
       openssh-client && \
     \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /home/ubuntu/.ssh && \
+    chown -R ubuntu:ubuntu /home/ubuntu/.ssh
