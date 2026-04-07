@@ -12,8 +12,8 @@ import geoalchemy2
 import sqlalchemy as sa
 import sqlmodel
 
-OVERLAY_TABLE_NAME = "o_{level}_{table_name}"
-DEFAULT_OVERLAY_LEVELS = [2, 8]
+OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"
+DEFAULT_OVERVIEW_LEVELS = [2, 8, 128]
 
 
 class TableType(enum.Enum):
@@ -73,22 +73,22 @@ def initialize_raster_table(
     session.commit()
 
 
-def initialize_overlay_tables(
+def initialize_overview_tables(
     session: sqlmodel.Session,
     table_name: str,
     schema: str,
 ) -> None:
-    """Initialize overlay tables with rid and rast columns.
+    """Initialize overview tables with rid and rast columns.
 
     Creates a main table and staging tables with:
     - rid: serial primary key
     - rast: raster column
     """
-    for level in DEFAULT_OVERLAY_LEVELS:
-        overlay_name = OVERLAY_TABLE_NAME.format(level=level, table_name=table_name)
+    for level in DEFAULT_OVERVIEW_LEVELS:
+        overview_name = OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
         _create_raster_table(
             session,
-            overlay_name,
+            overview_name,
             schema=schema,
         )
 
@@ -162,8 +162,8 @@ def finalize_overview_tables(
     reference_table_name: str,
 ) -> None:
     """Register overview tables and add raster indexes."""
-    for level in DEFAULT_OVERLAY_LEVELS:
-        overview_name = OVERLAY_TABLE_NAME.format(
+    for level in DEFAULT_OVERVIEW_LEVELS:
+        overview_name = OVERVIEW_TABLE_NAME.format(
             level=level, table_name=reference_table_name
         )
         session.exec(  # type: ignore[call-overload]

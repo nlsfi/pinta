@@ -348,30 +348,30 @@ def test_initialize_raster_table_twice_with_staging_tables(
         )
 
 
-def test_initialize_overlay_tables(processing_worker_db: sqlmodel.Session):
-    """Test creating overlay tables."""
-    table_name = "test_raster_overlay"
+def test_initialize_overview_tables(processing_worker_db: sqlmodel.Session):
+    """Test creating overview tables."""
+    table_name = "test_raster_overview"
     schema = schemas.Schema.PROCESSING.value
 
-    raster.initialize_overlay_tables(
+    raster.initialize_overview_tables(
         table_name=table_name,
         schema=schema,
         session=processing_worker_db,
     )
 
-    overlay_table_names = [
-        raster.OVERLAY_TABLE_NAME.format(level=level, table_name=table_name)
-        for level in raster.DEFAULT_OVERLAY_LEVELS
+    overview_table_names = [
+        raster.OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
+        for level in raster.DEFAULT_OVERVIEW_LEVELS
     ]
 
-    for overlay_table_name in overlay_table_names:
-        _assert_table_exists(processing_worker_db, schema, overlay_table_name)
+    for overview_table_name in overview_table_names:
+        _assert_table_exists(processing_worker_db, schema, overview_table_name)
         _assert_table_has_default_columns(
-            processing_worker_db, schema, overlay_table_name
+            processing_worker_db, schema, overview_table_name
         )
         # only pk index
         _assert_table_index_count(
-            processing_worker_db, schema, overlay_table_name, expected_count=1
+            processing_worker_db, schema, overview_table_name, expected_count=1
         )
 
 
@@ -417,7 +417,7 @@ def test_register_overview(processing_worker_db: sqlmodel.Session):
         schema=schema,
         session=processing_worker_db,
     )
-    raster.initialize_overlay_tables(
+    raster.initialize_overview_tables(
         table_name=table_name,
         schema=schema,
         session=processing_worker_db,
@@ -438,13 +438,13 @@ def test_register_overview(processing_worker_db: sqlmodel.Session):
             """
         )
     ).first()
-    assert overviews_result == (len(raster.DEFAULT_OVERLAY_LEVELS),), (
-        f"Expected {len(raster.DEFAULT_OVERLAY_LEVELS)} overview registrations, "
+    assert overviews_result == (len(raster.DEFAULT_OVERVIEW_LEVELS),), (
+        f"Expected {len(raster.DEFAULT_OVERVIEW_LEVELS)} overview registrations, "
         f"got {overviews_result[0]}"
     )
     # Verify each overview table has an index on rast column
-    for level in raster.DEFAULT_OVERLAY_LEVELS:
-        overview_name = raster.OVERLAY_TABLE_NAME.format(
+    for level in raster.DEFAULT_OVERVIEW_LEVELS:
+        overview_name = raster.OVERVIEW_TABLE_NAME.format(
             level=level, table_name=table_name
         )
         _assert_table_index_count(
