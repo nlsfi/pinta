@@ -40,6 +40,14 @@ def pytest_xdist_auto_num_workers(config: "pytest.Config"):
     return xdist_utils.get_number_of_workers(config)
 
 
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config: "pytest.Config") -> None:
+    """Set environment variables for tests."""
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setenv("PINTA_INITIAL_PROJECT_EXTENT", "0,0,10,10")
+    monkeypatch.setenv("DB_SRID", 3067)
+
+
 @pytest.fixture(autouse=True)
 def reset_session_state(
     qgis_new_project: None,

@@ -37,6 +37,18 @@ def pytest_xdist_auto_num_workers(config: "pytest.Config"):
 
 
 @pytest.fixture
+def _set_env_variables(
+    created_db: str, worker_id: str, monkeypatch: "pytest.MonkeyPatch"
+) -> None:
+    """Set test specific environment variables."""
+    monkeypatch.setenv("DB_NAME", created_db)
+    monkeypatch.setenv("DB_NAME", created_db)
+    monkeypatch.setenv("DB_SRID", constants.SRID)
+    monkeypatch.delenv("PINTA_BASE_MAP_LAYER_CONFIG", raising=False)
+    monkeypatch.setenv("PINTA_INITIAL_PROJECT_EXTENT", "67734,6570084,843161,7879314")
+
+
+@pytest.fixture
 def created_db(worker_id: str) -> str:
     return db_utils.create_db(worker_id)
 
@@ -48,14 +60,6 @@ def db(created_db: str) -> Iterator["Session"]:
     ) as session:
         yield session
         session.close()
-
-
-@pytest.fixture
-def _set_env_variables(
-    created_db: str, worker_id: str, monkeypatch: "pytest.MonkeyPatch"
-) -> None:
-    monkeypatch.setenv("DB_NAME", created_db)
-    monkeypatch.setenv("DB_SRID", constants.SRID)
 
 
 @pytest.fixture

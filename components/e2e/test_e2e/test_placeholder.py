@@ -11,4 +11,4 @@ if TYPE_CHECKING:
 
 
 def test_placeholder(qgis_plugin: "Plugin"):
-    assert len(QgsProject.instance().mapLayers()) == 2
+    assert len(QgsProject.instance().mapLayers()) == 3
