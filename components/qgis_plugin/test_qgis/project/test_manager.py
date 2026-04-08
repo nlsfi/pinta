@@ -33,6 +33,7 @@ if typing.TYPE_CHECKING:
     from unittest.mock import MagicMock
 
     from pytest_mock import MockerFixture
+    from qgis.gui import QgsMapCanvas
 
 
 @pytest.fixture
@@ -62,11 +63,14 @@ def mock_basemap_layer_collection(mocker: "MockerFixture") -> "MagicMock":
 def test_initialize_layers_should_initialize_all_layers(
     mock_management_layer_collection: "MagicMock",
     mock_basemap_layer_collection: "MagicMock",
+    qgis_canvas: "QgsMapCanvas",
 ):
+    initial_extent = qgis_canvas.extent()
     manager.initialize_project()
     mock_basemap_layer_collection.add_to_project.assert_called_once()
     mock_management_layer_collection.add_to_project.assert_called_once()
     assert QgsProject.instance().crs().authid() == f"EPSG:{env.SRID}"
+    assert qgis_canvas.extent() != initial_extent
 
 
 def test_remove_layers_should_remove_all_layers(

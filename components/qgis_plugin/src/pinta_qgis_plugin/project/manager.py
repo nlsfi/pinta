@@ -19,11 +19,12 @@
 import logging
 import typing
 
-from pinta_db import env
-from qgis.core import QgsCoordinateReferenceSystem, QgsProject
+from pinta_db import env as db_env
+from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsRectangle
 from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools.decorations import log_if_fails
 
+from pinta_qgis_plugin import env as plugin_env
 from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
     BasemapLayerCollection,
 )
@@ -45,7 +46,10 @@ def initialize_project() -> None:
     BasemapLayerCollection.get().add_to_project()
     ManagementLayerCollection.get().add_to_project()
 
-    QgsProject.instance().setCrs(QgsCoordinateReferenceSystem.fromEpsgId(int(env.SRID)))
+    QgsProject.instance().setCrs(
+        QgsCoordinateReferenceSystem.fromEpsgId(int(db_env.SRID))
+    )
+    iface.mapCanvas().setExtent(QgsRectangle(*plugin_env.PINTA_INITIAL_PROJECT_EXTENT))
 
 
 @log_if_fails

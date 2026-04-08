@@ -24,7 +24,7 @@ class LayerCreationError(RuntimeError):
         )
 
 
-class MissingEnvironmentError(RuntimeError):
+class EnvironmentVariableError(RuntimeError):
     def __init__(self, env_variable_name: str) -> None:
         super().__init__(
             f"Environment configuration error: {env_variable_name}",
