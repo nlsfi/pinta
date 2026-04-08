@@ -96,3 +96,13 @@ ovfactor
 refcolumn
 basemap
 epsg
+rast
+factor2
+factor4
+factor8
+factor128
+o2
+o8
+o128
+ddl
+preparer

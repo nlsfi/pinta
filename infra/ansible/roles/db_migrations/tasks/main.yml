@@ -13,6 +13,8 @@
     DB_READER_ROLE: "{{ db_migrations_reader_role }}"
     # TODO: use dynamic way of passing extra env vars
     DB_SRID: "{{ db_migrations_srid }}"
+    DB_DEM_PIXEL_SIZE: "{{ db_migrations_dem_pixel_size }}"
+    DB_DEM_NODATA: "{{ db_migrations_dem_nodata }}"
 
   become: true
   changed_when: true

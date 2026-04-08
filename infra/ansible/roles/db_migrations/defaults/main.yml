@@ -14,3 +14,5 @@ db_migrations_reader_role: db_reader
 
 # Extra env vars # TODO: remove later
 db_migrations_srid: srid code of spatial tables
+db_migrations_dem_pixel_size: 2
+db_migrations_dem_nodata: -9999
