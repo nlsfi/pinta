@@ -55,6 +55,8 @@
         db_migrations_reader_role: "{{ db_reader_role_name }}"
         db_migrations_uv_path: "{{ uv_path }}"
         db_migrations_srid: "{{ db_srid }}"
+        db_migrations_dem_pixel_size: "{{ db_dem_pixel_size }}"
+        db_migrations_dem_nodata: "{{ db_dem_nodata }}"
       loop: "{{ application_dbs }}"
       loop_control:
         loop_var: db_init_database

@@ -17,6 +17,7 @@ class Schema(enum.Enum):
     MANAGEMENT = "management"
     # TODO: replace this with a schema where processing tables are stored
     PROCESSING = "processing"
+    DEM = "dem"
 
 
 # Role placeholders
@@ -119,6 +120,22 @@ SCHEMA_CONFIGURATIONS = [
         extra_schema_owners=("pinta_processing_worker",),
         role_privileges=(
             RolePrivileges.get_default_write_privileges(Role.PROCESSING_WORKER),
+        ),
+    ),
+    SchemaConfig(
+        schema=Schema.DEM,
+        role_privileges=(
+            RolePrivileges.get_default_write_privileges(Role.WRITER),
+            RolePrivileges(
+                role=Role.READER,
+                table_privileges=(Privilege.SELECT,),
+                sequence_privileges=(
+                    Privilege.USAGE,
+                    Privilege.SELECT,
+                ),
+                default_table_privileges=(Privilege.SELECT,),
+                default_sequence_privileges=(Privilege.USAGE, Privilege.SELECT),
+            ),
         ),
     ),
 ]

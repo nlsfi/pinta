@@ -7,9 +7,11 @@
 
 import re
 import uuid
+from typing import Any
 
+from geoalchemy2 import Raster
 from sqlalchemy import orm
-from sqlmodel import Field, SQLModel
+from sqlmodel import BigInteger, Field, SQLModel
 
 from pinta_db.exceptions import MissingFieldError
 from pinta_db.schemas import Schema
@@ -64,6 +66,24 @@ class ManagementBase(BaseModel):
     __table_args__ = {"schema": Schema.MANAGEMENT.value}
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+
+class DemBase(BaseModel):
+    """Base model for tables in dem schema."""
+
+    __table_args__ = {"schema": Schema.DEM.value}
+
+    rid: int = Field(
+        default=None,
+        primary_key=True,
+        sa_column_kwargs={"autoincrement": True},
+        sa_type=BigInteger,
+    )
+    rast: Any = Field(
+        default=None,
+        sa_type=Raster,
+        nullable=False,
+    )
 
 
 BaseModel.metadata.naming_convention = NAMING_CONVENTION
