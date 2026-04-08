@@ -17,7 +17,11 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import typing
 
+from pinta_db import env
+from qgis.core import QgsCoordinateReferenceSystem, QgsProject
+from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools.decorations import log_if_fails
 
 from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
@@ -27,18 +31,25 @@ from pinta_qgis_plugin.layers.collections.management_layer_collection import (
     ManagementLayerCollection,
 )
 
+if typing.TYPE_CHECKING:
+    from qgis.gui import QgisInterface
+
+iface = typing.cast("QgisInterface", utils_iface)
+
 LOGGER = logging.getLogger(__name__)
 
 
 @log_if_fails
-def initialize_layers() -> None:
-    """Initialize and load all layers into QGIS project."""
+def initialize_project() -> None:
+    """Initialize the QGIS project dynamically."""
     BasemapLayerCollection.get().add_to_project()
     ManagementLayerCollection.get().add_to_project()
 
+    QgsProject.instance().setCrs(QgsCoordinateReferenceSystem.fromEpsgId(int(env.SRID)))
+
 
 @log_if_fails
-def remove_layers() -> None:
-    """Remove all layers from QGIS project."""
+def clean_project() -> None:
+    """Clean QGIS project dynamically."""
     BasemapLayerCollection.get().remove_from_project()
     ManagementLayerCollection.get().remove_from_project()
