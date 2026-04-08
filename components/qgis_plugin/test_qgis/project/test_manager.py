@@ -18,14 +18,16 @@
 import typing
 
 import pytest
+from pinta_db import env
+from qgis.core import QgsProject
 
-from pinta_qgis_plugin.layers import manager
 from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
     BasemapLayerCollection,
 )
 from pinta_qgis_plugin.layers.collections.management_layer_collection import (
     ManagementLayerCollection,
 )
+from pinta_qgis_plugin.project import manager
 
 if typing.TYPE_CHECKING:
     from unittest.mock import MagicMock
@@ -61,15 +63,16 @@ def test_initialize_layers_should_initialize_all_layers(
     mock_management_layer_collection: "MagicMock",
     mock_basemap_layer_collection: "MagicMock",
 ):
-    manager.initialize_layers()
+    manager.initialize_project()
     mock_basemap_layer_collection.add_to_project.assert_called_once()
     mock_management_layer_collection.add_to_project.assert_called_once()
+    assert QgsProject.instance().crs().authid() == f"EPSG:{env.SRID}"
 
 
 def test_remove_layers_should_remove_all_layers(
     mock_management_layer_collection: "MagicMock",
     mock_basemap_layer_collection: "MagicMock",
 ):
-    manager.remove_layers()
+    manager.clean_project()
     mock_basemap_layer_collection.remove_from_project.assert_called_once()
     mock_management_layer_collection.remove_from_project.assert_called_once()

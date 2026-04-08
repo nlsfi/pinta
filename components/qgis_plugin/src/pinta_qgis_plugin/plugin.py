@@ -19,13 +19,11 @@ import logging
 import typing
 
 import qgis_plugin_tools
-from pinta_db import env
-from qgis.core import QgsCoordinateReferenceSystem, QgsProject
 from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools import custom_logging, i18n
 
 import pinta_qgis_plugin
-from pinta_qgis_plugin.layers import manager
+from pinta_qgis_plugin.project import manager
 
 if typing.TYPE_CHECKING:
     from qgis.gui import QgisInterface
@@ -51,16 +49,11 @@ class Plugin:
             message_log_name=i18n.tr("Pinta plugin"),
         )
 
-        manager.initialize_layers()
-
-        QgsProject.instance().setCrs(
-            QgsCoordinateReferenceSystem.fromEpsgId(int(env.SRID))
-        )
-
+        manager.initialize_project()
         LOGGER.info("Plugin initialized")
 
     def unload(self) -> None:
         """Unload plugin."""
-        manager.remove_layers()
+        manager.clean_project()
         self._teardown_loggers()
         self._teardown_loggers = lambda: None
