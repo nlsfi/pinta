@@ -83,7 +83,7 @@ airflow-migrate:
 airflow-set-variables:
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_task_log_level DEBUG
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_image "localhost/pinta-processing"
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_image "ghcr.io/nlsfi/pinta/processing:latest"
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
 
 airflow-start: airflow-migrate airflow-set-variables

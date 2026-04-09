@@ -1,0 +1,159 @@
+name: Build Containers
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker-compose.yml'
+      - 'infra/containers/**'
+      - 'infra/ansible/**'
+      - 'components/**/Containerfile'
+      - 'components/**/entrypoint.sh'
+      - '.github/workflows/build-containers.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docker-compose.yml'
+      - 'infra/containers/**'
+      - 'infra/ansible/**'
+      - 'components/**/Containerfile'
+      - 'components/**/entrypoint.sh'
+      - '.github/workflows/build-containers.yml'
+  workflow_dispatch:
+  release:
+    types: [ created ]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: pinta-ci
+      COMPOSE_PROFILES: "*"
+      GHCR_PREFIX: ghcr.io/nlsfi/pinta
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build all images
+        run: |
+          set -euo pipefail
+
+          docker buildx build --load \
+            -f infra/containers/postgis/Containerfile \
+            -t pinta/db:latest \
+            infra/containers/postgis
+
+          docker buildx build --load \
+            -f infra/containers/ansible/Containerfile \
+            -t pinta/ansible:latest \
+            infra/containers/ansible
+
+          docker buildx build --load \
+            -f components/processing/Containerfile \
+            -t pinta/processing:latest \
+            .
+
+          docker buildx build --load \
+            -f components/e2e/Containerfile \
+            -t pinta/e2e:latest \
+            .
+
+          # Compose uses GHCR image names, so map local builds to those names.
+          docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
+          docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:latest"
+          docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
+          docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
+
+      - name: Initialize database with ansible
+        run: |
+          set -euo pipefail
+
+          docker compose up -d db
+          docker compose run --rm ansible
+
+      - name: Commit initialized DB state to image
+        run: |
+          set -euo pipefail
+
+          # Stop postgres cleanly so the data directory is consistent.
+          docker compose stop db
+
+          # The data lives in a named volume, not the container layer, so we
+          # mount it into a fresh helper container and copy it into /pgdata
+          # before committing, so the image is self-contained.
+          DB_VOLUME="${COMPOSE_PROJECT_NAME}_db-data"
+
+          docker run -d --name pinta-db-committer \
+            -v "${DB_VOLUME}:/pgdata-src:ro" \
+            --entrypoint sh pinta/db:latest -c "sleep infinity"
+
+          docker exec pinta-db-committer sh -c \
+            "cp -a /pgdata-src/. /pgdata/ && rm -f /pgdata/postmaster.pid /pgdata/.s.PGSQL.*"
+
+          docker commit \
+            --change 'ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]' \
+            --change 'CMD ["postgres"]' \
+            pinta-db-committer pinta/db:latest
+
+          docker image inspect pinta/db:latest >/dev/null
+
+      - name: Resolve image tag
+        id: image_tag
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="latest"
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name == 'push' || github.event_name == 'release'
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Tag images for GHCR
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.image_tag.outputs.tag }}"
+
+          docker tag pinta/db:latest "$GHCR_PREFIX/db:$TAG"
+          docker tag pinta/processing:latest "$GHCR_PREFIX/processing:$TAG"
+          docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:$TAG"
+          docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:$TAG"
+
+      - name: Push images to GHCR
+        if: github.event_name == 'push' || github.event_name == 'release'
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.image_tag.outputs.tag }}"
+
+          docker push "$GHCR_PREFIX/db:$TAG"
+          docker push "$GHCR_PREFIX/processing:$TAG"
+          docker push "$GHCR_PREFIX/ansible:$TAG"
+          docker push "$GHCR_PREFIX/e2e:$TAG"
+
+      - name: Show built images
+        run: |
+          docker image ls --filter reference='pinta/*'
+          docker image ls --filter reference="$GHCR_PREFIX/*"
+
+      - name: Cleanup containers
+        if: always()
+        run: |
+          docker rm -f pinta-db-committer >/dev/null 2>&1 || true
+          docker compose down -v --remove-orphans
