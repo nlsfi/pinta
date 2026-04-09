@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Containerfile
-    image: localhost/pinta-devcontainer:latest
+    image: ghcr.io/nlsfi/pinta/devcontainer:latest
     network_mode: host
     volumes:
       - type: bind

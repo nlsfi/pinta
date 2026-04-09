@@ -7,7 +7,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: localhost/pinta-db:latest
+    image: ghcr.io/nlsfi/pinta/db:latest
     healthcheck:
       test: pg_isready -U postgres || exit 1
       interval: 5s
@@ -39,7 +39,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: localhost/pinta-ansible:latest
+    image: ghcr.io/nlsfi/pinta/ansible:latest
     environment:
       ANSIBLE_CONFIG: /ansible/ansible.cfg
       HTTP_PROXY: ${HTTP_PROXY}
@@ -69,7 +69,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: localhost/pinta-processing:latest
+    image: ghcr.io/nlsfi/pinta/processing:latest
     volumes:
       - type: bind
         source: ${REPO_DIR:-.}
@@ -88,7 +88,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: localhost/pinta-e2e
+    image: ghcr.io/nlsfi/pinta/e2e:latest
     env_file:
       - ".env.example"
       - ".env.e2e"
