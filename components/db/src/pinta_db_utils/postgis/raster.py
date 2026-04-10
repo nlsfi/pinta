@@ -77,8 +77,9 @@ def initialize_overview_tables(
     session: sqlmodel.Session,
     schema: str,
     table_name: str,
+    staging_tables: int = 0,
 ) -> None:
-    """Initialize overview tables with rid and rast columns.
+    """Initialize overview tables with optional staging tables.
 
     Creates a main table and staging tables with:
     - rid: serial primary key
@@ -91,6 +92,14 @@ def initialize_overview_tables(
             schema,
             overview_name,
         )
+        for i in range(staging_tables):
+            staging_name = f"{overview_name}_p{i}"
+            _create_raster_table(
+                session,
+                schema,
+                staging_name,
+                table_type=TableType.UNLOGGED,
+            )
 
 
 def merge_staging_tables(
@@ -220,7 +229,7 @@ def _create_raster_table(
         schema=schema,
         prefixes=prefixes,
     )
-    table.create(session.connection(), checkfirst=True)
+    table.create(session.connection())
 
     _set_raster_table_options(session, schema, table_name)
     if table_type is TableType.UNLOGGED:
@@ -243,4 +252,4 @@ def _create_raster_index(
         ),
         postgresql_using="gist",
     )
-    index.create(bind=session.connection())
+    index.create(bind=session.connection(), checkfirst=True)
