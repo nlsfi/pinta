@@ -311,44 +311,37 @@ def test_initialize_raster_table_with_extra_columns(
     )
 
 
-def test_initialize_raster_table_twice_with_staging_tables(
-    processing_worker_db: sqlmodel.Session,
+@pytest.mark.parametrize("staging_tables", [0, 3])
+def test_initialize_raster_table_twice_raises_exception(
+    processing_worker_db: sqlmodel.Session, staging_tables: int
 ):
-    """Test calling initialize_raster_table twice with 2 staging tables."""
-    table_name = "test_raster_staging_twice"
+    """Test calling initialize_raster_table twice."""
+    table_name = "test_initialize_table_twice"
     schema = schemas.Schema.PROCESSING.value
 
     # Initialize twice
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
-        staging_tables=2,
+        staging_tables=staging_tables,
         session=processing_worker_db,
     )
-    raster.initialize_raster_table(
-        table_name=table_name,
-        schema=schema,
-        staging_tables=2,
-        session=processing_worker_db,
-    )
-    _assert_table_exists(processing_worker_db, schema, table_name)
-    _assert_table_index_count(
-        processing_worker_db, schema, table_name, expected_count=1
-    )
-    for i in range(2):
-        staging_name = f"{table_name}_p{i}"
-        _assert_table_exists(
-            processing_worker_db,
-            schema,
-            staging_name,
-            table_type=raster.TableType.UNLOGGED,
-        )
-        _assert_table_index_count(
-            processing_worker_db, schema, staging_name, expected_count=1
+    with pytest.raises(
+        sa.exc.ProgrammingError,
+        match='relation "test_initialize_table_twice" already exists',
+    ):
+        raster.initialize_raster_table(
+            table_name=table_name,
+            schema=schema,
+            staging_tables=staging_tables,
+            session=processing_worker_db,
         )
 
 
-def test_initialize_overview_tables(processing_worker_db: sqlmodel.Session):
+@pytest.mark.parametrize("staging_tables", [0, 3])
+def test_initialize_overview_tables(
+    processing_worker_db: sqlmodel.Session, staging_tables: int
+):
     """Test creating overview tables."""
     table_name = "test_raster_overview"
     schema = schemas.Schema.PROCESSING.value
@@ -357,6 +350,7 @@ def test_initialize_overview_tables(processing_worker_db: sqlmodel.Session):
         table_name=table_name,
         schema=schema,
         session=processing_worker_db,
+        staging_tables=staging_tables,
     )
 
     overview_table_names = [
@@ -373,6 +367,26 @@ def test_initialize_overview_tables(processing_worker_db: sqlmodel.Session):
         _assert_table_index_count(
             processing_worker_db, schema, overview_table_name, expected_count=1
         )
+
+        if staging_tables == 0:
+            _assert_staging_tables_does_not_exist(
+                processing_worker_db, schema, overview_table_name
+            )
+        else:
+            for i in range(staging_tables):
+                staging_name = f"{overview_table_name}_p{i}"
+                _assert_table_exists(
+                    processing_worker_db,
+                    schema,
+                    staging_name,
+                    table_type=raster.TableType.UNLOGGED,
+                )
+                _assert_table_has_default_columns(
+                    processing_worker_db, schema, staging_name
+                )
+                _assert_table_index_count(
+                    processing_worker_db, schema, staging_name, expected_count=1
+                )
 
 
 def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
