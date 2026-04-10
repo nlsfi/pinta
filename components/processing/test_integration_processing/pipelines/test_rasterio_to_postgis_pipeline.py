@@ -14,7 +14,7 @@ from pinta_db_utils.postgis import raster
 from pinta_test_utils import pinta_utils
 from rasterio.transform import Affine
 
-from pinta_processing import core, reader, writer
+from pinta_processing import core, pipelines, reader, writer
 
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
@@ -187,3 +187,66 @@ def test_postgis_writer_with_staging_tables(
         assert count_result == expected_counts[staging_table], (
             f"Expected {expected_counts[staging_table]} rows in {staging_table}, got {count_result}"
         )
+
+
+def test_rasterio_to_postgis(
+    processing_worker_session: "Session",
+) -> None:
+
+    table_name = "test_raster_ol"
+    schema = "processing"
+    staging_tables = 2
+    ol_2_name = f"o_2_{table_name}"
+    ol_8_name = f"o_8_{table_name}"
+    ol_128_name = f"o_128_{table_name}"
+
+    raster.initialize_raster_table(
+        processing_worker_session, schema, table_name, staging_tables
+    )
+    raster.initialize_overview_tables(
+        processing_worker_session, schema, table_name, staging_tables
+    )
+
+    file_path = pinta_utils.get_test_data_path("processing/dem.asc.zip")
+    pipeline = pipelines.rasterio_to_postgis(
+        processing_worker_session, file_path, schema, table_name, staging_tables
+    )
+    pipeline.execute()
+
+    raster.merge_staging_tables(
+        schema, table_name, staging_tables, processing_worker_session
+    )
+    raster.merge_staging_tables(
+        schema, ol_2_name, staging_tables, processing_worker_session
+    )
+    raster.merge_staging_tables(
+        schema, ol_8_name, staging_tables, processing_worker_session
+    )
+    raster.merge_staging_tables(
+        schema, ol_128_name, staging_tables, processing_worker_session
+    )
+    raster.finalize_overview_tables(processing_worker_session, schema, table_name)
+
+    # Verify 4 tiles were written to database
+    tile_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
+        sa.text(f"SELECT COUNT(*) FROM {schema}.{table_name}")
+    ).first()
+    assert tile_count_result == (4,), f"Expected 4 tiles, got {tile_count_result[0]}"
+
+    # Verify overlay 2 tiles were written to database
+    ol_2_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
+        sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_2_name}")
+    ).first()
+    assert ol_2_count_result == (1,), f"Expected 1 tile, got {ol_2_count_result[0]}"
+
+    # Verify overlay 8 tiles were written to database
+    ol_8_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
+        sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_8_name}")
+    ).first()
+    assert ol_8_count_result == (1,), f"Expected 1 tile, got {ol_8_count_result[0]}"
+
+    # Verify overlay 128 tiles were written to database
+    ol_128_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
+        sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_128_name}")
+    ).first()
+    assert ol_128_count_result == (1,), f"Expected 1 tile, got {ol_128_count_result[0]}"
