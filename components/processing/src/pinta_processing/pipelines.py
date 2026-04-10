@@ -3,9 +3,52 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-from pinta_processing import core, reader, writer
+from pathlib import Path
+
+from sqlmodel import Session
+
+from pinta_processing import core, filters, reader, writer
 
 
-def rasterio_to_geotiff_pipeline(input_path: str, output_path: str) -> core.Pipeline:
+def rasterio_to_geotiff(input_path: str, output_path: str) -> core.Pipeline:
     """Read rasterio input and write it as geotiff."""
     return reader.RasterioReader(input_path) | writer.GeotiffWriter(output_path)
+
+
+def rasterio_to_postgis(
+    session: Session,
+    input_path: Path,
+    schema: str,
+    table_name: str,
+    staging_tables: int = 0,
+) -> core.Pipeline:
+    """Read rasterio input and write it to PostGIS with overviews."""
+    return (
+        reader.RasterioReader(input_path)
+        # Calculate and write overviews
+        | core.Tee(
+            _overview_to_postgis(
+                2, schema, f"o_2_{table_name}", session, staging_tables
+            )
+        )
+        | core.Tee(
+            _overview_to_postgis(
+                8, schema, f"o_8_{table_name}", session, staging_tables
+            )
+        )
+        | core.Tee(
+            _overview_to_postgis(
+                128, schema, f"o_128_{table_name}", session, staging_tables
+            )
+        )
+        # Write original data
+        | writer.PostgisWriter(schema, table_name, session, staging_tables)
+    )
+
+
+def _overview_to_postgis(
+    factor: int, schema: str, table_name: str, session: Session, staging_tables: int
+) -> filters.DownsampleOverview:
+    return filters.DownsampleOverview(factor) | writer.PostgisWriter(
+        schema, table_name, session, staging_tables
+    )

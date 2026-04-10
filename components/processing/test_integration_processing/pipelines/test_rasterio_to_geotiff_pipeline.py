@@ -49,18 +49,16 @@ def _verify_pipeline_output(input_path: str, output_path: Path) -> None:
     assert output_nodata == input_nodata, "Nodata not preserved"
 
 
-def test_rasterio_to_geotiff_pipeline_with_geotiff_input():
+def test_rasterio_to_geotiff_with_geotiff_input():
     file_path = pinta_utils.get_test_data_path("processing/dem.tif")
     with tempfile.TemporaryDirectory() as tmp:
         output_path = Path(tmp) / "output.tif"
-        pipeline = pipelines.rasterio_to_geotiff_pipeline(
-            str(file_path), str(output_path)
-        )
+        pipeline = pipelines.rasterio_to_geotiff(str(file_path), str(output_path))
         pipeline.execute()
         _verify_pipeline_output(str(file_path), output_path)
 
 
-def test_rasterio_to_geotiff_pipeline_with_asc_input():
+def test_rasterio_to_geotiff_with_asc_input():
     zip_path = pinta_utils.get_test_data_path("processing/dem.asc.zip")
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -71,15 +69,13 @@ def test_rasterio_to_geotiff_pipeline_with_asc_input():
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(tmp_path)
 
-        pipeline = pipelines.rasterio_to_geotiff_pipeline(
-            str(unzipped_path), str(output_path)
-        )
+        pipeline = pipelines.rasterio_to_geotiff(str(unzipped_path), str(output_path))
         pipeline.execute()
 
         _verify_pipeline_output(str(unzipped_path), output_path)
 
 
-def test_rasterio_to_geotiff_pipeline_with_tee():
+def test_rasterio_to_geotiff_with_tee():
     file_path = pinta_utils.get_test_data_path("processing/dem.tif")
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
