@@ -1,0 +1,25 @@
+name: Build Processing Build Dependencies Container
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'components/processing/Containerfile.build-dependecies'
+      - '.github/workflows/build-processing-deps.yml'
+      - '.github/workflows/build-container.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/processing/Containerfile.build-dependecies'
+      - '.github/workflows/build-processing-deps.yml'
+      - '.github/workflows/build-container.yml'
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-container.yml
+    with:
+      containerfile: components/processing/Containerfile.build-dependecies
+      context: components/processing
+      image-name: processing-build-deps
+      registry-image: ghcr.io/nlsfi/pinta/processing-build-deps
+      push: ${{ github.event_name == 'push' || github.event_name == 'release' }}

@@ -1,4 +1,27 @@
+# Version control
+.git
+
+# Virtual environments
 .venv
+
+# Caches
 .pytest_cache
+.mypy_cache
+.ruff_cache
 __pycache__
 *.egg-info
+
+# Config files
+.env
+.vault
+
+# IDE
+.vscode
+.idea
+# But not .vscode inside components/
+!components/**/.vscode
+
+# Cloud Optimized Point Cloud files inside test_data
+test_data/**/*.copc.laz
+/components/dags/.airflow/
+/basemap_layer_config.json

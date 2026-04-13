@@ -1,4 +1,4 @@
-FROM redhat/ubi9:9.7
+FROM redhat/ubi10:10.1
 
 # Proxy args
 ARG HTTP_PROXY
@@ -13,6 +13,8 @@ ARG ENABLE_REPOS="*"
 ARG DISABLE_REPOS=""
 ARG ADDITIONAL_REPO_CONTENTS=""
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # hadolint ignore=DL3041, SC3009
 RUN if [ -n "$ADDITIONAL_REPO_CONTENTS" ]; then \
       echo "$ADDITIONAL_REPO_CONTENTS" > /etc/yum.repos.d/extra.repo; \
@@ -25,21 +27,37 @@ RUN if [ -n "$ADDITIONAL_REPO_CONTENTS" ]; then \
       --disableplugin=subscription-manager \
       --disablerepo="${DISABLE_REPOS}" \
       --enablerepo="${ENABLE_REPOS}" \
-      install -y -vv python3.12 python3.12-pip \
+      --allowerasing \
+      install -y python3.12 python3.12-pip \
+      # LASTools dependencies
+      libpng libjpeg-turbo \
+      # proj dependencies
+      sqlite sqlite-devel curl libcurl libcurl-devel \
   && dnf --disableplugin=subscription-manager clean all \
   && ln -s /usr/bin/python3.12 /usr/bin/python \
   && mv /usr/bin/python3{,9} \
   && ln -s /usr/bin/python3.12 /usr/bin/python3
 
+COPY --from=ghcr.io/nlsfi/pinta/processing-build-deps:latest /usr/local/lib64/ /usr/local/lib64/
+COPY --from=ghcr.io/nlsfi/pinta/processing-build-deps:latest /usr/local/lib/ /usr/local/lib/
+COPY --from=ghcr.io/nlsfi/pinta/processing-build-deps:latest /usr/local/include/nlohmann/json.hpp /usr/local/include/nlohmann/
+
+# Update paths to include the newly added libraries and headers
+RUN echo "/usr/local/lib64" > /etc/ld.so.conf.d/proj.conf && \
+  echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf && ldconfig
+
+# Verify that all LASTools dependencies are installed
+# hadolint ignore=DL3003
+RUN mkdir -p /lastools && cd /lastools && curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz -o lastools.tar.gz \
+  && tar -xzf lastools.tar.gz \
+  && cd bin \
+  && ldd blast2dem64 | grep "not found" && echo "Missing dependencies for LASTools!" && exit 1 || echo "All LASTools dependencies are installed." \
+  && cd .. \
+  && rm -rf lastools.tar.gz LAStools
+
 # hadolint ignore=DL3013
 RUN python -m pip install --upgrade pip --no-cache-dir \
   && pip install uv --no-cache-dir
-
-# Lastools dependecies from debian based image
-# RUN apt-get update && apt-get install -y \
-#     libjpeg62 libpng-dev libtiff-dev libjpeg-dev \
-#     libz-dev libproj-dev liblzma-dev libjbig-dev \
-#     libzstd-dev libgeotiff-dev libwebp-dev
 
 WORKDIR /code
 

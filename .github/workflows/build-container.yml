@@ -1,0 +1,77 @@
+name: Build Container
+
+on:
+  workflow_call:
+    inputs:
+      containerfile:
+        description: Path to Containerfile to build
+        required: true
+        type: string
+      context:
+        description: Build context directory
+        required: true
+        type: string
+      image-name:
+        description: Container image name (used for local tag)
+        required: true
+        type: string
+      registry-image:
+        description: Full image path for registry (e.g., ghcr.io/nlsfi/pinta/image-name)
+        required: true
+        type: string
+      push:
+        description: Whether to push to registry
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container image
+        run: |
+          set -euo pipefail
+
+          docker buildx build --load \
+            -f ${{ inputs.containerfile }} \
+            -t pinta/${{ inputs.image-name }}:latest \
+            --label org.opencontainers.image.source=https://github.com/${{ github.repository }} \
+            ${{ inputs.context }}
+
+      - name: Determine if should push
+        id: should-push
+        run: |
+          set -euo pipefail
+          should_push="${{ inputs.push }}"
+          echo "should_push=$should_push" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GitHub Container Registry
+        if: steps.should-push.outputs.should_push == 'true'
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Tag and push to GHCR
+        if: steps.should-push.outputs.should_push == 'true'
+        run: |
+          set -euo pipefail
+
+          docker tag pinta/${{ inputs.image-name }}:latest ${{ inputs.registry-image }}:latest
+          docker push ${{ inputs.registry-image }}:latest
+
+      - name: Show built images
+        run: |
+          docker image ls --filter reference='pinta/${{ inputs.image-name }}:*'
+          docker image ls --filter reference='${{ inputs.registry-image }}:*'
