@@ -1,0 +1,100 @@
+# This Containerfile is part of multi-stage build for the processing container.
+# The image includes only the dependencies which are built from source.
+
+FROM redhat/ubi10:10.1
+
+ARG LIBTIFF_VERSION=4.7.1
+ARG LIBGEOTIFF_VERSION=1.7.4
+ARG PROJ_VERSION=9.7.1
+ARG NLOHMANN_JSON_VERSION=3.7.3
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+ENV NO_PROXY=$NO_PROXY
+
+ARG ENABLE_REPOS="*"
+ARG DISABLE_REPOS=""
+ARG ADDITIONAL_REPO_CONTENTS=""
+
+
+# hadolint ignore=DL3041, SC3009
+RUN if [ -n "$ADDITIONAL_REPO_CONTENTS" ]; then \
+      echo "$ADDITIONAL_REPO_CONTENTS" > /etc/yum.repos.d/extra.repo; \
+  fi && \
+  dnf update \
+    -y \
+    --disablerepo="${DISABLE_REPOS}" \
+    --enablerepo="${ENABLE_REPOS}" \
+  && dnf install \
+      -y \
+      --disableplugin=subscription-manager \
+      --disablerepo="${DISABLE_REPOS}" \
+      --enablerepo="${ENABLE_REPOS}" \
+      --allowerasing \
+      # libtiff build dependencies
+      gcc make cmake autoconf automake libtool g++ \
+      # libgeotiff build dependencies
+      unzip zip diffutils \
+      # proj build dependencies
+      sqlite sqlite-devel curl libcurl libcurl-devel \
+  && dnf --disableplugin=subscription-manager clean all
+
+# Build and install libtiff
+# hadolint ignore=DL3003
+RUN curl -fsSL https://download.osgeo.org/libtiff/tiff-${LIBTIFF_VERSION}.tar.gz -o libtiff.tar.gz \
+  && tar -xzf libtiff.tar.gz \
+  && cd tiff-${LIBTIFF_VERSION} \
+  && ./configure \
+  && make \
+  && make install \
+  && cd .. \
+  && rm -rf libtiff.tar.gz tiff-${LIBTIFF_VERSION}
+
+# Install nlohmann/json
+RUN curl -fsSL https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON_VERSION}/json.hpp -o json.hpp && \
+  mkdir -p /usr/local/include/nlohmann && \
+  mv json.hpp /usr/local/include/nlohmann/
+
+# Install proj
+# hadolint ignore=DL3003
+RUN curl -fsSL https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz -o proj.tar.gz \
+  && tar -xzf proj.tar.gz \
+  && cd proj-${PROJ_VERSION} \
+  && mkdir build && cd build \
+  && cmake .. \
+  && cmake --build . \
+  && cmake --build . --target install \
+  && cd ../.. \
+  && rm -rf proj.tar.gz proj-${PROJ_VERSION}
+
+# Add proj for libgeotiff build
+RUN echo "/usr/local/lib64" > /etc/ld.so.conf.d/proj.conf && \
+  echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf && ldconfig
+
+# Install libgeotiff
+# hadolint ignore=DL3003
+RUN curl -fsSL https://github.com/OSGeo/libgeotiff/releases/download/${LIBGEOTIFF_VERSION}/libgeotiff-${LIBGEOTIFF_VERSION}.zip -o libgeotiff.zip \
+  && unzip libgeotiff.zip \
+  && cd libgeotiff-${LIBGEOTIFF_VERSION} \
+  && ./autogen.sh \
+  && ./configure \
+  && make dist \
+  && tar xvzf libgeotiff*.tar.gz \
+  && cd libgeotiff-${LIBGEOTIFF_VERSION} \
+  && mkdir build_autoconf \
+  && cd build_autoconf \
+  && CFLAGS="-Wall -Wextra -Werror" ../configure \
+  && make -j3 \
+  && make check \
+  && cd .. \
+  && mkdir build_cmake \
+  && cd build_cmake \
+  && cmake -DCMAKE_C_FLAGS="-Wall -Wextra -Werror" .. \
+  && make -j3 \
+  && make install \
+  && cd .. \
+  && rm -rf libgeotiff.zip libgeotiff-${LIBGEOTIFF_VERSION}
