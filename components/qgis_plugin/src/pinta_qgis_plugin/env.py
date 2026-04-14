@@ -23,6 +23,19 @@ from qgis_plugin_tools.tools import resources
 
 from pinta_qgis_plugin.exceptions import EnvironmentVariableError
 
+TRUTHY_STRINGS = (
+    "1",
+    "true",
+    "yes",
+    "t",
+)
+
+
+def is_truthy(value: str) -> bool:
+    """Is string content truthy."""
+    return value.lower() in TRUTHY_STRINGS
+
+
 try:
     PINTA_DB_HOST = os.environ["DB_HOST"]
     PINTA_DB_PORT = os.environ["DB_PORT"]
@@ -34,6 +47,8 @@ try:
         "tuple[float, float, float, float]",
         tuple(map(float, os.environ["PINTA_INITIAL_PROJECT_EXTENT"].split(","))),
     )
+
+    IS_DEVELOPMENT_MODE = is_truthy(os.environ.get("PINTA_DEVELOPMENT_MODE", "0"))
 
     # Configurable layer configs
     if (config_path := os.environ.get("PINTA_BASE_MAP_LAYER_CONFIG")) is None:

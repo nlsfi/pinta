@@ -46,6 +46,11 @@ def initialize_project() -> None:
     BasemapLayerCollection.get().add_to_project()
     ManagementLayerCollection.get().add_to_project()
 
+    # TODO: By default QgsProject.instance().setCrs() has no effect here and the project
+    # will have crs of first added layer in BasemapLayerCollection. By default
+    # QGIS will set project crs to match the first added layer. We can not change the
+    # global setting "projections\defaultProjectCrs" as it will affect every project
+    # created by the QGIS installation.
     QgsProject.instance().setCrs(
         QgsCoordinateReferenceSystem.fromEpsgId(int(db_env.SRID))
     )
