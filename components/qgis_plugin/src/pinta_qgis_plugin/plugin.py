@@ -21,8 +21,10 @@ import typing
 import qgis_plugin_tools
 from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools import custom_logging, i18n
+from qgis_plugin_tools.tools.decorations import log_if_fails
 
 import pinta_qgis_plugin
+from pinta_qgis_plugin import env
 from pinta_qgis_plugin.project import manager
 
 if typing.TYPE_CHECKING:
@@ -49,7 +51,11 @@ class Plugin:
             message_log_name=i18n.tr("Pinta plugin"),
         )
 
-        manager.initialize_project()
+        if hasattr(iface, "initializationCompleted"):
+            iface.initializationCompleted.connect(self.iface_initialization_completed)
+
+        if env.IS_DEVELOPMENT_MODE:
+            self.iface_initialization_completed()
         LOGGER.info("Plugin initialized")
 
     def unload(self) -> None:
@@ -57,3 +63,8 @@ class Plugin:
         manager.clean_project()
         self._teardown_loggers()
         self._teardown_loggers = lambda: None
+
+    @log_if_fails
+    def iface_initialization_completed(self) -> None:
+        """Executed after initializationCompleted signal is emitted."""
+        manager.initialize_project()
