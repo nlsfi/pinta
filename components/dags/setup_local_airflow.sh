@@ -25,5 +25,8 @@ airflow db migrate
 
 # variables editable from Airflow GUI
 airflow variables set pinta_processing_task_log_level DEBUG
+airflow variables set pinta_db_srid 3067
+airflow variables set pinta_db_dem_pixel_size 2
+airflow variables set pinta_db_dem_nodata -9999
 
 airflow standalone

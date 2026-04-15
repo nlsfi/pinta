@@ -20,11 +20,12 @@ module-name = "pinta_e2e_utils"
 include = ["py.typed"]
 
 [tool.uv]
-default-groups = ["dev", "lint", "qgis"]
+default-groups = ["dev", "lint", "qgis", "airflow"]
 
 [tool.uv.sources]
 pinta-qgis-plugin = { workspace = true }
 pinta-lib = { workspace = true }
+pinta-dags = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -32,6 +33,7 @@ dev = [
   "pytest>=9.0.2",
   "pytest-xdist>=3.8.0",
   "psycopg",
+  "pytest-mock>=3.0.0",
 ]
 lint = [
   "prek",
@@ -43,6 +45,10 @@ qgis = [
   "pinta-qgis-plugin",
   "pytest-qgis",
   "pytest-qt",
+]
+# List all dev depencies that require Airflow here
+airflow = [
+  "pinta-dags[airflow]",
 ]
 
 [tool.pytest.ini_options]

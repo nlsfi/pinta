@@ -107,3 +107,4 @@ o128
 ddl
 preparer
 truthy
+checksums

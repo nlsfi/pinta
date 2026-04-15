@@ -19,6 +19,7 @@ WORKDIR /code
 
 COPY pyproject.toml uv.lock ./
 COPY components ./components
+COPY test_data ./test_data
 
 WORKDIR /code/components/e2e
 
