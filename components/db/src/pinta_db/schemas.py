@@ -100,6 +100,7 @@ SCHEMA_CONFIGURATIONS = [
         schema=Schema.MANAGEMENT,
         role_privileges=(
             RolePrivileges.get_default_write_privileges(Role.WRITER),
+            RolePrivileges.get_default_write_privileges(Role.PROCESSING_WORKER),
             RolePrivileges(
                 role=Role.READER,
                 table_privileges=(Privilege.SELECT,),

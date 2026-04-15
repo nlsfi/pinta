@@ -5,9 +5,6 @@
 
 import typing
 
-from pydantic.dataclasses import dataclass
-
-from pinta_db.models.all import *  # noqa: F403
 from pinta_db.schemas import (
     Privilege,
     Role,
@@ -39,18 +36,10 @@ def _get_set_schema_role_privileges(
     role_config: "RolePrivileges",
     *,
     owner_role: str,
-    writer_role: str,
-    reader_role: str,
+    role_mapping: "dict[Role, str]",
 ) -> list[str]:
     schema = schema_config.schema.value
-    if role_config.role == Role.WRITER:
-        role = writer_role
-    elif role_config.role == Role.READER:
-        role = reader_role
-    elif role_config.role == Role.PROCESSING_WORKER:
-        role = writer_role  # Processing worker has same privileges as writer
-    else:
-        raise ValueError(role_config.role)
+    role = role_mapping[role_config.role]
 
     statements: list[str] = []
 
@@ -88,24 +77,21 @@ def _get_set_schema_role_privileges(
     return statements
 
 
-@dataclass
-class Roles:
-    """Mandatory roles for the database."""
-
-    owner: str
-    writer: str
-    reader: str
-
-
 def get_set_schema_role_privileges_statements(
     schema_configuration: list["SchemaConfig"],
-    roles: Roles,
+    owner_role: str,
+    role_mapping: "dict[Role, str]",
 ) -> list[str]:
     """Ensure that the schemas and schema privileges are set up."""
+    missing = set(Role) - set(role_mapping)
+    if missing:
+        msg = f"Missing role mappings for: {missing}"
+        raise ValueError(msg)
+
     statements: list[str] = []
 
     for schema_config in schema_configuration:
-        owner_roles = (roles.owner, *schema_config.extra_schema_owners)
+        owner_roles = (owner_role, *schema_config.extra_schema_owners)
         statements.extend(_get_create_schema_statement(schema_config, owner_roles))
 
         for role_config in schema_config.role_privileges:
@@ -113,9 +99,8 @@ def get_set_schema_role_privileges_statements(
                 _get_set_schema_role_privileges(
                     schema_config,
                     role_config,
-                    owner_role=roles.owner,
-                    writer_role=roles.writer,
-                    reader_role=roles.reader,
+                    owner_role=owner_role,
+                    role_mapping=role_mapping,
                 )
             )
 
