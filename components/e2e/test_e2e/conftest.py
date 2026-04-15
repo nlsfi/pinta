@@ -3,8 +3,13 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import os
+import shutil
+import sqlite3
+import tempfile
 import typing
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 import qgis.utils
@@ -15,8 +20,6 @@ from pinta_test_utils import xdist_utils
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject
 
 if typing.TYPE_CHECKING:
-    from pathlib import Path
-
     from pinta_qgis_plugin.plugin import Plugin
     from qgis.gui import QgisInterface
     from sqlmodel import Session
@@ -29,6 +32,37 @@ Importing those modules in fixtures is OK.
 
 The same goes with pinta_qgis_plugin.env.py.
 """
+
+
+def pytest_addoption(parser: pytest.Parser):
+    parser.addoption(
+        "--use-temp-airflow-home",
+        action="store_true",
+        # Use temp dir by default on CI
+        default="CI" in os.environ,
+        help="Use a temporary path for AIRFLOW_HOME for tests",
+    )
+
+
+def pytest_configure(config: pytest.Config):
+    os.environ.setdefault("PINTA_DEVELOPMENT_MODE", "true")
+
+    worker_id = getattr(config, "workerinput", {}).get("workerid", "master")
+
+    if os.environ.get("AIRFLOW_HOME") and worker_id == "master":
+        return
+
+    airflow_home_dir = Path(__file__).parent.parent.joinpath(".airflow")
+    airflow_home_dir.mkdir(exist_ok=True)
+
+    if config.getoption("--use-temp-airflow-home"):
+        os.environ["AIRFLOW_HOME"] = tempfile.mkdtemp(
+            prefix=f".{worker_id}-airflow-test"
+        )
+    else:
+        os.environ["AIRFLOW_HOME"] = str(
+            airflow_home_dir / f".{worker_id}-airflow-test"
+        )
 
 
 @pytest.hookimpl
@@ -46,6 +80,25 @@ def _set_env_variables(
     monkeypatch.setenv("DB_SRID", constants.SRID)
     monkeypatch.delenv("PINTA_BASE_MAP_LAYER_CONFIG", raising=False)
     monkeypatch.setenv("PINTA_INITIAL_PROJECT_EXTENT", "67734,6570084,843161,7879314")
+    monkeypatch.setenv(
+        "AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER",
+        f"postgresql://{os.environ['DB_PROCESSING_WORKER_USER']}:{os.environ['DB_PROCESSING_WORKER_PASSWORD']}"
+        f"@{os.environ['DB_HOST']}:{os.environ['DB_PORT']}/{created_db}",
+    )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _initialize_airflow() -> None:
+    from airflow.utils.db import initdb
+
+    shutil.rmtree(os.environ["AIRFLOW_HOME"], ignore_errors=True)
+    Path(os.environ["AIRFLOW_HOME"]).mkdir(exist_ok=True)
+
+    initdb()
+
+    with sqlite3.connect(Path(os.environ["AIRFLOW_HOME"]) / "airflow.db") as connection:
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO dag_bundle (name) VALUES ('mock-dags')")
 
 
 @pytest.fixture

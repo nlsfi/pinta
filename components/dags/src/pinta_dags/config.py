@@ -24,6 +24,9 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
     ),
     "environment": {
         "TASK_LOG_LEVEL": "{{ var.value.pinta_processing_task_log_level }}",
+        "DB_SRID": "{{ var.value.pinta_db_srid }}",
+        "DB_DEM_PIXEL_SIZE": "{{ var.value.pinta_db_dem_pixel_size }}",
+        "DB_DEM_NODATA": "{{ var.value.pinta_db_dem_nodata }}",
     },
     "tty": True,  # To be able to see the logs
     # When using remote engine or docker-in-docker,
@@ -31,6 +34,7 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
     "mount_tmp_dir": False,
     "auto_remove": "success",
     "mounts": [],
+    "extra_hosts": {"host.docker.internal": "host-gateway"},
 }
 
 # maybe not the most optimal way of setting mounts
@@ -41,5 +45,14 @@ if mount_dir := Variable.get("pinta_processing_code_mount_dir", None):
             source=mount_dir,
             type="bind",
             read_only=True,
+        )
+    )
+if data_dir := Variable.get("pinta_container_source_base_path", None):
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target=Variable.get("pinta_container_target_base_path", None),
+            source=data_dir,
+            type="bind",
+            read_only=False,
         )
     )

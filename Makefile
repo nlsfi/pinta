@@ -14,6 +14,7 @@ E2E_DIR := $(COMPONENTS_DIR)/e2e
 # Env variables
 export AIRFLOW_HOME := $(DAGS_DIR)/.airflow/
 export AIRFLOW_CONN_PINTA_PROCESSING_DB :=postgres://$(PINTA_DB_EDITOR_USER):$(PINTA_DB_EDITOR_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
+export AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER :=postgres://$(DB_PROCESSING_WORKER_USER):$(DB_PROCESSING_WORKER_PASSWORD)@host.docker.internal:$(DB_PORT)/$(DB_NAME)
 export AIRFLOW__CORE__DAGS_FOLDER := $(DAGS_DIR)/src/pinta_dags/dags
 export AIRFLOW__CORE__LOAD_EXAMPLES := false
 export AIRFLOW__API__EXPOSE_CONFIG := true
@@ -28,8 +29,8 @@ venv:
 sync:
 	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
 
-sync-all-but-qgis:
-	uv sync --all-packages --all-groups --no-group qgis --all-extras --no-extra qgis --no-extra build
+sync-all-but-qgis-and-airflow:
+	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build
 
 # Infra targets
 # =================
@@ -85,6 +86,12 @@ airflow-set-variables:
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_image "localhost/pinta-processing"
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_point_cloud_base_path $(ROOT_DIR)/test_data/point_clouds
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_container_source_base_path $(REPO_DIR)/test_data/point_clouds
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_container_target_base_path /data
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_srid 3067
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_dem_pixel_size 2
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_dem_nodata -9999
 
 airflow-start: airflow-migrate airflow-set-variables
 	uv run --directory $(DAGS_DIR) airflow standalone
@@ -98,7 +105,7 @@ airflow-reserialize: airflow-set-variables
 test: sync
 	uv run pytest -k "not test_integration" --ignore=$(E2E_DIR)
 
-test-integration: sync-all-but-qgis
+test-integration: sync-all-but-qgis-and-airflow
 	uv run pytest -v -k test_integration --ignore=$(E2E_DIR) --ignore=$(QGIS_DIR)
 
 test-qgis: sync

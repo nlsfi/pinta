@@ -2153,10 +2153,15 @@ version = "0.0.0"
 source = { editable = "components/e2e" }
 
 [package.dev-dependencies]
+airflow = [
+    { name = "pinta-dags" },
+    { name = "pinta-dags", extra = ["airflow"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
+]
 dev = [
     { name = "pinta-lib" },
     { name = "psycopg" },
     { name = "pytest" },
+    { name = "pytest-mock" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2173,10 +2178,12 @@ qgis = [
 [package.metadata]
 
 [package.metadata.requires-dev]
+airflow = [{ name = "pinta-dags", extras = ["airflow"], editable = "components/dags" }]
 dev = [
     { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg" },
     { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-mock", specifier = ">=3.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
