@@ -11,6 +11,7 @@
     DB_OWNER_ROLE: "{{ db_migrations_owner_role }}"
     DB_WRITER_ROLE: "{{ db_migrations_writer_role }}"
     DB_READER_ROLE: "{{ db_migrations_reader_role }}"
+    DB_PROCESSING_WORKER_ROLE: "{{ db_migrations_processing_worker_role }}"
     # TODO: use dynamic way of passing extra env vars
     DB_SRID: "{{ db_migrations_srid }}"
     DB_DEM_PIXEL_SIZE: "{{ db_migrations_dem_pixel_size }}"

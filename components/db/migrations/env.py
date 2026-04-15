@@ -53,6 +53,7 @@ ADMIN_CREDENTIALS = engine_utils.Credentials(
 DB_OWNER_ROLE = os.environ["DB_OWNER_ROLE"]
 DB_WRITER_ROLE = os.environ["DB_WRITER_ROLE"]
 DB_READER_ROLE = os.environ["DB_READER_ROLE"]
+DB_PROCESSING_WORKER_ROLE = os.environ["DB_PROCESSING_WORKER_ROLE"]
 
 config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())
 
@@ -60,11 +61,12 @@ config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string
 def _setup_schemas(connection: "Connection") -> None:
     statements = schema_utils.get_set_schema_role_privileges_statements(
         schemas.SCHEMA_CONFIGURATIONS,
-        schema_utils.Roles(
-            owner=DB_OWNER_ROLE,
-            writer=DB_WRITER_ROLE,
-            reader=DB_READER_ROLE,
-        ),
+        DB_OWNER_ROLE,
+        {
+            schemas.Role.WRITER: DB_WRITER_ROLE,
+            schemas.Role.READER: DB_READER_ROLE,
+            schemas.Role.PROCESSING_WORKER: DB_PROCESSING_WORKER_ROLE,
+        },
     )
 
     for statement in statements:

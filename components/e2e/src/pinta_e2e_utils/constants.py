@@ -3,4 +3,4 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-SRID = "EPSG:3067"
+SRID = 3067

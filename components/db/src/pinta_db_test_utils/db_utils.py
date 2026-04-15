@@ -54,11 +54,12 @@ def create_db(worker_id: str) -> str:
     """Create a new database for the test session."""
     db_name = os.environ["DB_NAME"] + f"_test_{worker_id}"
     template_name = os.environ["DB_NAME"] + "_test_template"
-    db_roles = schema_utils.Roles(
-        owner=os.environ["DB_OWNER_ROLE"],
-        writer=os.environ["DB_WRITER_ROLE"],
-        reader=os.environ["DB_READER_ROLE"],
-    )
+    owner_role = os.environ["DB_OWNER_ROLE"]
+    role_mapping = {
+        schemas.Role.WRITER: os.environ["DB_WRITER_ROLE"],
+        schemas.Role.READER: os.environ["DB_READER_ROLE"],
+        schemas.Role.PROCESSING_WORKER: os.environ["DB_PROCESSING_WORKER_ROLE"],
+    }
 
     kill_connections_query = sqlmodel.text(
         "SELECT pg_terminate_backend(pg_stat_activity.pid) "  # noqa: S608
@@ -77,7 +78,7 @@ def create_db(worker_id: str) -> str:
         )
 
     schema_statements = schema_utils.get_set_schema_role_privileges_statements(
-        schemas.SCHEMA_CONFIGURATIONS, db_roles
+        schemas.SCHEMA_CONFIGURATIONS, owner_role, role_mapping
     )
 
     with engine_utils.get_autocommit_connection(

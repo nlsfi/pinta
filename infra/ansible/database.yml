@@ -53,6 +53,7 @@
         db_migrations_owner_role: "{{ db_owner_role_name }}"
         db_migrations_writer_role: "{{ db_writer_role_name }}"
         db_migrations_reader_role: "{{ db_reader_role_name }}"
+        db_migrations_processing_worker_role: "{{ db_processing_worker_role_name }}"
         db_migrations_uv_path: "{{ uv_path }}"
         db_migrations_srid: "{{ db_srid }}"
         db_migrations_dem_pixel_size: "{{ db_dem_pixel_size }}"
