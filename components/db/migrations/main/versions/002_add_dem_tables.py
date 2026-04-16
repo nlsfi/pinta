@@ -19,7 +19,7 @@ from alembic import op
 from geoalchemy2 import Raster
 
 from pinta_db.env import DEM_NODATA, DEM_PIXEL_SIZE, SRID
-from pinta_db.models import dem
+from pinta_db.main_db.models import dem
 
 # revision identifiers, used by Alembic.
 revision: str = "002"

@@ -6,15 +6,13 @@
 """Base classes for the models."""
 
 import re
-import uuid
 from typing import Any
 
 from geoalchemy2 import Raster
-from sqlalchemy import orm
+from sqlalchemy import MetaData, orm
 from sqlmodel import BigInteger, Field, SQLModel
 
 from pinta_db.exceptions import MissingFieldError
-from pinta_db.schemas import Schema
 
 NAMING_CONVENTION = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -63,18 +61,8 @@ class BaseModel(SQLModel):
         return geoalchemy2.shape.to_shape(geom).wkt  # type: ignore[assignment,attr-defined]
 
 
-class ManagementBase(BaseModel):
-    """Base model for tables in management schema."""
-
-    __table_args__ = {"schema": Schema.MANAGEMENT.value}
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-
-
-class DemBase(BaseModel):
-    """Base model for tables in dem schema."""
-
-    __table_args__ = {"schema": Schema.DEM.value}
+class RasterBase(BaseModel):
+    """Base model for raster tables."""
 
     rid: int = Field(
         default=None,
@@ -87,6 +75,22 @@ class DemBase(BaseModel):
         sa_type=Raster,
         nullable=False,
     )
+
+
+main_db_metadata = MetaData()
+job_db_metadata = MetaData()
+
+
+class BaseMainDb(BaseModel):
+    """Base model for main db tables."""
+
+    metadata = main_db_metadata
+
+
+class BaseJobDb(BaseModel):
+    """Base model for job db tables."""
+
+    metadata = job_db_metadata
 
 
 BaseModel.metadata.naming_convention = NAMING_CONVENTION

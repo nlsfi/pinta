@@ -8,6 +8,7 @@ import os
 import sqlmodel
 
 from pinta_db import schemas
+from pinta_db.main_db import schema
 from pinta_db_utils import engine_utils, schema_utils
 
 
@@ -78,7 +79,7 @@ def create_db(worker_id: str) -> str:
         )
 
     schema_statements = schema_utils.get_set_schema_role_privileges_statements(
-        schemas.SCHEMA_CONFIGURATIONS, role_mapping
+        schema.SCHEMA_CONFIGURATIONS_MAIN, role_mapping
     )
 
     with engine_utils.get_autocommit_connection(
@@ -86,5 +87,21 @@ def create_db(worker_id: str) -> str:
     ) as connection:
         for statement in schema_statements:
             connection.execute(sqlmodel.text(statement))
+
+    return db_name
+
+
+def create_job_db(worker_id: str) -> str:
+    """Create a new database for the test session."""
+    db_name = f"test_job_{worker_id}"
+    template_name = os.environ["DB_JOB_TEMPLATE_NAME"]
+
+    with engine_utils.get_autocommit_connection(
+        get_admin_credentials(os.environ["DB_NAME"])
+    ) as connection:
+        connection.execute(sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name}"))
+        connection.execute(
+            sqlmodel.text(f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}")
+        )
 
     return db_name

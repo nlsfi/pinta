@@ -13,16 +13,18 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship
 
+from pinta_db.common.base import BaseMainDb
 from pinta_db.constants import MULTIPOLYGON, POLYGON
 from pinta_db.env import SRID
-from pinta_db.models.base import ManagementBase
+from pinta_db.main_db.models.base import ManagementBase
 from pinta_db_utils import model_utils
 
 
-class ProductionArea(ManagementBase, table=True):
+class ProductionArea(BaseMainDb, ManagementBase, table=True):  # type: ignore[call-arg]
     """Production area for elevation production."""
 
     name: str
+    database_name: str | None = Field(default=None)
     geom: Any = Field(
         sa_column=Column(Geometry(MULTIPOLYGON, srid=SRID, nullable=False))
     )
@@ -32,7 +34,7 @@ class ProductionArea(ManagementBase, table=True):
     )
 
 
-class PointCloudTile(ManagementBase, table=True):
+class PointCloudTile(BaseMainDb, ManagementBase, table=True):  # type: ignore[call-arg]
     """Point cloud tile for single lidar mission."""
 
     geom: Any = Field(sa_column=Column(Geometry(POLYGON, srid=SRID, nullable=False)))

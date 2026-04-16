@@ -20,8 +20,8 @@ import json
 from pathlib import Path
 
 from pinta_db import env as db_env
-from pinta_db.models.all import PointCloudTile, ProductionArea
-from pinta_db.models.base import BaseModel
+from pinta_db.common.base import BaseModel
+from pinta_db.main_db.models.all import PointCloudTile, ProductionArea
 from pinta_db_utils import model_utils
 from qgis.core import QgsWkbTypes
 from qgis_plugin_tools.tools import i18n

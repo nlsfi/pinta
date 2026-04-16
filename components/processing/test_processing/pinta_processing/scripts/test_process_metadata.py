@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import shapely.wkt
-from pinta_db.models.management import PointCloudTile, ProductionArea
+from pinta_db.main_db.models.management import PointCloudTile, ProductionArea
 from pinta_test_utils import pinta_utils
 from sqlmodel import Session
 
