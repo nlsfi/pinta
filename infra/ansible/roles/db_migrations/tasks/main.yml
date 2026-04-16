@@ -8,6 +8,7 @@
     DB_HOST: "{{ db_migrations_db_host }}"
     DB_PORT: "{{ db_migrations_db_port }}"
     DB_NAME: "{{ db_migrations_db_name }}"
+    DB_JOB_TEMPLATE_NAME: "{{ db_migrations_db_name }}"
     DB_OWNER_ROLE: "{{ db_migrations_owner_role }}"
     DB_WRITER_ROLE: "{{ db_migrations_writer_role }}"
     DB_READER_ROLE: "{{ db_migrations_reader_role }}"

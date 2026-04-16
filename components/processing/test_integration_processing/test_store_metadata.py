@@ -8,7 +8,7 @@ import typing
 import geoalchemy2.shape
 import pytest
 import sqlmodel
-from pinta_db.models.management import PointCloudTile, ProductionArea
+from pinta_db.main_db.models.management import PointCloudTile, ProductionArea
 from pinta_test_utils import pinta_utils
 
 from pinta_processing.scripts import process_metadata

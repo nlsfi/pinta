@@ -3,43 +3,23 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-"""Module to confugre Alembic migrations.
-
-env.py module is used to configure, create and run database
- migrations for a certain database.
-
-If there is need to set up multiple different databases,
-make separate migration folders for each.
-"""
-
-import logging.config
 import os
 import typing
 
 import alembic
-import dotenv
 import geoalchemy2.alembic_helpers
+import sqlalchemy
+from alembic.config import Config
+from sqlalchemy.sql.schema import MetaData
 
-# Get env variables before importing models
-dotenv.load_dotenv()
-
-import sqlalchemy  # noqa: E402
-from sqlmodel import SQLModel  # noqa: E402
-
-import pinta_db_utils.alembic_helpers  # noqa: E402
-from pinta_db import schemas  # noqa: E402
-from pinta_db.models.all import *  # noqa: F403, E402
-from pinta_db_utils import engine_utils, schema_utils  # noqa: E402
+import pinta_db_utils.alembic_helpers
+from pinta_db import schemas
+from pinta_db.schemas import SchemaConfig
+from pinta_db_utils import schema_utils
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.engine.base import Connection
 
-config = alembic.context.config
-
-if config.config_file_name is not None:
-    logging.config.fileConfig(config.config_file_name)
-
-target_metadata = SQLModel.metadata
 
 # Read env variables
 ROLES = {
@@ -49,20 +29,13 @@ ROLES = {
     schemas.Role.PROCESSING_WORKER: os.environ["DB_PROCESSING_WORKER_ROLE"],
 }
 
-ADMIN_CREDENTIALS = engine_utils.Credentials(
-    user=os.environ["DB_ADMIN_USER"],
-    password=os.environ["DB_ADMIN_PASSWORD"],
-    host=os.environ["DB_HOST"],
-    port=os.environ["DB_PORT"],
-    db_name=os.environ["DB_NAME"],
-)
 
-config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())
-
-
-def _setup_schemas(connection: "Connection") -> None:
+def _setup_schemas(
+    connection: "Connection",
+    schema_configuration: list[SchemaConfig],
+) -> None:
     statements = schema_utils.get_set_schema_role_privileges_statements(
-        schema_configuration=schemas.SCHEMA_CONFIGURATIONS,
+        schema_configuration=schema_configuration,
         roles=ROLES,
     )
 
@@ -70,7 +43,11 @@ def _setup_schemas(connection: "Connection") -> None:
         connection.execute(sqlalchemy.text(statement))
 
 
-def run_migrations_online() -> None:
+def run_migrations_online(
+    config: Config,
+    target_metadata: MetaData,
+    schema_configuration: list[SchemaConfig],
+) -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
@@ -87,7 +64,7 @@ def run_migrations_online() -> None:
             connection=connection, target_metadata=target_metadata
         )
 
-        _setup_schemas(connection)
+        _setup_schemas(connection, schema_configuration)
         connection.commit()
 
         alembic.context.configure(
@@ -105,6 +82,3 @@ def run_migrations_online() -> None:
 
         with alembic.context.begin_transaction():
             alembic.context.run_migrations()
-
-
-run_migrations_online()

@@ -5,9 +5,9 @@
 
 """All the models of the database.
 
-This module should improt all the models so that
+This module should import all the models so that
 Alembic can find those to autogenerate migrations.
 """
 
-from pinta_db.models.dem import *  # noqa: F403
-from pinta_db.models.management import *  # noqa: F403
+from pinta_db.main_db.models.dem import *  # noqa: F403
+from pinta_db.main_db.models.management import *  # noqa: F403  # noqa: F403

@@ -6,6 +6,7 @@
 import typing
 
 from pinta_db.exceptions import MissingRoleError
+from pinta_db.main_db.models.all import *  # noqa: F403
 from pinta_db.schemas import (
     DelegatedAccess,
     Privilege,
