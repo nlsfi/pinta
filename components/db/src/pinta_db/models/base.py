@@ -26,10 +26,13 @@ NAMING_CONVENTION = {
 
 
 def _camel_to_snake(name: str) -> str:
-    repl = r"\1_\2"
-    return re.sub(
-        r"([a-z0-9])([A-Z])", repl, re.sub(r"(.)([A-Z][a-z]+)", repl, name)
-    ).lower()
+    # Add underscore before capital letters
+    name = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+    # Add underscore between lowercase/number and uppercase
+    name = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
+    # Add underscore between letters and numbers
+    name = re.sub(r"([a-zA-Z])([0-9])", r"\1_\2", name)
+    return name.lower()
 
 
 class BaseModel(SQLModel):
