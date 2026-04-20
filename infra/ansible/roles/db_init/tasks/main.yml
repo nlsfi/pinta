@@ -83,8 +83,10 @@
 
 # Work around ansible bug: since admin will initially have set privilege on the roles it has
 # created, ansible does not apply the inherit privilege with membership module, since
-# it sees owner is already granted on admin, even if it is only set privilege
-- name: Grant owner to admin
+# it sees owner is already granted on admin, even if it is only set privilege.
+# Admin needs membership in every application role so it can ALTER DEFAULT PRIVILEGES
+# on behalf of those roles during schema setup.
+- name: Grant application roles to admin
   community.postgresql.postgresql_privs:
     login_host: "{{ db_init_host }}"
     login_port: "{{ db_init_port }}"
@@ -92,8 +94,11 @@
     login_password: "{{ db_init_admin_password }}"
     login_db: "{{ db_init_maintenance_db }}"
     type: group
-    objs: "{{ db_init_owner_role }}"
+    objs: "{{ item }}"
     roles: "{{ db_init_admin_user }}"
+  loop_control:
+    label: "{{ item }} to {{ db_init_admin_user }}"
+  loop: "{{ [db_init_owner_role] + (db_init_application_roles | default([]) | map(attribute='name') | list) }}"
 
 - name: Create role hierarchy
   community.postgresql.postgresql_membership:

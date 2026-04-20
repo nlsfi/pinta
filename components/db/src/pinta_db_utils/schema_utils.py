@@ -5,6 +5,7 @@
 
 import typing
 
+from pinta_db.exceptions import MissingRoleError
 from pinta_db.schemas import (
     Privilege,
     Role,
@@ -21,25 +22,24 @@ def _grant_list(privileges: "Iterable[Privilege]") -> str:
 
 
 def _get_create_schema_statement(
-    schema_config: "SchemaConfig", owner_roles: tuple[str, ...]
+    schema_config: "SchemaConfig",
+    owner: str,
 ) -> list[str]:
     schema = schema_config.schema.value
     return [
-        f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {owner_roles[0]}",
-        f"GRANT {_grant_list(schema_config.owner_privileges)} "
-        f"ON SCHEMA {schema} TO {','.join(owner_roles)}",
+        f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {owner}",
     ]
 
 
 def _get_set_schema_role_privileges(
     schema_config: "SchemaConfig",
     role_config: "RolePrivileges",
-    *,
-    owner_role: str,
-    role_mapping: "dict[Role, str]",
+    roles: dict[Role, str],
 ) -> list[str]:
     schema = schema_config.schema.value
-    role = role_mapping[role_config.role]
+    role = roles[role_config.role]
+    for_role = roles[role_config.for_role or schema_config.owner]
+    grant_option_suffix = " WITH GRANT OPTION" if role_config.with_grant_option else ""
 
     statements: list[str] = []
 
@@ -49,29 +49,35 @@ def _get_set_schema_role_privileges(
     if role_config.table_privileges:
         statements.append(
             f"GRANT {_grant_list(role_config.table_privileges)} "
-            f"ON ALL TABLES IN SCHEMA {schema} TO {role}"
+            f"ON ALL TABLES IN SCHEMA {schema} TO {role}{grant_option_suffix}"
         )
 
     if role_config.sequence_privileges:
         statements.append(
             f"GRANT {_grant_list(role_config.sequence_privileges)} "
-            f"ON ALL SEQUENCES IN SCHEMA {schema} TO {role}"
+            f"ON ALL SEQUENCES IN SCHEMA {schema} TO {role}{grant_option_suffix}"
         )
 
     if role_config.default_table_privileges:
         statements.append(
             f"ALTER DEFAULT PRIVILEGES FOR ROLE "
-            f"{owner_role} IN SCHEMA {schema} "
+            f"{for_role} IN SCHEMA {schema} "
             f"GRANT {_grant_list(role_config.default_table_privileges)} "
-            f"ON TABLES TO {role}"
+            f"ON TABLES TO {role}{grant_option_suffix}"
         )
 
     if role_config.default_sequence_privileges:
         statements.append(
             f"ALTER DEFAULT PRIVILEGES FOR ROLE "
-            f"{owner_role} IN SCHEMA {schema} "
+            f"{for_role} IN SCHEMA {schema} "
             f"GRANT {_grant_list(role_config.default_sequence_privileges)} "
-            f"ON SEQUENCES TO {role}"
+            f"ON SEQUENCES TO {role}{grant_option_suffix}"
+        )
+
+    if role_config.schema_privileges:
+        statements.append(
+            f"GRANT {_grant_list(role_config.schema_privileges)} "
+            f"ON SCHEMA {schema} TO {role}"
         )
 
     return statements
@@ -79,28 +85,26 @@ def _get_set_schema_role_privileges(
 
 def get_set_schema_role_privileges_statements(
     schema_configuration: list["SchemaConfig"],
-    owner_role: str,
-    role_mapping: "dict[Role, str]",
+    roles: dict[Role, str],
 ) -> list[str]:
     """Ensure that the schemas and schema privileges are set up."""
-    missing = set(Role) - set(role_mapping)
-    if missing:
-        msg = f"Missing role mappings for: {missing}"
-        raise ValueError(msg)
+    for role in Role:
+        if role not in roles:
+            raise MissingRoleError(role.name)
 
     statements: list[str] = []
 
     for schema_config in schema_configuration:
-        owner_roles = (owner_role, *schema_config.extra_schema_owners)
-        statements.extend(_get_create_schema_statement(schema_config, owner_roles))
+        statements.extend(
+            _get_create_schema_statement(schema_config, roles[schema_config.owner])
+        )
 
         for role_config in schema_config.role_privileges:
             statements.extend(
                 _get_set_schema_role_privileges(
                     schema_config,
                     role_config,
-                    owner_role=owner_role,
-                    role_mapping=role_mapping,
+                    roles,
                 )
             )
 
