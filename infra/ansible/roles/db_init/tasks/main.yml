@@ -121,6 +121,15 @@
     owner: "{{ db_init_owner_role }}"
     template: "{{ db_init_template_name }}"
 
+- name: Revoke all on database from public
+  community.postgresql.postgresql_query:
+    login_host: "{{ db_init_host }}"
+    port: "{{ db_init_port }}"
+    login_user: "{{ db_init_admin_user }}"
+    login_password: "{{ db_init_admin_password }}"
+    db: "{{ db_init_database_name }}"
+    query: Revoke all on database {{ db_init_database_name }} from public
+
 - name: Set database as template
   when: db_init_is_template
   community.postgresql.postgresql_query:
