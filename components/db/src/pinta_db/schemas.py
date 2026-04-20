@@ -5,9 +5,8 @@
 
 """Database schemas and privileges."""
 
+import dataclasses
 import enum
-
-from pydantic import dataclasses
 
 
 class Schema(enum.Enum):
@@ -24,9 +23,10 @@ class Schema(enum.Enum):
 class Role(enum.Enum):
     """Roles used in the database."""
 
-    WRITER = "writer"
-    READER = "reader"
-    PROCESSING_WORKER = "processing_worker"
+    OWNER = enum.auto()
+    WRITER = enum.auto()
+    READER = enum.auto()
+    PROCESSING_WORKER = enum.auto()
 
 
 class Privilege(enum.Enum):
@@ -54,6 +54,9 @@ class RolePrivileges:
     sequence_privileges: tuple[Privilege, ...] = ()
     default_table_privileges: tuple[Privilege, ...] = ()
     default_sequence_privileges: tuple[Privilege, ...] = ()
+    schema_privileges: tuple[Privilege, ...] = ()
+    for_role: "Role | None" = None
+    with_grant_option: bool = False
 
     @staticmethod
     def get_default_write_privileges(role: Role) -> "RolePrivileges":
@@ -65,6 +68,7 @@ class RolePrivileges:
                 Privilege.INSERT,
                 Privilege.UPDATE,
                 Privilege.DELETE,
+                Privilege.TRUNCATE,
             ),
             sequence_privileges=(
                 Privilege.USAGE,
@@ -76,11 +80,29 @@ class RolePrivileges:
                 Privilege.INSERT,
                 Privilege.UPDATE,
                 Privilege.DELETE,
+                Privilege.TRUNCATE,
             ),
             default_sequence_privileges=(
                 Privilege.USAGE,
                 Privilege.SELECT,
                 Privilege.UPDATE,
+            ),
+        )
+
+    @staticmethod
+    def get_default_read_privileges(role: Role) -> "RolePrivileges":
+        """Get default read privileges for the role."""
+        return RolePrivileges(
+            role=role,
+            table_privileges=(Privilege.SELECT,),
+            sequence_privileges=(
+                Privilege.USAGE,
+                Privilege.SELECT,
+            ),
+            default_table_privileges=(Privilege.SELECT,),
+            default_sequence_privileges=(
+                Privilege.USAGE,
+                Privilege.SELECT,
             ),
         )
 
@@ -90,9 +112,8 @@ class SchemaConfig:
     """Schema configuration."""
 
     schema: Schema
-    owner_privileges: tuple[Privilege, ...] = (Privilege.USAGE, Privilege.CREATE)
+    owner: Role = Role.OWNER
     role_privileges: tuple[RolePrivileges, ...] = ()
-    extra_schema_owners: tuple[str, ...] = ()
 
 
 SCHEMA_CONFIGURATIONS = [
@@ -100,17 +121,8 @@ SCHEMA_CONFIGURATIONS = [
         schema=Schema.MANAGEMENT,
         role_privileges=(
             RolePrivileges.get_default_write_privileges(Role.WRITER),
+            RolePrivileges.get_default_read_privileges(Role.READER),
             RolePrivileges.get_default_write_privileges(Role.PROCESSING_WORKER),
-            RolePrivileges(
-                role=Role.READER,
-                table_privileges=(Privilege.SELECT,),
-                sequence_privileges=(
-                    Privilege.USAGE,
-                    Privilege.SELECT,
-                ),
-                default_table_privileges=(Privilege.SELECT,),
-                default_sequence_privileges=(Privilege.USAGE, Privilege.SELECT),
-            ),
         ),
     ),
     SchemaConfig(
@@ -118,25 +130,47 @@ SCHEMA_CONFIGURATIONS = [
     ),
     SchemaConfig(
         schema=Schema.PROCESSING,
-        extra_schema_owners=("pinta_processing_worker",),
         role_privileges=(
-            RolePrivileges.get_default_write_privileges(Role.PROCESSING_WORKER),
+            RolePrivileges(
+                role=Role.PROCESSING_WORKER,
+                table_privileges=(
+                    Privilege.SELECT,
+                    Privilege.INSERT,
+                    Privilege.UPDATE,
+                    Privilege.DELETE,
+                    Privilege.TRUNCATE,
+                ),
+                sequence_privileges=(
+                    Privilege.USAGE,
+                    Privilege.SELECT,
+                    Privilege.UPDATE,
+                ),
+                schema_privileges=(Privilege.USAGE, Privilege.CREATE),
+            ),
+            RolePrivileges(
+                role=Role.OWNER,
+                default_table_privileges=(
+                    Privilege.SELECT,
+                    Privilege.INSERT,
+                    Privilege.UPDATE,
+                    Privilege.DELETE,
+                    Privilege.TRUNCATE,
+                ),
+                default_sequence_privileges=(
+                    Privilege.USAGE,
+                    Privilege.SELECT,
+                    Privilege.UPDATE,
+                ),
+                for_role=Role.PROCESSING_WORKER,
+                with_grant_option=True,
+            ),
         ),
     ),
     SchemaConfig(
         schema=Schema.DEM,
         role_privileges=(
             RolePrivileges.get_default_write_privileges(Role.WRITER),
-            RolePrivileges(
-                role=Role.READER,
-                table_privileges=(Privilege.SELECT,),
-                sequence_privileges=(
-                    Privilege.USAGE,
-                    Privilege.SELECT,
-                ),
-                default_table_privileges=(Privilege.SELECT,),
-                default_sequence_privileges=(Privilege.USAGE, Privilege.SELECT),
-            ),
+            RolePrivileges.get_default_read_privileges(Role.READER),
         ),
     ),
 ]

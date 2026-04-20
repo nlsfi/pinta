@@ -42,31 +42,28 @@ if config.config_file_name is not None:
 target_metadata = SQLModel.metadata
 
 # Read env variables
-ADMIN_CREDENTIALS = engine_utils.Credentials(
-    os.environ["DB_ADMIN_USER"],
-    os.environ["DB_ADMIN_PASSWORD"],
-    os.environ["DB_HOST"],
-    os.environ["DB_PORT"],
-    os.environ["DB_NAME"],
-)
+ROLES = {
+    schemas.Role.OWNER: os.environ["DB_OWNER_ROLE"],
+    schemas.Role.WRITER: os.environ["DB_WRITER_ROLE"],
+    schemas.Role.READER: os.environ["DB_READER_ROLE"],
+    schemas.Role.PROCESSING_WORKER: os.environ["DB_PROCESSING_WORKER_ROLE"],
+}
 
-DB_OWNER_ROLE = os.environ["DB_OWNER_ROLE"]
-DB_WRITER_ROLE = os.environ["DB_WRITER_ROLE"]
-DB_READER_ROLE = os.environ["DB_READER_ROLE"]
-DB_PROCESSING_WORKER_ROLE = os.environ["DB_PROCESSING_WORKER_ROLE"]
+ADMIN_CREDENTIALS = engine_utils.Credentials(
+    user=os.environ["DB_ADMIN_USER"],
+    password=os.environ["DB_ADMIN_PASSWORD"],
+    host=os.environ["DB_HOST"],
+    port=os.environ["DB_PORT"],
+    db_name=os.environ["DB_NAME"],
+)
 
 config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())
 
 
 def _setup_schemas(connection: "Connection") -> None:
     statements = schema_utils.get_set_schema_role_privileges_statements(
-        schemas.SCHEMA_CONFIGURATIONS,
-        DB_OWNER_ROLE,
-        {
-            schemas.Role.WRITER: DB_WRITER_ROLE,
-            schemas.Role.READER: DB_READER_ROLE,
-            schemas.Role.PROCESSING_WORKER: DB_PROCESSING_WORKER_ROLE,
-        },
+        schema_configuration=schemas.SCHEMA_CONFIGURATIONS,
+        roles=ROLES,
     )
 
     for statement in statements:

@@ -15,6 +15,11 @@ class MissingSchemaError(RuntimeError):
         super().__init__(f"Schema is missing from the model {model.__name__}")
 
 
+class MissingRoleError(RuntimeError):
+    def __init__(self, role_name: str) -> None:
+        super().__init__(f"Role is missing: {role_name}")
+
+
 class MissingEnvironmentError(RuntimeError):
     def __init__(self, env_variable_name: str) -> None:
         super().__init__(
