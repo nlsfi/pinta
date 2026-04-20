@@ -44,67 +44,78 @@ class Privilege(enum.Enum):
     EXECUTE = enum.auto()
 
 
+class AccessLevel(enum.Enum):
+    """Named access pattern that expands into concrete privileges."""
+
+    READ = enum.auto()
+    READ_WRITE = enum.auto()
+    MANAGE = enum.auto()
+
+    @property
+    def privileges(self) -> "LevelPrivileges":
+        """Concrete table, sequence, and schema privileges for this level."""
+        return _LEVEL_PRIVILEGES[self]
+
+
 @dataclasses.dataclass(frozen=True)
-class RolePrivileges:
-    """Role privileges for a specific schema."""
+class LevelPrivileges:
+    """Concrete privileges that `AccessLevel` expands into."""
+
+    tables: tuple[Privilege, ...]
+    sequences: tuple[Privilege, ...]
+    # Schema privileges beyond the always-granted USAGE.
+    schema_extra: tuple[Privilege, ...]
+
+
+_WRITE_TABLE_PRIVILEGES: tuple[Privilege, ...] = (
+    Privilege.SELECT,
+    Privilege.INSERT,
+    Privilege.UPDATE,
+    Privilege.DELETE,
+    Privilege.TRUNCATE,
+)
+_WRITE_SEQUENCE_PRIVILEGES: tuple[Privilege, ...] = (
+    Privilege.USAGE,
+    Privilege.SELECT,
+    Privilege.UPDATE,
+)
+
+_LEVEL_PRIVILEGES: dict[AccessLevel, LevelPrivileges] = {
+    AccessLevel.READ: LevelPrivileges(
+        tables=(Privilege.SELECT,),
+        sequences=(Privilege.USAGE, Privilege.SELECT),
+        schema_extra=(),
+    ),
+    AccessLevel.READ_WRITE: LevelPrivileges(
+        tables=_WRITE_TABLE_PRIVILEGES,
+        sequences=_WRITE_SEQUENCE_PRIVILEGES,
+        schema_extra=(),
+    ),
+    AccessLevel.MANAGE: LevelPrivileges(
+        tables=_WRITE_TABLE_PRIVILEGES,
+        sequences=_WRITE_SEQUENCE_PRIVILEGES,
+        schema_extra=(Privilege.CREATE,),
+    ),
+}
+
+
+@dataclasses.dataclass(frozen=True)
+class SchemaAccess:
+    """Grant a role the given access level to a schema and its objects."""
 
     role: Role
-    usage: bool = True
-    table_privileges: tuple[Privilege, ...] = ()
-    sequence_privileges: tuple[Privilege, ...] = ()
-    default_table_privileges: tuple[Privilege, ...] = ()
-    default_sequence_privileges: tuple[Privilege, ...] = ()
-    schema_privileges: tuple[Privilege, ...] = ()
-    for_role: "Role | None" = None
+    level: AccessLevel
+
+
+@dataclasses.dataclass(frozen=True)
+class DelegatedAccess:
+    """Grant access on objects that another role creates."""
+
+    creator: Role
+    grantee: Role
+    level: AccessLevel
+    # When True, `grantee` may re-grant these privileges to other roles.
     with_grant_option: bool = False
-
-    @staticmethod
-    def get_default_write_privileges(role: Role) -> "RolePrivileges":
-        """Get default write privileges for the role."""
-        return RolePrivileges(
-            role=role,
-            table_privileges=(
-                Privilege.SELECT,
-                Privilege.INSERT,
-                Privilege.UPDATE,
-                Privilege.DELETE,
-                Privilege.TRUNCATE,
-            ),
-            sequence_privileges=(
-                Privilege.USAGE,
-                Privilege.SELECT,
-                Privilege.UPDATE,
-            ),
-            default_table_privileges=(
-                Privilege.SELECT,
-                Privilege.INSERT,
-                Privilege.UPDATE,
-                Privilege.DELETE,
-                Privilege.TRUNCATE,
-            ),
-            default_sequence_privileges=(
-                Privilege.USAGE,
-                Privilege.SELECT,
-                Privilege.UPDATE,
-            ),
-        )
-
-    @staticmethod
-    def get_default_read_privileges(role: Role) -> "RolePrivileges":
-        """Get default read privileges for the role."""
-        return RolePrivileges(
-            role=role,
-            table_privileges=(Privilege.SELECT,),
-            sequence_privileges=(
-                Privilege.USAGE,
-                Privilege.SELECT,
-            ),
-            default_table_privileges=(Privilege.SELECT,),
-            default_sequence_privileges=(
-                Privilege.USAGE,
-                Privilege.SELECT,
-            ),
-        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -113,16 +124,17 @@ class SchemaConfig:
 
     schema: Schema
     owner: Role = Role.OWNER
-    role_privileges: tuple[RolePrivileges, ...] = ()
+    access: tuple[SchemaAccess, ...] = ()
+    delegated: tuple[DelegatedAccess, ...] = ()
 
 
 SCHEMA_CONFIGURATIONS = [
     SchemaConfig(
         schema=Schema.MANAGEMENT,
-        role_privileges=(
-            RolePrivileges.get_default_write_privileges(Role.WRITER),
-            RolePrivileges.get_default_read_privileges(Role.READER),
-            RolePrivileges.get_default_write_privileges(Role.PROCESSING_WORKER),
+        access=(
+            SchemaAccess(Role.WRITER, AccessLevel.READ_WRITE),
+            SchemaAccess(Role.READER, AccessLevel.READ),
+            SchemaAccess(Role.PROCESSING_WORKER, AccessLevel.READ_WRITE),
         ),
     ),
     SchemaConfig(
@@ -130,47 +142,21 @@ SCHEMA_CONFIGURATIONS = [
     ),
     SchemaConfig(
         schema=Schema.PROCESSING,
-        role_privileges=(
-            RolePrivileges(
-                role=Role.PROCESSING_WORKER,
-                table_privileges=(
-                    Privilege.SELECT,
-                    Privilege.INSERT,
-                    Privilege.UPDATE,
-                    Privilege.DELETE,
-                    Privilege.TRUNCATE,
-                ),
-                sequence_privileges=(
-                    Privilege.USAGE,
-                    Privilege.SELECT,
-                    Privilege.UPDATE,
-                ),
-                schema_privileges=(Privilege.USAGE, Privilege.CREATE),
-            ),
-            RolePrivileges(
-                role=Role.OWNER,
-                default_table_privileges=(
-                    Privilege.SELECT,
-                    Privilege.INSERT,
-                    Privilege.UPDATE,
-                    Privilege.DELETE,
-                    Privilege.TRUNCATE,
-                ),
-                default_sequence_privileges=(
-                    Privilege.USAGE,
-                    Privilege.SELECT,
-                    Privilege.UPDATE,
-                ),
-                for_role=Role.PROCESSING_WORKER,
+        access=(SchemaAccess(Role.PROCESSING_WORKER, AccessLevel.MANAGE),),
+        delegated=(
+            DelegatedAccess(
+                creator=Role.PROCESSING_WORKER,
+                grantee=Role.OWNER,
+                level=AccessLevel.READ_WRITE,
                 with_grant_option=True,
             ),
         ),
     ),
     SchemaConfig(
         schema=Schema.DEM,
-        role_privileges=(
-            RolePrivileges.get_default_write_privileges(Role.WRITER),
-            RolePrivileges.get_default_read_privileges(Role.READER),
+        access=(
+            SchemaAccess(Role.WRITER, AccessLevel.READ_WRITE),
+            SchemaAccess(Role.READER, AccessLevel.READ),
         ),
     ),
 ]

@@ -7,9 +7,10 @@ import typing
 
 from pinta_db.exceptions import MissingRoleError
 from pinta_db.schemas import (
+    DelegatedAccess,
     Privilege,
     Role,
-    RolePrivileges,
+    SchemaAccess,
     SchemaConfig,
 )
 
@@ -24,60 +25,76 @@ def _grant_list(privileges: "Iterable[Privilege]") -> str:
 def _get_create_schema_statement(
     schema_config: "SchemaConfig",
     owner: str,
-) -> list[str]:
-    schema = schema_config.schema.value
-    return [
-        f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {owner}",
-    ]
+) -> str:
+    return (
+        f"CREATE SCHEMA IF NOT EXISTS {schema_config.schema.value} "
+        f"AUTHORIZATION {owner}"
+    )
 
 
-def _get_set_schema_role_privileges(
+def _statements_for_access(
     schema_config: "SchemaConfig",
-    role_config: "RolePrivileges",
+    access: "SchemaAccess",
     roles: dict[Role, str],
 ) -> list[str]:
     schema = schema_config.schema.value
-    role = roles[role_config.role]
-    for_role = roles[role_config.for_role or schema_config.owner]
-    grant_option_suffix = " WITH GRANT OPTION" if role_config.with_grant_option else ""
+    role = roles[access.role]
+    owner = roles[schema_config.owner]
+    privileges = access.level.privileges
+
+    statements = [
+        f"GRANT {_grant_list((Privilege.USAGE, *privileges.schema_extra))} "
+        f"ON SCHEMA {schema} TO {role}"
+    ]
+
+    if privileges.tables:
+        statements.append(
+            f"GRANT {_grant_list(privileges.tables)} "
+            f"ON ALL TABLES IN SCHEMA {schema} TO {role}"
+        )
+    if privileges.sequences:
+        statements.append(
+            f"GRANT {_grant_list(privileges.sequences)} "
+            f"ON ALL SEQUENCES IN SCHEMA {schema} TO {role}"
+        )
+    if privileges.tables:
+        statements.append(
+            f"ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} "
+            f"GRANT {_grant_list(privileges.tables)} ON TABLES TO {role}"
+        )
+    if privileges.sequences:
+        statements.append(
+            f"ALTER DEFAULT PRIVILEGES FOR ROLE {owner} IN SCHEMA {schema} "
+            f"GRANT {_grant_list(privileges.sequences)} ON SEQUENCES TO {role}"
+        )
+
+    return statements
+
+
+def _statements_for_delegation(
+    schema_config: "SchemaConfig",
+    delegated: "DelegatedAccess",
+    roles: dict[Role, str],
+) -> list[str]:
+    schema = schema_config.schema.value
+    creator = roles[delegated.creator]
+    grantee = roles[delegated.grantee]
+    privileges = delegated.level.privileges
+    grant_option = " WITH GRANT OPTION" if delegated.with_grant_option else ""
 
     statements: list[str] = []
 
-    if role_config.usage:
-        statements.append(f"GRANT USAGE ON SCHEMA {schema} TO {role}")
-
-    if role_config.table_privileges:
+    if privileges.tables:
         statements.append(
-            f"GRANT {_grant_list(role_config.table_privileges)} "
-            f"ON ALL TABLES IN SCHEMA {schema} TO {role}{grant_option_suffix}"
+            f"ALTER DEFAULT PRIVILEGES FOR ROLE {creator} IN SCHEMA {schema} "
+            f"GRANT {_grant_list(privileges.tables)} "
+            f"ON TABLES TO {grantee}{grant_option}"
         )
-
-    if role_config.sequence_privileges:
+    if privileges.sequences:
         statements.append(
-            f"GRANT {_grant_list(role_config.sequence_privileges)} "
-            f"ON ALL SEQUENCES IN SCHEMA {schema} TO {role}{grant_option_suffix}"
-        )
-
-    if role_config.default_table_privileges:
-        statements.append(
-            f"ALTER DEFAULT PRIVILEGES FOR ROLE "
-            f"{for_role} IN SCHEMA {schema} "
-            f"GRANT {_grant_list(role_config.default_table_privileges)} "
-            f"ON TABLES TO {role}{grant_option_suffix}"
-        )
-
-    if role_config.default_sequence_privileges:
-        statements.append(
-            f"ALTER DEFAULT PRIVILEGES FOR ROLE "
-            f"{for_role} IN SCHEMA {schema} "
-            f"GRANT {_grant_list(role_config.default_sequence_privileges)} "
-            f"ON SEQUENCES TO {role}{grant_option_suffix}"
-        )
-
-    if role_config.schema_privileges:
-        statements.append(
-            f"GRANT {_grant_list(role_config.schema_privileges)} "
-            f"ON SCHEMA {schema} TO {role}"
+            f"ALTER DEFAULT PRIVILEGES FOR ROLE {creator} IN SCHEMA {schema} "
+            f"GRANT {_grant_list(privileges.sequences)} "
+            f"ON SEQUENCES TO {grantee}{grant_option}"
         )
 
     return statements
@@ -95,17 +112,14 @@ def get_set_schema_role_privileges_statements(
     statements: list[str] = []
 
     for schema_config in schema_configuration:
-        statements.extend(
+        statements.append(
             _get_create_schema_statement(schema_config, roles[schema_config.owner])
         )
-
-        for role_config in schema_config.role_privileges:
+        for access in schema_config.access:
+            statements.extend(_statements_for_access(schema_config, access, roles))
+        for delegated in schema_config.delegated:
             statements.extend(
-                _get_set_schema_role_privileges(
-                    schema_config,
-                    role_config,
-                    roles,
-                )
+                _statements_for_delegation(schema_config, delegated, roles)
             )
 
     return statements
