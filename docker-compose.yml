@@ -1,7 +1,7 @@
 services:
   db:
     build:
-      context: infra/containers/postgis
+      context: components/db/containers/postgis
       dockerfile: Containerfile
       args:
         HTTP_PROXY: ${HTTP_PROXY}

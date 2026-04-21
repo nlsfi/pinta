@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# When requesting a new cluster, these items need to be asked for:
-#   - a superuser account
-#   - a template database with postgis extension
-
 # Applied from https://github.com/postgis/docker-postgis licensed under MIT license
 
 set -e
