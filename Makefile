@@ -32,7 +32,7 @@ sync:
 sync-all-but-qgis-and-airflow:
 	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build
 
-# Infra targets
+# Docker Compose targets
 # =================
 
 down:
@@ -56,14 +56,6 @@ build-migrator:
 restart-fully: down build up
 
 restart: down up
-
-infra-full:
-	docker compose run --rm ansible
-
-infra-migrations:
-	docker compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
-
-infra-restart: restart infra-full
 
 # Database targets
 # ================

@@ -32,15 +32,16 @@ jobs:
 
       - name: Build all compose images
         env:
-          COMPOSE_PROFILES: "ansible"
+          COMPOSE_PROFILES: "migrator"
         run: |
           docker buildx bake \
             --file docker-compose.yml \
+            --load \
             --set *.cache-from=type=gha \
             --set *.cache-to=type=gha,mode=max
 
-      - name: Run migrations via docker compose
-        run: docker compose run --rm ansible
+      - name: Run migrations
+        run: make db-migrate-all
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57

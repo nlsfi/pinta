@@ -23,6 +23,7 @@ on:
   release:
     types: [ created ]
 
+
 permissions:
   contents: read
   packages: write
@@ -49,14 +50,14 @@ jobs:
           set -euo pipefail
 
           docker buildx build --load \
-            -f infra/containers/postgis/Containerfile \
+            -f components/db/containers/postgis/Containerfile \
             -t pinta/db:latest \
-            infra/containers/postgis
+            components/db/containers/postgis
 
           docker buildx build --load \
-            -f infra/containers/ansible/Containerfile \
-            -t pinta/ansible:latest \
-            infra/containers/ansible
+            -f components/db/containers/migrator/Containerfile \
+            -t pinta/db-migrator:latest \
+            .
 
           docker buildx build --load \
             -f components/processing/Containerfile \
@@ -71,16 +72,14 @@ jobs:
           # Compose uses GHCR image names, so map local builds to those names.
           docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
           docker tag pinta/db-migrator:latest "$GHCR_PREFIX/db-migrator:latest"
-          docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:latest"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
 
-      - name: Initialize database with ansible
-        run: |
-          set -euo pipefail
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
 
-          docker compose up -d db
-          docker compose run --rm ansible
+      - name: Initialize databases
+        run: make db-migrate-all
 
       - name: Commit initialized DB state to image
         run: |
@@ -147,7 +146,7 @@ jobs:
           docker push "$GHCR_PREFIX/db:$TAG"
           docker push "$GHCR_PREFIX/db-migrator:$TAG"
           docker push "$GHCR_PREFIX/processing:$TAG"
-          docker push "$GHCR_PREFIX/ansible:$TAG"
+          docker push "$GHCR_PREFIX/ansibleToka:$TAG"
           docker push "$GHCR_PREFIX/e2e:$TAG"
 
       - name: Show built images
