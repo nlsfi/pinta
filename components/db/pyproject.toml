@@ -13,6 +13,8 @@ dependencies = [
 [project.optional-dependencies]
 migrations = [
   "alembic>=1.18.4",
+  "dotenv>=0.9.9",
+  "psycopg[binary]>=3.3.3",
 ]
 shapely = [
   "geoalchemy2[shapely]",

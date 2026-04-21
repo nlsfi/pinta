@@ -32,7 +32,7 @@ def db(worker_id: str) -> Iterator["Session"]:
 @pytest.fixture
 def job_db(worker_id: str) -> Iterator["Session"]:
     db_name = db_utils.create_job_db(worker_id)
-    with engine_utils.get_session(db_utils.get_writer_credentials(db_name)) as session:
+    with engine_utils.get_session(db_utils.get_admin_credentials(db_name)) as session:
         yield session
         session.close()
 

@@ -42,10 +42,16 @@ up:
 	docker compose up -d
 
 build:
-	docker compose --profile ansible build
+	docker compose --profile migrator build
 
 build-qgis:
 	docker compose build qgis
+
+build-db:
+	docker compose build db
+
+build-migrator:
+	docker compose build migrator
 
 restart-fully: down build up
 
@@ -54,11 +60,33 @@ restart: down up
 infra-full:
 	docker compose run --rm ansible
 
-migrations:
+infra-migrations:
 	docker compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
 
 infra-restart: restart infra-full
 
+# Database targets
+# ================
+
+db-migrate-main:
+	docker compose run --rm \
+	-e DB_HOST=db \
+	-e DB_PORT=5432 \
+	migrator \
+	uv run --active alembic -c migrations/main/alembic.ini upgrade head
+
+db-migrate-job:
+	docker compose run --rm \
+	-e DB_HOST=db \
+	-e DB_PORT=5432 \
+	migrator \
+	uv run --active alembic -c migrations/job/alembic.ini upgrade head
+
+db-migrate-all: db-migrate-main db-migrate-job
+
+db-restart: restart db-migrate-all
+
+db-restart-fully: down build-db build-migrator up db-migrate-all
 
 # QGIS plugin targets
 # =================

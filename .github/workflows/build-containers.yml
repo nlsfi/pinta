@@ -8,7 +8,7 @@ on:
       - 'infra/containers/**'
       - 'infra/ansible/**'
       - 'components/**/Containerfile'
-      - 'components/**/entrypoint.sh'
+      - 'components/**/*.sh'
       - '.github/workflows/build-containers.yml'
   pull_request:
     branches: [ main ]
@@ -17,7 +17,7 @@ on:
       - 'infra/containers/**'
       - 'infra/ansible/**'
       - 'components/**/Containerfile'
-      - 'components/**/entrypoint.sh'
+      - 'components/**/*.sh'
       - '.github/workflows/build-containers.yml'
   workflow_dispatch:
   release:
@@ -70,6 +70,7 @@ jobs:
 
           # Compose uses GHCR image names, so map local builds to those names.
           docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
+          docker tag pinta/db-migrator:latest "$GHCR_PREFIX/db-migrator:latest"
           docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:latest"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
@@ -131,6 +132,7 @@ jobs:
           TAG="${{ steps.image_tag.outputs.tag }}"
 
           docker tag pinta/db:latest "$GHCR_PREFIX/db:$TAG"
+          docker tag pinta/db-migrator:latest "$GHCR_PREFIX/db-migrator:$TAG"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:$TAG"
           docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:$TAG"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:$TAG"
@@ -143,6 +145,7 @@ jobs:
           TAG="${{ steps.image_tag.outputs.tag }}"
 
           docker push "$GHCR_PREFIX/db:$TAG"
+          docker push "$GHCR_PREFIX/db-migrator:$TAG"
           docker push "$GHCR_PREFIX/processing:$TAG"
           docker push "$GHCR_PREFIX/ansible:$TAG"
           docker push "$GHCR_PREFIX/e2e:$TAG"

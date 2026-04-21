@@ -28,6 +28,24 @@ services:
         source: db-data
         target: /pgdata
 
+  migrator:
+    profiles:
+      - migrator
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: components/db/containers/migrator/Containerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    image: ghcr.io/nlsfi/pinta/db-migrator:latest
+    volumes:
+      - type: bind
+        source: ${REPO_DIR:-.}
+        target: /code
+        read_only: true
 
   ansible:
     profiles:

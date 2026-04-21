@@ -11,6 +11,40 @@ from pinta_db import schemas
 from pinta_db.main_db import schema
 from pinta_db_utils import engine_utils, schema_utils
 
+_CREATE_DB_LOCK_KEY = "pinta-create-db"
+
+
+def _create_from_template(db_name: str, template_name: str) -> None:
+    kill_connections_query = sqlmodel.text(
+        "SELECT pg_terminate_backend(pg_stat_activity.pid) "
+        "FROM pg_stat_activity "
+        "WHERE pg_stat_activity.datname = :db_name "
+        "AND pid <> pg_backend_pid()"
+    )
+
+    with engine_utils.get_autocommit_connection(
+        get_admin_credentials("postgres")
+    ) as connection:
+        # To avoid race conditions with pytest-xdist
+        connection.execute(
+            sqlmodel.text("SELECT pg_advisory_lock(hashtext(:key))"),
+            {"key": _CREATE_DB_LOCK_KEY},
+        )
+        try:
+            connection.execute(kill_connections_query, {"db_name": db_name})
+            connection.execute(kill_connections_query, {"db_name": template_name})
+            connection.execute(sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name}"))
+            connection.execute(
+                sqlmodel.text(
+                    f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}"
+                )
+            )
+        finally:
+            connection.execute(
+                sqlmodel.text("SELECT pg_advisory_unlock(hashtext(:key))"),
+                {"key": _CREATE_DB_LOCK_KEY},
+            )
+
 
 def get_admin_credentials(
     db_name: str,
@@ -54,7 +88,7 @@ def get_processing_worker_credentials(
 def create_db(worker_id: str) -> str:
     """Create a new database for the test session."""
     db_name = os.environ["DB_NAME"] + f"_test_{worker_id}"
-    template_name = os.environ["DB_NAME"] + "_test_template"
+    template_name = os.environ["DB_NAME"]
     role_mapping = {
         schemas.Role.OWNER: (os.environ["DB_OWNER_ROLE"]),
         schemas.Role.WRITER: os.environ["DB_WRITER_ROLE"],
@@ -62,21 +96,7 @@ def create_db(worker_id: str) -> str:
         schemas.Role.PROCESSING_WORKER: os.environ["DB_PROCESSING_WORKER_ROLE"],
     }
 
-    kill_connections_query = sqlmodel.text(
-        "SELECT pg_terminate_backend(pg_stat_activity.pid) "  # noqa: S608
-        "FROM pg_stat_activity "
-        f"WHERE pg_stat_activity.datname = '{db_name}' "
-        "AND pid <> pg_backend_pid()"
-    )
-
-    with engine_utils.get_autocommit_connection(
-        get_admin_credentials(os.environ["DB_NAME"])
-    ) as connection:
-        connection.execute(kill_connections_query)
-        connection.execute(sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name}"))
-        connection.execute(
-            sqlmodel.text(f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}")
-        )
+    _create_from_template(db_name, template_name)
 
     schema_statements = schema_utils.get_set_schema_role_privileges_statements(
         schema.SCHEMA_CONFIGURATIONS_MAIN, role_mapping
@@ -94,14 +114,5 @@ def create_db(worker_id: str) -> str:
 def create_job_db(worker_id: str) -> str:
     """Create a new database for the test session."""
     db_name = f"test_job_{worker_id}"
-    template_name = os.environ["DB_JOB_TEMPLATE_NAME"]
-
-    with engine_utils.get_autocommit_connection(
-        get_admin_credentials(os.environ["DB_NAME"])
-    ) as connection:
-        connection.execute(sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name}"))
-        connection.execute(
-            sqlmodel.text(f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}")
-        )
-
+    _create_from_template(db_name, os.environ["DB_JOB_TEMPLATE_NAME"])
     return db_name
