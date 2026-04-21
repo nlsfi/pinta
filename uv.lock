@@ -2100,6 +2100,8 @@ build = [
 ]
 migrations = [
     { name = "alembic" },
+    { name = "dotenv" },
+    { name = "psycopg", extra = ["binary"] },
 ]
 shapely = [
     { name = "geoalchemy2", extra = ["shapely"], marker = "(extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra != 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely') or (extra != 'extra-10-pinta-dags-airflow' and extra == 'extra-8-pinta-db-shapely')" },
@@ -2124,9 +2126,11 @@ lint = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", marker = "extra == 'migrations'", specifier = ">=1.18.4" },
+    { name = "dotenv", marker = "extra == 'migrations'", specifier = ">=0.9.9" },
     { name = "geoalchemy2", specifier = ">=0.18.4" },
     { name = "geoalchemy2", extras = ["shapely"], marker = "extra == 'shapely'" },
     { name = "numpy", marker = "extra == 'shapely'", specifier = ">=2" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'migrations'", specifier = ">=3.3.3" },
     { name = "sqlmodel", specifier = ">=0.0.37" },
     { name = "uv", marker = "extra == 'build'" },
 ]

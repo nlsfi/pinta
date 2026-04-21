@@ -34,11 +34,18 @@ jobs:
         run: |
           docker buildx bake \
             --file docker-compose.yml \
+            --load \
             --set *.cache-from=type=gha \
             --set *.cache-to=type=gha,mode=max
 
-      - name: Run migrations via docker compose
-        run: docker compose run --rm ansible
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+
+      - name: Start database
+        run: make up
+
+      - name: Run migrations
+        run: make db-migrate-all
 
       - name: Run e2e tests in QGIS container
-        run: docker compose run --rm qgis uv run --active pytest
+        run: make test-e2e-in-container
