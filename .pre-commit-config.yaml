@@ -78,16 +78,6 @@ repos:
     rev: v2.12.0
     hooks:
       - id: hadolint-docker
-  - repo: https://github.com/ansible/ansible-lint
-    rev: v26.3.0
-    hooks:
-      - id: ansible-lint
-        always_run: false # to only run when any file matched
-        files: ^infra/ansible/.*\.(yaml|yml)$
-        exclude: ^infra/ansible/files/.*$
-        args: [ "infra/ansible" ]
-        additional_dependencies:
-          - ansible==13.4.0
   - repo: https://github.com/nlsfi/qgis-plugin-dev-tools
     rev: v0.12.0
     hooks:

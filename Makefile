@@ -32,7 +32,7 @@ sync:
 sync-all-but-qgis-and-airflow:
 	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build
 
-# Infra targets
+# Docker Compose targets
 # =================
 
 down:
@@ -42,23 +42,32 @@ up:
 	docker compose up -d
 
 build:
-	docker compose --profile ansible build
+	docker compose build
 
 build-qgis:
 	docker compose build qgis
+
+build-db:
+	docker compose build db
 
 restart-fully: down build up
 
 restart: down up
 
-infra-full:
-	docker compose run --rm ansible
+# Database targets
+# ================
 
-migrations:
-	docker compose run --rm ansible ansible-playbook full.yml -i inventories/local -e skip_db_initialization=1
+db-migrate-main:
+	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/main/alembic.ini upgrade head
 
-infra-restart: restart infra-full
+db-migrate-job:
+	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/job/alembic.ini upgrade head
 
+db-migrate-all: db-migrate-main db-migrate-job
+
+db-restart: restart db-migrate-all
+
+db-restart-fully: down build-db build-migrator up db-migrate-all
 
 # QGIS plugin targets
 # =================

@@ -8,7 +8,7 @@ on:
       - 'infra/containers/**'
       - 'infra/ansible/**'
       - 'components/**/Containerfile'
-      - 'components/**/entrypoint.sh'
+      - 'components/**/*.sh'
       - '.github/workflows/build-containers.yml'
   pull_request:
     branches: [ main ]
@@ -17,7 +17,7 @@ on:
       - 'infra/containers/**'
       - 'infra/ansible/**'
       - 'components/**/Containerfile'
-      - 'components/**/entrypoint.sh'
+      - 'components/**/*.sh'
       - '.github/workflows/build-containers.yml'
   workflow_dispatch:
   release:
@@ -49,14 +49,10 @@ jobs:
           set -euo pipefail
 
           docker buildx build --load \
-            -f infra/containers/postgis/Containerfile \
+            -f components/db/containers/postgis/Containerfile \
             -t pinta/db:latest \
-            infra/containers/postgis
+            components/db/containers/postgis
 
-          docker buildx build --load \
-            -f infra/containers/ansible/Containerfile \
-            -t pinta/ansible:latest \
-            infra/containers/ansible
 
           docker buildx build --load \
             -f components/processing/Containerfile \
@@ -70,16 +66,20 @@ jobs:
 
           # Compose uses GHCR image names, so map local builds to those names.
           docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
-          docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:latest"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
 
-      - name: Initialize database with ansible
-        run: |
-          set -euo pipefail
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
 
-          docker compose up -d db
-          docker compose run --rm ansible
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+
+      - name: Start database
+        run: make up
+
+      - name: Run migrations
+        run: make db-migrate-all
 
       - name: Commit initialized DB state to image
         run: |

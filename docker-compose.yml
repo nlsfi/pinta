@@ -28,41 +28,6 @@ services:
         source: db-data
         target: /pgdata
 
-
-  ansible:
-    profiles:
-      - ansible
-    depends_on:
-      - db
-    build:
-      context: infra/containers/ansible
-      dockerfile: Containerfile
-      args:
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
-        NO_PROXY: ${NO_PROXY}
-    image: ghcr.io/nlsfi/pinta/ansible:latest
-    environment:
-      ANSIBLE_CONFIG: /ansible/ansible.cfg
-      HTTP_PROXY: ${HTTP_PROXY}
-      HTTPS_PROXY: ${HTTPS_PROXY}
-      NO_PROXY: ${NO_PROXY}
-    working_dir: /ansible
-    command:
-      - ansible-playbook
-      - full.yml
-      - -i
-      - inventories/local
-    volumes:
-      - type: bind
-        source: ${REPO_DIR:-.}/infra/ansible
-        target: /ansible
-        read_only: true
-      - type: bind
-        source: ${REPO_DIR:-.}
-        target: /repository
-        read_only: true
-
   processing:
     build:
       context: .
