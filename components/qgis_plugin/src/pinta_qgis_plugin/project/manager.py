@@ -28,6 +28,7 @@ from pinta_qgis_plugin import env as plugin_env
 from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
     BasemapLayerCollection,
 )
+from pinta_qgis_plugin.layers.collections.dem_layer_collection import DemLayerCollection
 from pinta_qgis_plugin.layers.collections.management_layer_collection import (
     ManagementLayerCollection,
 )
@@ -44,6 +45,7 @@ LOGGER = logging.getLogger(__name__)
 def initialize_project() -> None:
     """Initialize the QGIS project dynamically."""
     BasemapLayerCollection.get().add_to_project()
+    DemLayerCollection.get().add_to_project()
     ManagementLayerCollection.get().add_to_project()
 
     # TODO: By default QgsProject.instance().setCrs() has no effect here and the project
@@ -61,4 +63,5 @@ def initialize_project() -> None:
 def clean_project() -> None:
     """Clean QGIS project dynamically."""
     BasemapLayerCollection.get().remove_from_project()
+    DemLayerCollection.get().remove_from_project()
     ManagementLayerCollection.get().remove_from_project()

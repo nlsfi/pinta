@@ -48,4 +48,4 @@ Translation files can be updated with `qpdt transup` or wait them to be updated 
 pre-commit hook.
 
 After updating ts files, you can open file you wish to translate with Qt Linguist or code editor, make the changes and
-compile the translations to .qm files using `qpdt transompile`.
+compile the translations to .qm files using `qpdt transcompile`.

@@ -24,6 +24,9 @@ from qgis.core import QgsProject
 from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
     BasemapLayerCollection,
 )
+from pinta_qgis_plugin.layers.collections.dem_layer_collection import (
+    DemLayerCollection,
+)
 from pinta_qgis_plugin.layers.collections.management_layer_collection import (
     ManagementLayerCollection,
 )
@@ -49,6 +52,18 @@ def mock_management_layer_collection(mocker: "MockerFixture") -> "MagicMock":
 
 
 @pytest.fixture
+def mock_dem_layer_collection(mocker: "MockerFixture") -> "MagicMock":
+    mock_dem = mocker.MagicMock(spec=DemLayerCollection)
+    mocker.patch.object(
+        DemLayerCollection,
+        "get",
+        autospec=True,
+        return_value=mock_dem,
+    )
+    return mock_dem
+
+
+@pytest.fixture
 def mock_basemap_layer_collection(mocker: "MockerFixture") -> "MagicMock":
     mock_basemap_layer_collection = mocker.MagicMock(spec=BasemapLayerCollection)
     mocker.patch.object(
@@ -62,6 +77,7 @@ def mock_basemap_layer_collection(mocker: "MockerFixture") -> "MagicMock":
 
 def test_initialize_layers_should_initialize_all_layers(
     mock_management_layer_collection: "MagicMock",
+    mock_dem_layer_collection: "MagicMock",
     mock_basemap_layer_collection: "MagicMock",
     qgis_canvas: "QgsMapCanvas",
 ):

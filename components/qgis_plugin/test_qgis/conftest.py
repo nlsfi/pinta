@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 from pinta_test_utils import xdist_utils
-from qgis.core import QgsProject, QgsVectorLayer
+from qgis.core import QgsProject, QgsRasterLayer, QgsVectorLayer
 
 if typing.TYPE_CHECKING:
     from _pytest.fixtures import SubRequest
@@ -58,6 +58,11 @@ def reset_session_state(
 @pytest.fixture
 def empty_multipolygon_layer() -> QgsVectorLayer:
     return QgsVectorLayer("MultiPolygon", "Empty", "memory")
+
+
+@pytest.fixture
+def empty_raster_layer() -> QgsRasterLayer:
+    return QgsRasterLayer("dummy.tif", "Empty", "gdal")
 
 
 @pytest.fixture
