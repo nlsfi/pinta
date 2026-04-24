@@ -16,8 +16,12 @@ from pinta_processing_test_utils import constants
 class DummyStage(core.Stage):
     """Dummy stage for testing."""
 
+    def __init__(self, dummy_data: core.RasterDataset | None = None) -> None:
+        super().__init__()
+        self.dummy_data = dummy_data
+
     def process(self, data: core.RasterDataset | None) -> core.RasterDataset | None:
-        return data
+        return self.dummy_data if self.dummy_data is not None else data
 
 
 class ErrorStage(core.Stage):
@@ -25,6 +29,13 @@ class ErrorStage(core.Stage):
 
     def process(self, _: core.RasterDataset | None) -> core.RasterDataset | None:
         raise RuntimeError
+
+
+class NullStage(core.Stage):
+    """Stage that returns None."""
+
+    def process(self, _: core.RasterDataset | None) -> core.RasterDataset | None:
+        return None
 
 
 class TrackingStage(core.Stage):
@@ -100,3 +111,64 @@ def test_tee_sends_independent_copies(dataset: core.RasterDataset):
     assert branch1.received_data is not branch2.received_data
     # Arrays have identical content but are different objects
     assert np.array_equal(branch1.received_data.array, branch2.received_data.array)
+
+
+def test_zip(dataset: core.RasterDataset):
+    original_array = dataset.array.copy()
+    pipeline = DummyStage() | core.Zip(DummyStage(dummy_data=dataset))
+    result = pipeline.process(dataset)
+
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+    assert all(item is dataset for item in result)
+    # Datasets should not be modified
+    assert all(np.array_equal(item.array, original_array) for item in result)
+
+
+def test_zip_with_pipeline(dataset: core.RasterDataset):
+    pipeline = DummyStage() | core.Zip(DummyStage() | DummyStage(dummy_data=dataset))
+    result = pipeline.process(dataset)
+
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+    assert all(item is dataset for item in result)
+
+
+def test_zip_multiple_inputs(dataset: core.RasterDataset):
+    other1 = DummyStage(dummy_data=dataset)
+    other2 = DummyStage(dummy_data=dataset)
+    other3 = DummyStage(dummy_data=dataset)
+    pipeline = DummyStage() | core.Zip(other1, other2, other3)
+    result = pipeline.process(dataset)
+
+    assert isinstance(result, tuple)
+    assert len(result) == 4
+    assert all(item is dataset for item in result)
+
+
+def test_zip_without_input_as_first_stage(dataset: core.RasterDataset):
+    # Test that Zip works as the first stage without input
+    pipeline = core.Zip(DummyStage(dummy_data=dataset))
+    result = pipeline.execute()
+
+    assert isinstance(result, tuple)
+    assert len(result) == 1
+    assert result[0] is dataset
+
+
+def test_zip_with_branch_returning_none(dataset: core.RasterDataset):
+    # Test that Zip works when a branch returns None
+    pipeline = DummyStage() | core.Zip(NullStage())
+    result = pipeline.process(dataset)
+
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+    assert result[0] is dataset
+    assert result[1] is None
+
+
+def test_zip_only_stage_with_no_others():
+    pipeline = core.Zip()
+    result = pipeline.execute()
+
+    assert result == ()
