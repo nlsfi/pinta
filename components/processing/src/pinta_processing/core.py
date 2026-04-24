@@ -32,6 +32,9 @@ class RasterDataset:
         )
 
 
+type StageReturnType = RasterDataset | tuple["StageReturnType" | None, ...] | None
+
+
 class Stage:
     """Base class for all processing stages."""
 
@@ -40,9 +43,16 @@ class Stage:
             return Pipeline([self, *other.stages])
         return Pipeline([self, other])
 
-    def process(self, data: RasterDataset | None) -> RasterDataset | None:
+    def process(self, data: StageReturnType) -> StageReturnType:
         """Process the input data and return the result."""
         raise NotImplementedError
+
+    def execute(self) -> StageReturnType:
+        """Execute the pipeline without input data.
+
+        This is used as entrypoint for the pipeline.
+        """
+        return self.process(None)
 
 
 class Pipeline(Stage):
@@ -56,19 +66,12 @@ class Pipeline(Stage):
             return Pipeline([*self.stages, *other.stages])
         return Pipeline([*self.stages, other])
 
-    def process(self, data: RasterDataset | None) -> RasterDataset | None:
+    def process(self, data: StageReturnType) -> StageReturnType:
         """Process the data through all stages serially in the pipeline."""
         context = data
         for stage in self.stages:
             context = stage.process(context)
         return context
-
-    def execute(self) -> RasterDataset | None:
-        """Execute the pipeline without input data.
-
-        This is used as entrypoint for the pipeline.
-        """
-        return self.process(None)
 
 
 class Tee(Stage):
@@ -77,8 +80,29 @@ class Tee(Stage):
     def __init__(self, *branches: Stage) -> None:
         self.branches = branches
 
-    def process(self, data: RasterDataset | None) -> RasterDataset | None:
+    def process(self, data: StageReturnType) -> StageReturnType:
         """Process the data and send it to all branches."""
         for branch in self.branches:
             branch.process(copy.deepcopy(data))
         return data
+
+
+class Zip(Stage):
+    """Zip stage to combine multiple branches into one."""
+
+    def __init__(self, *others: Stage) -> None:
+        self.others = others
+
+    def _run_others(self) -> tuple[StageReturnType, ...]:
+        results: list[StageReturnType] = []
+        for other in self.others:
+            result = other.execute()
+            results.append(result)
+        return tuple(results)
+
+    def process(self, data: StageReturnType) -> StageReturnType:
+        """Process the pipelines and combine their results and input into a tuple."""
+        others_results = self._run_others()
+        if data is None:
+            return others_results
+        return (data, *others_results)
