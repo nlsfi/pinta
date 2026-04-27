@@ -47,5 +47,5 @@ config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string
 common.run_migrations_online(
     config=config,
     target_metadata=target_metadata,
-    schema_configuration=schema.SCHEMA_CONFIGURATIONS_MAIN,
+    migration_schema=schema.Schema.MIGRATION.value,
 )

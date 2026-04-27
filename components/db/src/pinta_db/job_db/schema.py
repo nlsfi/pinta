@@ -2,33 +2,12 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
+import enum
 
-from pinta_db.schemas import (
-    AccessLevel,
-    Role,
-    Schema,
-    SchemaAccess,
-    SchemaConfig,
-)
 
-SCHEMA_CONFIGURATIONS_JOB = [
-    SchemaConfig(
-        schema=Schema.MIGRATIONS,
-    ),
-    SchemaConfig(
-        schema=Schema.REFERENCE,
-        access=(
-            SchemaAccess(Role.WRITER, AccessLevel.READ_WRITE),
-            SchemaAccess(Role.READER, AccessLevel.READ),
-            SchemaAccess(Role.PROCESSING_WORKER, AccessLevel.READ_WRITE),
-        ),
-    ),
-    SchemaConfig(
-        schema=Schema.USER,
-        access=(
-            SchemaAccess(Role.WRITER, AccessLevel.READ_WRITE),
-            SchemaAccess(Role.READER, AccessLevel.READ),
-            SchemaAccess(Role.PROCESSING_WORKER, AccessLevel.READ_WRITE),
-        ),
-    ),
-]
+class Schema(enum.Enum):
+    """Schemas used in the database."""
+
+    MIGRATION = "alembic"
+    REFERENCE = "reference"
+    USER = "user_data"

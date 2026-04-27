@@ -5,8 +5,8 @@
 
 """Add dem tables
 
-Revision ID: 002
-Revises: 001
+Revision ID: 003
+Revises: 002
 Create Date: 2026-04-08 07:36:59.835976
 
 """
@@ -22,8 +22,8 @@ from pinta_db.env import DEM_NODATA, DEM_PIXEL_SIZE, SRID
 from pinta_db.main_db.models import dem
 
 # revision identifiers, used by Alembic.
-revision: str = "002"
-down_revision: str | Sequence[str] | None = "001"
+revision: str = "003"
+down_revision: str | Sequence[str] | None = "002"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
