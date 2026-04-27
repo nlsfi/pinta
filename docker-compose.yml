@@ -7,8 +7,6 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-        MAIN_DB_NAME: ${DB_NAME:-pinta}
-        JOB_DB_NAME: ${DB_JOB_TEMPLATE_NAME:-job_template}
     image: ghcr.io/nlsfi/pinta/db:latest
     healthcheck:
       test: pg_isready -U postgres || exit 1

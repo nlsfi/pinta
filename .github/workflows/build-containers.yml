@@ -132,7 +132,6 @@ jobs:
 
           docker tag pinta/db:latest "$GHCR_PREFIX/db:$TAG"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:$TAG"
-          docker tag pinta/ansible:latest "$GHCR_PREFIX/ansible:$TAG"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:$TAG"
 
       - name: Push images to GHCR
@@ -144,7 +143,6 @@ jobs:
 
           docker push "$GHCR_PREFIX/db:$TAG"
           docker push "$GHCR_PREFIX/processing:$TAG"
-          docker push "$GHCR_PREFIX/ansible:$TAG"
           docker push "$GHCR_PREFIX/e2e:$TAG"
 
       - name: Show built images

@@ -40,6 +40,11 @@ down:
 
 up:
 	docker compose up -d
+	@echo -n "Waiting for containers to be healthy"
+	@t=60; while [ $$t -gt 0 ] && [ "$$(docker inspect -f '{{.State.Health.Status}}' $$(docker compose ps -q db) 2>/dev/null)" != "healthy" ]; do \
+		sleep 1; t=$$((t-1)); echo -n "."; \
+	done; [ $$t -gt 0 ] || (echo " Timeout!" && exit 0)
+	@echo ""
 
 build:
 	docker compose build
@@ -63,11 +68,20 @@ db-migrate-main:
 db-migrate-job:
 	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/job/alembic.ini upgrade head
 
-db-migrate-all: db-migrate-main db-migrate-job
+db-migrate-all: db-migrate-main db-migrate-job db-sync-users
+
+db-sync-users:
+	@docker compose exec -T \
+	  -e PGPASSWORD=$(DB_ADMIN_PASSWORD) \
+	  db psql \
+	  -h localhost \
+	  -U $(DB_ADMIN_USER) -d $(DB_NAME) \
+	  < components/db/scripts/create_development_users.sql
 
 db-restart: restart db-migrate-all
 
-db-restart-fully: down build-db build-migrator up db-migrate-all
+db-restart-fully: down build-db up db-migrate-all
+
 
 # QGIS plugin targets
 # =================

@@ -5,24 +5,16 @@
 set -euo pipefail
 
 export PGUSER="$POSTGRES_USER"
+# DB name
+MAIN_DB_NAME="pinta"
+JOB_DB_NAME="job_template"
 
 # Admin user
 ADMIN_USER="admin"
 ADMIN_PASSWORD="admin"
 
-# Roles
+# Owner role
 OWNER_ROLE="pinta_owner"
-READER_ROLE="pinta_reader"
-WRITER_ROLE="pinta_writer"
-PROCESSING_WORKER_ROLE="pinta_processing_worker"
-
-# Users
-QGIS_EDITOR_USER="qgis_editor"
-QGIS_EDITOR_PASSWORD="qgis"
-QGIS_VIEWER_USER="qgis_viewer"
-QGIS_VIEWER_PASSWORD="qgis"
-PROCESSING_WORKER_USER="processing_worker"
-PROCESSING_WORKER_PASSWORD="processing_worker"
 
 TEMPLATE_NAME="template_postgis"
 
@@ -43,50 +35,21 @@ create_application_database() {
   echo "Creating database ${db_name}"
   psql <<EOSQL
     CREATE DATABASE "${db_name}" OWNER "${OWNER_ROLE}" TEMPLATE "${TEMPLATE_NAME}";
-    REVOKE ALL ON DATABASE "${db_name}" FROM PUBLIC;
-    GRANT CONNECT, TEMP ON DATABASE "${db_name}" TO "${READER_ROLE}";
-    GRANT CONNECT, TEMP ON DATABASE "${db_name}" TO "${WRITER_ROLE}";
-    GRANT CONNECT, TEMP ON DATABASE "${db_name}" TO "${PROCESSING_WORKER_ROLE}";
-    REVOKE CREATE ON DATABASE "${db_name}" FROM "${READER_ROLE}";
-    REVOKE CREATE ON DATABASE "${db_name}" FROM "${WRITER_ROLE}";
-    REVOKE CREATE ON DATABASE "${db_name}" FROM "${PROCESSING_WORKER_ROLE}";
 EOSQL
 
   check_extension "${db_name}" "postgis"
   check_extension "${db_name}" "postgis_raster"
 }
 
-echo "Creating admin user"
-psql <<EOSQL
-  CREATE ROLE "${ADMIN_USER}" LOGIN CREATEDB CREATEROLE PASSWORD '${ADMIN_PASSWORD}';
-EOSQL
-
 check_extension "${TEMPLATE_NAME}" "postgis"
 check_extension "${TEMPLATE_NAME}" "postgis_raster"
 
-echo "Creating application roles and users"
+echo "Creating admin user and owner role"
 psql <<EOSQL
-  CREATE ROLE "${OWNER_ROLE}" NOLOGIN;
-  CREATE ROLE "${READER_ROLE}" NOLOGIN;
-  CREATE ROLE "${WRITER_ROLE}" NOLOGIN;
-  CREATE ROLE "${PROCESSING_WORKER_ROLE}" NOLOGIN;
-
-  CREATE ROLE "${QGIS_EDITOR_USER}" LOGIN PASSWORD '${QGIS_EDITOR_PASSWORD}';
-  CREATE ROLE "${QGIS_VIEWER_USER}" LOGIN PASSWORD '${QGIS_VIEWER_PASSWORD}';
-  CREATE ROLE "${PROCESSING_WORKER_USER}" LOGIN PASSWORD '${PROCESSING_WORKER_PASSWORD}';
-
-  GRANT "${READER_ROLE}" TO "${WRITER_ROLE}";
-  GRANT "${READER_ROLE}" TO "${PROCESSING_WORKER_ROLE}";
-  GRANT "${WRITER_ROLE}" TO "${QGIS_EDITOR_USER}";
-  GRANT "${READER_ROLE}" TO "${QGIS_VIEWER_USER}";
-  GRANT "${PROCESSING_WORKER_ROLE}" TO "${PROCESSING_WORKER_USER}";
-
-  -- Admin needs membership in every application role so it can
-  -- ALTER DEFAULT PRIVILEGES on their behalf during schema setup.
+  CREATE ROLE "${ADMIN_USER}" LOGIN CREATEDB CREATEROLE PASSWORD '${ADMIN_PASSWORD}';
+  CREATE ROLE "${OWNER_ROLE}" NOLOGIN CREATEROLE;
   GRANT "${OWNER_ROLE}" TO "${ADMIN_USER}";
-  GRANT "${READER_ROLE}" TO "${ADMIN_USER}";
-  GRANT "${WRITER_ROLE}" TO "${ADMIN_USER}";
-  GRANT "${PROCESSING_WORKER_ROLE}" TO "${ADMIN_USER}";
+  GRANT pg_signal_backend TO "${ADMIN_USER}";
 EOSQL
 
 create_application_database "${MAIN_DB_NAME}"
