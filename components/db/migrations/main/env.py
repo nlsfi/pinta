@@ -40,6 +40,7 @@ ADMIN_CREDENTIALS = engine_utils.Credentials(
     host=os.environ["DB_HOST"],
     port=os.environ["DB_PORT"],
     db_name=os.environ["DB_NAME"],
+    role=os.environ["DB_OWNER_ROLE"],
 )
 
 config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())
@@ -47,5 +48,5 @@ config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string
 common.run_migrations_online(
     config=config,
     target_metadata=target_metadata,
-    schema_configuration=schema.SCHEMA_CONFIGURATIONS_MAIN,
+    migration_schema=schema.Schema.MIGRATION.value,
 )

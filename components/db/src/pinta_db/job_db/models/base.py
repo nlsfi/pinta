@@ -8,7 +8,7 @@ import uuid
 from sqlmodel import Field
 
 from pinta_db.common.base import BaseJobDb
-from pinta_db.schemas import Schema
+from pinta_db.job_db.schema import Schema
 
 
 class ReferenceBase(BaseJobDb):

@@ -7,9 +7,7 @@ import os
 
 import sqlmodel
 
-from pinta_db import schemas
-from pinta_db.main_db import schema
-from pinta_db_utils import engine_utils, schema_utils
+from pinta_db_utils import engine_utils
 
 _CREATE_DB_LOCK_KEY = "pinta-create-db"
 
@@ -88,26 +86,7 @@ def get_processing_worker_credentials(
 def create_db(worker_id: str) -> str:
     """Create a new database for the test session."""
     db_name = os.environ["DB_NAME"] + f"_test_{worker_id}"
-    template_name = os.environ["DB_NAME"]
-    role_mapping = {
-        schemas.Role.OWNER: (os.environ["DB_OWNER_ROLE"]),
-        schemas.Role.WRITER: os.environ["DB_WRITER_ROLE"],
-        schemas.Role.READER: os.environ["DB_READER_ROLE"],
-        schemas.Role.PROCESSING_WORKER: os.environ["DB_PROCESSING_WORKER_ROLE"],
-    }
-
-    _create_from_template(db_name, template_name)
-
-    schema_statements = schema_utils.get_set_schema_role_privileges_statements(
-        schema.SCHEMA_CONFIGURATIONS_MAIN, role_mapping
-    )
-
-    with engine_utils.get_autocommit_connection(
-        get_admin_credentials(db_name)
-    ) as connection:
-        for statement in schema_statements:
-            connection.execute(sqlmodel.text(statement))
-
+    _create_from_template(db_name, os.environ["DB_NAME"])
     return db_name
 
 

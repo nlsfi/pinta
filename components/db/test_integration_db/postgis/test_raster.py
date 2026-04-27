@@ -7,7 +7,7 @@ import pytest
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_db import schemas
+from pinta_db.main_db.schema import Schema
 from pinta_db_utils.postgis import raster
 
 
@@ -151,7 +151,7 @@ def test_initialize_raster_table(
 ):
     """Test creating a raster table with varying numbers of staging tables."""
     table_name = "test_raster_table"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
@@ -188,7 +188,7 @@ def test_test_merge_staging_tables_with_no_staging_tables_creates_rast_index(
     processing_worker_db: sqlmodel.Session,
 ):
     table_name = "test_raster_merge_no_staging"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
 
     raster.initialize_raster_table(
         table_name=table_name,
@@ -212,7 +212,7 @@ def test_test_merge_staging_tables_with_no_staging_tables_creates_rast_index(
 def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
     """Test merging staging tables into main raster table."""
     table_name = "test_raster_merge"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
     staging_tables = 3
     rows_per_staging = 2
 
@@ -272,7 +272,7 @@ def test_initialize_raster_table_with_extra_columns(
 ):
     """Test creating a raster table with extra columns."""
     table_name = "test_raster_extra"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
 
     def extra_columns() -> list[sa.Column]:
         return [
@@ -317,7 +317,7 @@ def test_initialize_raster_table_twice_raises_exception(
 ):
     """Test calling initialize_raster_table twice."""
     table_name = "test_initialize_table_twice"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
 
     # Initialize twice
     raster.initialize_raster_table(
@@ -344,7 +344,7 @@ def test_initialize_overview_tables(
 ):
     """Test creating overview tables."""
     table_name = "test_raster_overview"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
 
     raster.initialize_overview_tables(
         table_name=table_name,
@@ -391,7 +391,7 @@ def test_initialize_overview_tables(
 
 def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
     table_name = "dem"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
@@ -425,7 +425,7 @@ def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
 def test_register_overview(processing_worker_db: sqlmodel.Session):
     """Test registering overview tables and verifying their constraints."""
     table_name = "dem"
-    schema = schemas.Schema.PROCESSING.value
+    schema = Schema.PROCESSING.value
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,

@@ -21,19 +21,35 @@ class Credentials:
     host: str
     port: str
     db_name: str
+    role: str | None = None
 
     def get_connection_string(self) -> str:
         """Get connection string for DB."""
         return get_connection_string(
-            self.user, self.host, self.port, self.password, self.db_name
+            self.user,
+            self.host,
+            self.port,
+            self.password,
+            self.db_name,
+            self.role,
         )
 
 
-def get_connection_string(
-    user: str, host: str, port: str, password: str, db_name: str
+def get_connection_string(  # noqa: PLR0913
+    user: str,
+    host: str,
+    port: str,
+    password: str,
+    db_name: str,
+    role: str | None = None,
 ) -> str:
     """Get connection string for DB."""
-    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
+    connection_string = (
+        f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
+    )
+    if role:
+        connection_string += f"?options=-crole={role}"
+    return connection_string
 
 
 @contextmanager
