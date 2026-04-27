@@ -5,8 +5,8 @@
 
 """Add production area and point cloud tables
 
-Revision ID: 001
-Revises:
+Revision ID: 002
+Revises: 001
 Create Date: 2026-03-16 11:36:40.752518
 
 """
@@ -22,8 +22,8 @@ from geoalchemy2 import Geometry
 from pinta_db.env import SRID
 
 # revision identifiers, used by Alembic.
-revision: str = "001"
-down_revision: str | Sequence[str] | None = None
+revision: str = "002"
+down_revision: str | Sequence[str] | None = "001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
