@@ -10,15 +10,20 @@ https://trac.osgeo.org/postgis/wiki/WKTRaster/RFC/RFC2_V0WKBFormat
 """
 
 import hashlib
+import logging
+import math
 import struct
 from dataclasses import dataclass
 
+import numpy as np
 import sqlmodel
-from rasterio.transform import Affine
+from affine import Affine
+from pinta_db import env
+from rasterio.windows import Window, from_bounds
 
 from pinta_processing import core, exceptions
 
-DEFAULT_TILE_SIZE = 256
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -52,7 +57,7 @@ class PostgisWriter(core.Stage):
         table_name: str,
         session: sqlmodel.Session,
         staging_tables: int = 0,
-        tile_size: int = DEFAULT_TILE_SIZE,
+        tile_size: int = env.DEFAULT_TILE_SIZE,
     ) -> None:
         super().__init__()
         self.schema = schema
@@ -70,6 +75,9 @@ class PostgisWriter(core.Stage):
                 received_type=type(data).__name__,
             )
 
+        if data.crs is None:
+            msg = "CRS is required for writing to PostGIS. "
+            raise ValueError(msg)
         if self.staging_tables == 0:
             return self._write_to_postgis(data, self.table_name)
 
@@ -81,7 +89,7 @@ class PostgisWriter(core.Stage):
         # Get the raw psycopg2 connection for batch operations
         raw_connection = self.session.connection().connection
         copy_sql = f"COPY {self.schema}.{table_name} (rast) FROM STDIN"
-
+        LOGGER.info("Writing data to table %s.%s using COPY", self.schema, table_name)
         with raw_connection.cursor() as cursor, cursor.copy(copy_sql) as copy:
             for tile_data in self._generate_tiles(data):
                 raster_bytes = self._raster_dataset_to_postgis_bytes(tile_data)
@@ -89,40 +97,98 @@ class PostgisWriter(core.Stage):
 
         raw_connection.commit()
 
-    def _generate_tiles(self, data: core.RasterDataset) -> list[core.RasterDataset]:
-        """Generate tiles as RasterDataset objects.
+    def _generate_tiles(
+        self,
+        data: core.RasterDataset,
+        x0: float = 500000,
+        y0: float = 6570000,
+    ) -> list[core.RasterDataset]:
+        """Generate tiles from a RasterDataset.
 
-        Each tile is a RasterDataset with the proper array slice, transform,
-        CRS, and nodata value for writing to PostGIS. Last tile might be smaller if
-        dimensions are not divisible by tile_size.
+        Generate tiles covering input data on a global grid to ensure regular
+        blocking. Initialize tiles with nodata and fill tiles accordingly with
+        input data.
         """
         tiles = []
+
+        transform = data.transform
+        pixel_width = transform.a
+        pixel_height = -transform.e
+
+        tile_width = self.tile_size * pixel_width
+        tile_height = self.tile_size * pixel_height
+
         height, width = data.array.shape[:2]
+        nodata_value = data.nodata if data.nodata is not None else 0.0
 
-        for row in range(0, height, self.tile_size):
-            for col in range(0, width, self.tile_size):
-                # Calculate tile dimensions (last tiles may be smaller)
-                tile_height = min(self.tile_size, height - row)
-                tile_width = min(self.tile_size, width - col)
+        # Raster bounds
+        xmin, ymax = transform * (0, 0)
+        xmax, ymin = transform * (width, height)
 
-                # Extract tile array
-                tile_array = data.array[
-                    row : row + tile_height,
-                    col : col + tile_width,
-                ]
+        # Snap to global grid
+        grid_xmin = x0 + math.floor((xmin - x0) / tile_width) * tile_width
+        grid_xmax = x0 + math.ceil((xmax - x0) / tile_width) * tile_width
 
-                # Calculate the transform for this tile's upper-left corner
-                tile_transform = data.transform * Affine.translation(col, row)
+        grid_ymax = y0 + math.ceil((ymax - y0) / tile_height) * tile_height
+        grid_ymin = y0 + math.floor((ymin - y0) / tile_height) * tile_height
 
-                # Create RasterDataset for this tile
-                tile_data = core.RasterDataset(
-                    array=tile_array,
-                    transform=tile_transform,
-                    crs=data.crs,
-                    nodata=data.nodata,
+        full_window = Window(0, 0, width, height)
+
+        y = grid_ymax
+        while y > grid_ymin:
+            x = grid_xmin
+            while x < grid_xmax:
+                tile_bounds = (x, y - tile_height, x + tile_width, y)
+
+                # Convert bounds to pixel window
+                win = from_bounds(*tile_bounds, transform=transform)
+
+                # Stabilize floating precision
+                win = win.round_offsets().round_lengths()
+
+                # Intersect with raster extent
+                src_win = win.intersection(full_window)
+
+                # Create empty tile
+                tile_array = np.full(
+                    (self.tile_size, self.tile_size),
+                    nodata_value,
+                    dtype=data.array.dtype,
                 )
 
-                tiles.append(tile_data)
+                if src_win.width > 0 and src_win.height > 0:
+                    src = data.array[
+                        int(src_win.row_off) : int(src_win.row_off + src_win.height),
+                        int(src_win.col_off) : int(src_win.col_off + src_win.width),
+                    ]
+
+                    # Compute destination window inside tile
+                    dst_row_off = int(src_win.row_off - win.row_off)
+                    dst_col_off = int(src_win.col_off - win.col_off)
+
+                    h, w = src.shape
+
+                    tile_array[
+                        dst_row_off : dst_row_off + h,
+                        dst_col_off : dst_col_off + w,
+                    ] = src
+
+                # Compute tile transform
+                tile_transform = Affine.translation(x, y) * Affine.scale(
+                    pixel_width, -pixel_height
+                )
+
+                tiles.append(
+                    core.RasterDataset(
+                        array=tile_array,
+                        transform=tile_transform,
+                        crs=data.crs,
+                        nodata=data.nodata,
+                    )
+                )
+
+                x += tile_width
+            y -= tile_height
 
         return tiles
 

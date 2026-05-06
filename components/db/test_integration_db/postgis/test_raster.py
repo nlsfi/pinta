@@ -180,7 +180,7 @@ def test_initialize_raster_table(
                 processing_worker_db, schema, staging_name
             )
             _assert_table_index_count(
-                processing_worker_db, schema, staging_name, expected_count=1
+                processing_worker_db, schema, staging_name, expected_count=2
             )
 
 
@@ -214,7 +214,7 @@ def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
     table_name = "test_raster_merge"
     schema = Schema.PROCESSING.value
     staging_tables = 3
-    rows_per_staging = 2
+    rows_per_staging = 1
 
     # Initialize table with staging tables
     raster.initialize_raster_table(
@@ -229,15 +229,21 @@ def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
         staging_name = f"{table_name}_p{i}"
         for _ in range(rows_per_staging):
             processing_worker_db.exec(  # type: ignore[call-overload]
-                sa.text(
-                    f"""
-                    INSERT INTO {schema}.{staging_name} (rast)
-                    VALUES (ST_AsRaster(
-                        ST_GeomFromText('POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))', 4326),
-                        0.1, 0.1, 0, 0, '32BF'
-                    ))
-                    """
-                )
+                sa.text(f"""
+                    INSERT INTO "{schema}"."{staging_name}" ("rast")
+                    SELECT ST_AddBand(
+                        ST_MakeEmptyRaster(
+                            256, 256,
+                            41248 + ({i} * 512),   -- shift X
+                            7880720,               -- keep Y same
+                            2, -2, 0, 0, 3067
+                        ),
+                        1,
+                        '32BF'::text,
+                        0,
+                        -9999
+                    )
+                """)
             )
     processing_worker_db.commit()
 
@@ -263,7 +269,7 @@ def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
 
     # Verify pk and rast index exists on main table
     _assert_table_index_count(
-        processing_worker_db, schema, table_name, expected_count=2
+        processing_worker_db, schema, table_name, expected_count=3
     )
 
 
@@ -312,7 +318,7 @@ def test_initialize_raster_table_with_extra_columns(
 
 
 @pytest.mark.parametrize("staging_tables", [0, 3])
-def test_initialize_raster_table_twice_raises_exception(
+def test_initialize_raster_table_twice(
     processing_worker_db: sqlmodel.Session, staging_tables: int
 ):
     """Test calling initialize_raster_table twice."""
@@ -326,16 +332,12 @@ def test_initialize_raster_table_twice_raises_exception(
         staging_tables=staging_tables,
         session=processing_worker_db,
     )
-    with pytest.raises(
-        sa.exc.ProgrammingError,
-        match='relation "test_initialize_table_twice" already exists',
-    ):
-        raster.initialize_raster_table(
-            table_name=table_name,
-            schema=schema,
-            staging_tables=staging_tables,
-            session=processing_worker_db,
-        )
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        staging_tables=staging_tables,
+        session=processing_worker_db,
+    )
 
 
 @pytest.mark.parametrize("staging_tables", [0, 3])
@@ -400,10 +402,6 @@ def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
 
     _assert_table_exists(processing_worker_db, schema, table_name)
     _assert_table_has_default_columns(processing_worker_db, schema, table_name)
-
-    raster.add_raster_constraints(
-        session=processing_worker_db, schema=schema, table_name=table_name
-    )
 
     # Assert that constraints are created and registered in raster_columns view
     constraints_result = processing_worker_db.exec(  # type: ignore[call-overload]

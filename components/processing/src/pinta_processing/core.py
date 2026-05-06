@@ -17,7 +17,7 @@ class RasterDataset:
 
     array: np.ndarray
     transform: affine.Affine
-    crs: str | None
+    crs: str | None  # in format EPSG:xxxx
     nodata: float | int | None = None
 
     @staticmethod

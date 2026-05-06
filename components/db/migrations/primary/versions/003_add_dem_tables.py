@@ -63,6 +63,8 @@ def _make_empty_raster(  # noqa: PLR0913
 
 
 def _add_raster_constraints(table: str) -> Any:  # noqa: ANN401
+    # Disabled constraints:
+    # - enforce regularly blocking arrangement (generated manually)
     return sa.text("""
         SELECT AddRasterConstraints(
             'dem', :table, 'rast', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
@@ -271,7 +273,7 @@ def upgrade() -> None:
     )
     op.execute(
         dem.constraint_enforce_coverage_tile_dem_rast(
-            "o_128_dem", "enforce_coverage_tile_o_128_dem_rast", tile_size_overview_8
+            "o_128_dem", "enforce_coverage_tile_o_128_dem_rast", tile_size_overview_128
         )
     )
     op.execute(

@@ -2,6 +2,7 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
+import logging
 import pathlib
 import tempfile
 import zipfile
@@ -9,6 +10,8 @@ import zipfile
 import rasterio
 
 from pinta_processing import core
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RasterioReader(core.Stage):
@@ -18,9 +21,10 @@ class RasterioReader(core.Stage):
     (transform, CRS, nodata values) from the file metadata.
     """
 
-    def __init__(self, path: str | pathlib.Path) -> None:
+    def __init__(self, path: str | pathlib.Path, crs: str | None = None) -> None:
         """Initialize RasterioReader."""
         self.path = pathlib.Path(path)
+        self.crs = crs
 
     def process(self, data: core.RasterDataset | None) -> core.RasterDataset:  # noqa: ARG002
         """Read raster file and return RasterDataset."""
@@ -55,4 +59,30 @@ class RasterioReader(core.Stage):
     def _rasterio_to_dataset(self) -> core.RasterDataset:
         """Convert rasterio dataset to RasterDataset."""
         with rasterio.open(self.path) as src:
-            return core.RasterDataset.from_rasterio(src)
+            dataset = core.RasterDataset.from_rasterio(src)
+
+            if (
+                self.crs is not None
+                and dataset.crs is not None
+                and dataset.crs != self.crs
+            ):
+                msg = (
+                    f"CRS mismatch: raster file has CRS {dataset.crs} "
+                    f"but {self.crs} was specified. Reprojection is not supported."
+                )
+                raise NotImplementedError(msg)
+
+            if self.crs is not None:
+                dataset = core.RasterDataset(
+                    array=dataset.array,
+                    transform=dataset.transform,
+                    crs=self.crs,
+                    nodata=dataset.nodata,
+                )
+            if dataset.crs is None:
+                LOGGER.warning(
+                    "Raster file %s has no CRS information and no CRS "
+                    "manually specified",
+                    self.path,
+                )
+            return dataset

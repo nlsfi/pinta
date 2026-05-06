@@ -21,3 +21,5 @@ try:
     DEM_NODATA = float(os.environ["DB_DEM_NODATA"])
 except KeyError as e:
     raise MissingEnvironmentError(e.args[0]) from None
+
+DEFAULT_TILE_SIZE = 256

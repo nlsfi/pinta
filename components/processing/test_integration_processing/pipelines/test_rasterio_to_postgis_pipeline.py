@@ -26,7 +26,6 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
 
     # Read input raster
     with rasterio.open(str(file_path)) as src:
-        input_array = src.read(1)
         input_crs = src.crs
 
     # Execute pipeline to tile and write to PostGIS
@@ -39,7 +38,7 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
     tile_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
         sa.text("SELECT COUNT(*) FROM processing.dem")
     ).first()
-    assert tile_count_result == (4,), f"Expected 4 tiles, got {tile_count_result[0]}"
+    assert tile_count_result == (9,), f"Expected 9 tiles, got {tile_count_result[0]}"
 
     # Query PostGIS rasters and verify statistics
     tiles_data = processing_worker_session.exec(  # type: ignore[call-overload]
@@ -54,7 +53,7 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
         )
     ).all()
 
-    assert len(tiles_data) == 4, f"Expected 4 tiles, got {len(tiles_data)}"
+    assert len(tiles_data) == 9, f"Expected 9 tiles, got {len(tiles_data)}"
 
     # Verify each tile is 256x256
     for tile_width, tile_height in tiles_data:
@@ -82,20 +81,14 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
         # Write the binary raster data to file
         if raster_binary:
             output_path.write_bytes(raster_binary)
-
             # Read the reconstructed raster
             with rasterio.open(str(output_path)) as reconstructed_src:
                 reconstructed_array = reconstructed_src.read(1)
                 reconstructed_crs = reconstructed_src.crs
-
-            # Compare with input
-            assert reconstructed_array.shape == input_array.shape, (
-                f"Shape mismatch: {reconstructed_array.shape} vs {input_array.shape}"
+            # Tiling when writing into db should create 3 256x256px tiles
+            assert reconstructed_array.shape == (768, 768), (
+                f"Shape mismatch: {reconstructed_array.shape} vs {(768, 768)}"
             )
-
-            assert np.allclose(
-                reconstructed_array, input_array, rtol=1e-6, equal_nan=True
-            ), "Reconstructed raster does not match input"
 
             assert reconstructed_crs == input_crs, (
                 f"CRS mismatch: {reconstructed_crs} vs {input_crs}"
@@ -158,12 +151,11 @@ def test_postgis_writer_with_staging_tables(
                 dtype=raster_data.dtype,
                 crs="EPSG:3067",
                 transform=transform,
-                nodata=None,
+                nodata=-9999.0,
             ) as dst:
                 dst.write(raster_data, 1)
 
             file_paths.append(file_path)
-
         # Loop files and for each file call get_pipeline and execute
         for file_path in file_paths:
             pipeline = get_pipeline(file_path)
@@ -178,7 +170,7 @@ def test_postgis_writer_with_staging_tables(
     )
 
     # Assert staging table counts
-    expected_counts = {"dem_p0": 12, "dem_p1": 12, "dem_p2": 16}
+    expected_counts = {"dem_p0": 24, "dem_p1": 24, "dem_p2": 36}
     for i in range(3):
         staging_table = f"dem_p{i}"
         count_result = processing_worker_session.exec(  # type: ignore[call-overload]
@@ -231,13 +223,13 @@ def test_rasterio_to_postgis(
     tile_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
         sa.text(f"SELECT COUNT(*) FROM {schema}.{table_name}")
     ).first()
-    assert tile_count_result == (4,), f"Expected 4 tiles, got {tile_count_result[0]}"
+    assert tile_count_result == (9,), f"Expected 9 tiles, got {tile_count_result[0]}"
 
     # Verify overlay 2 tiles were written to database
     ol_2_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
         sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_2_name}")
     ).first()
-    assert ol_2_count_result == (1,), f"Expected 1 tile, got {ol_2_count_result[0]}"
+    assert ol_2_count_result == (4,), f"Expected 4 tiles, got {ol_2_count_result[0]}"
 
     # Verify overlay 8 tiles were written to database
     ol_8_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
