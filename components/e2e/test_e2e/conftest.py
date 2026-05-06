@@ -75,15 +75,14 @@ def _set_env_variables(
     created_db: str, worker_id: str, monkeypatch: "pytest.MonkeyPatch"
 ) -> None:
     """Set test specific environment variables."""
-    monkeypatch.setenv("DB_NAME", created_db)
-    monkeypatch.setenv("DB_NAME", created_db)
+    monkeypatch.setenv("DB_PRIMARY_NAME", created_db)
     monkeypatch.setenv("DB_SRID", constants.SRID)
     monkeypatch.delenv("PINTA_BASE_MAP_LAYER_CONFIG", raising=False)
     monkeypatch.setenv("PINTA_INITIAL_PROJECT_EXTENT", "67734,6570084,843161,7879314")
     monkeypatch.setenv(
         "AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER",
-        f"postgresql://{os.environ['DB_PROCESSING_WORKER_USER']}:{os.environ['DB_PROCESSING_WORKER_PASSWORD']}"
-        f"@{os.environ['DB_HOST']}:{os.environ['DB_PORT']}/{created_db}",
+        f"postgresql://{os.environ['DB_PRIMARY_PROCESSING_WORKER_USER']}:{os.environ['DB_PRIMARY_PROCESSING_WORKER_PASSWORD']}"
+        f"@{os.environ['DB_PRIMARY_HOST']}:{os.environ['DB_PRIMARY_PORT']}/{created_db}",
     )
 
 
@@ -103,13 +102,13 @@ def _initialize_airflow() -> None:
 
 @pytest.fixture
 def created_db(worker_id: str) -> str:
-    return db_utils.create_db(worker_id)
+    return db_utils.create_primary_db(worker_id)
 
 
 @pytest.fixture
 def db(created_db: str) -> Iterator["Session"]:
     with engine_utils.get_session(
-        db_utils.get_writer_credentials(created_db)
+        db_utils.get_primary_writer_credentials(created_db)
     ) as session:
         yield session
         session.close()

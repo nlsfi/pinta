@@ -22,10 +22,10 @@ down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-OWNER = os.environ["DB_OWNER_ROLE"]
-WRITER = os.environ["DB_WRITER_ROLE"]
-READER = os.environ["DB_READER_ROLE"]
-PROCESSING_WORKER = os.environ["DB_PROCESSING_WORKER_ROLE"]
+OWNER = os.environ["DB_JOB_OWNER_ROLE"]
+WRITER = os.environ["DB_JOB_WRITER_ROLE"]
+READER = os.environ["DB_JOB_READER_ROLE"]
+PROCESSING_WORKER = os.environ["DB_JOB_PROCESSING_WORKER_ROLE"]
 DB_NAME = os.environ["DB_JOB_TEMPLATE_NAME"]
 
 REFERENCE_SCHEMA = "reference"

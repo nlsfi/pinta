@@ -37,11 +37,11 @@ def is_truthy(value: str) -> bool:
 
 
 try:
-    PINTA_DB_HOST = os.environ["DB_HOST"]
-    PINTA_DB_PORT = os.environ["DB_PORT"]
-    PINTA_DB_NAME = os.environ["DB_NAME"]
-    PINTA_DB_EDITOR_USER = os.environ["DB_EDITOR_USER"]
-    PINTA_DB_EDITOR_PASSWORD = os.environ["DB_EDITOR_PASSWORD"]
+    PINTA_DB_HOST = os.environ["DB_PRIMARY_HOST"]
+    PINTA_DB_PORT = os.environ["DB_PRIMARY_PORT"]
+    PINTA_DB_NAME = os.environ["DB_PRIMARY_NAME"]
+    PINTA_DB_EDITOR_USER = os.environ["DB_PRIMARY_EDITOR_USER"]
+    PINTA_DB_EDITOR_PASSWORD = os.environ["DB_PRIMARY_EDITOR_PASSWORD"]
 
     PINTA_INITIAL_PROJECT_EXTENT = typing.cast(
         "tuple[float, float, float, float]",
