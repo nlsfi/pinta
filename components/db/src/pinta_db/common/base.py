@@ -77,14 +77,14 @@ class RasterBase(BaseModel):
     )
 
 
-main_db_metadata = MetaData()
+primary_db_metadata = MetaData()
 job_db_metadata = MetaData()
 
 
-class BaseMainDb(BaseModel):
-    """Base model for main db tables."""
+class BasePrimaryDb(BaseModel):
+    """Base model for primary db tables."""
 
-    metadata = main_db_metadata
+    metadata = primary_db_metadata
 
 
 class BaseJobDb(BaseModel):

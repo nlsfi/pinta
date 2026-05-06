@@ -6,7 +6,7 @@ set -euo pipefail
 
 export PGUSER="$POSTGRES_USER"
 # DB name
-MAIN_DB_NAME="pinta"
+PRIMARY_DB_NAME="pinta"
 JOB_DB_NAME="job_template"
 
 # Admin user
@@ -52,7 +52,7 @@ psql <<EOSQL
   GRANT pg_signal_backend TO "${ADMIN_USER}";
 EOSQL
 
-create_application_database "${MAIN_DB_NAME}"
+create_application_database "${PRIMARY_DB_NAME}"
 create_application_database "${JOB_DB_NAME}"
 
 echo "Set ${JOB_DB_NAME} to be a template database"

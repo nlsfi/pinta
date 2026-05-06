@@ -9,5 +9,5 @@ This module should import all the models so that
 Alembic can find those to autogenerate migrations.
 """
 
-from pinta_db.main_db.models.dem import *  # noqa: F403
-from pinta_db.main_db.models.management import *  # noqa: F403  # noqa: F403
+from pinta_db.primary_db.models.dem import *  # noqa: F403
+from pinta_db.primary_db.models.management import *  # noqa: F403  # noqa: F403

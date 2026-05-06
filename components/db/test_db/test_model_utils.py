@@ -6,7 +6,7 @@
 import pytest
 from sqlmodel import SQLModel
 
-from pinta_db.main_db.models.management import PointCloudTile, ProductionArea
+from pinta_db.primary_db.models.management import PointCloudTile, ProductionArea
 from pinta_db_utils import model_utils
 
 

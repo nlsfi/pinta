@@ -7,23 +7,23 @@
 
 import sqlalchemy as sa
 
-from pinta_db.common.base import BaseMainDb
-from pinta_db.main_db.models.base import DemBase
+from pinta_db.common.base import BasePrimaryDb
+from pinta_db.primary_db.models.base import DemBase
 
 
-class Dem(BaseMainDb, DemBase, table=True):  # type: ignore[call-arg]
+class Dem(BasePrimaryDb, DemBase, table=True):  # type: ignore[call-arg]
     """Elevation model."""
 
 
-class O2Dem(BaseMainDb, DemBase, table=True):  # type: ignore[call-arg]
+class O2Dem(BasePrimaryDb, DemBase, table=True):  # type: ignore[call-arg]
     """Overview factor 2."""
 
 
-class O8Dem(BaseMainDb, DemBase, table=True):  # type: ignore[call-arg]
+class O8Dem(BasePrimaryDb, DemBase, table=True):  # type: ignore[call-arg]
     """Overview factor 8."""
 
 
-class O128Dem(BaseMainDb, DemBase, table=True):  # type: ignore[call-arg]
+class O128Dem(BasePrimaryDb, DemBase, table=True):  # type: ignore[call-arg]
     """Overview factor 128."""
 
 

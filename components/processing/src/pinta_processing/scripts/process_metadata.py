@@ -9,7 +9,7 @@ from pathlib import Path
 import laspy
 import shapely
 import sqlmodel
-from pinta_db.main_db.models.management import PointCloudTile, ProductionArea
+from pinta_db.primary_db.models.management import PointCloudTile, ProductionArea
 from shapely import ops
 from shapely.geometry import MultiPolygon
 from sqlmodel import Session

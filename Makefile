@@ -62,13 +62,13 @@ restart: down up
 # Database targets
 # ================
 
-db-migrate-main:
-	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/main/alembic.ini upgrade head
+db-migrate-primary:
+	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/primary/alembic.ini upgrade head
 
 db-migrate-job:
 	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/job/alembic.ini upgrade head
 
-db-migrate-all: db-migrate-main db-migrate-job db-sync-users
+db-migrate-all: db-migrate-primary db-migrate-job db-sync-users
 
 db-sync-users:
 	@docker compose exec -T \

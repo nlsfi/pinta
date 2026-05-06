@@ -8,7 +8,7 @@ import uuid
 from sqlmodel import Field
 
 from pinta_db.common.base import BaseModel, RasterBase
-from pinta_db.main_db.schema import Schema
+from pinta_db.primary_db.schema import Schema
 
 
 class ManagementBase(BaseModel):
