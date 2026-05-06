@@ -67,3 +67,25 @@ def test_rasterio_reader_zip_invalid_contents(file_count: int, error_match: str)
         stage = reader.RasterioReader(zip_path)
         with pytest.raises(ValueError, match=error_match):
             stage.process(None)
+
+
+def test_rasterio_reader_set_crs_when_no_crs():
+    """Test that CRS is set when input raster has no CRS."""
+    file_path = pinta_utils.get_test_data_path("processing/dem.asc.zip")
+    crs_to_set = "EPSG:3067"
+
+    stage = reader.RasterioReader(file_path, crs=crs_to_set)
+    dataset = stage.process(None)
+
+    assert isinstance(dataset, core.RasterDataset)
+    assert dataset.crs == crs_to_set
+
+
+def test_rasterio_reader_raises_on_crs_mismatch():
+    """Test that reader raises when CRS differs from raster file CRS."""
+    file_path = pinta_utils.get_test_data_path("processing/dem.tif")
+    mismatched_crs = "EPSG:4326"
+
+    stage = reader.RasterioReader(file_path, crs=mismatched_crs)
+    with pytest.raises(NotImplementedError, match="CRS mismatch"):
+        stage.process(None)

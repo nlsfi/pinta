@@ -44,7 +44,9 @@ def _verify_pipeline_output(input_path: str, output_path: Path) -> None:
     assert np.array_equal(input_array, output_array), "Array data does not match"
 
     # Verify metadata is preserved
-    assert output_crs == input_crs, "CRS not preserved"
+    assert output_crs == input_crs, (
+        f"CRS not preserved, got {output_crs}, expected {input_crs}"
+    )
     assert output_transform == input_transform, "Transform not preserved"
     assert output_nodata == input_nodata, "Nodata not preserved"
 
@@ -69,7 +71,9 @@ def test_rasterio_to_geotiff_with_asc_input():
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(tmp_path)
 
-        pipeline = pipelines.rasterio_to_geotiff(str(unzipped_path), str(output_path))
+        pipeline = pipelines.rasterio_to_geotiff(
+            str(unzipped_path), str(output_path), crs=None
+        )
         pipeline.execute()
 
         _verify_pipeline_output(str(unzipped_path), output_path)

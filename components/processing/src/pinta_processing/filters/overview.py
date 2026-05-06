@@ -53,10 +53,7 @@ class DownsampleOverview(core.Stage):
                     resampling=Resampling.average,
                 )
 
-        new_transform = data.transform * data.transform.scale(
-            width / new_width,
-            height / new_height,
-        )
+        new_transform = data.transform * data.transform.scale(factor, factor)
 
         return core.RasterDataset(
             array=downsampled,

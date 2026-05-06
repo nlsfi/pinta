@@ -108,3 +108,17 @@ ddl
 preparer
 truthy
 checksums
+blocksize
+xmin
+ymin
+ymax
+xmax
+xmin
+y0
+x0
+cte
+geoms
+outerjoin
+SnapToGrid
+exc
+psycopg
