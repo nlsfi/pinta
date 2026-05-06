@@ -12,7 +12,9 @@ from pinta_db_utils import engine_utils
 _CREATE_DB_LOCK_KEY = "pinta-create-db"
 
 
-def _create_from_template(db_name: str, template_name: str) -> None:
+def _create_from_template(
+    db_name: str, template_name: str, admin_credentials: engine_utils.Credentials
+) -> None:
     kill_connections_query = sqlmodel.text(
         "SELECT pg_terminate_backend(pg_stat_activity.pid) "
         "FROM pg_stat_activity "
@@ -20,9 +22,7 @@ def _create_from_template(db_name: str, template_name: str) -> None:
         "AND pid <> pg_backend_pid()"
     )
 
-    with engine_utils.get_autocommit_connection(
-        get_admin_credentials("postgres")
-    ) as connection:
+    with engine_utils.get_autocommit_connection(admin_credentials) as connection:
         # To avoid race conditions with pytest-xdist
         connection.execute(
             sqlmodel.text("SELECT pg_advisory_lock(hashtext(:key))"),
@@ -44,54 +44,75 @@ def _create_from_template(db_name: str, template_name: str) -> None:
             )
 
 
-def get_admin_credentials(
+def get_primary_admin_credentials(
     db_name: str,
 ) -> engine_utils.Credentials:
     """Get connection parameters for the db."""
     return engine_utils.Credentials(
-        os.environ["DB_ADMIN_USER"],
-        os.environ["DB_ADMIN_PASSWORD"],
-        os.environ["DB_HOST"],
-        os.environ["DB_PORT"],
+        os.environ["DB_PRIMARY_ADMIN_USER"],
+        os.environ["DB_PRIMARY_ADMIN_PASSWORD"],
+        os.environ["DB_PRIMARY_HOST"],
+        os.environ["DB_PRIMARY_PORT"],
         db_name,
     )
 
 
-def get_writer_credentials(
+def get_job_admin_credentials(
+    db_name: str,
+) -> engine_utils.Credentials:
+    """Get admin connection parameters for the job db."""
+    return engine_utils.Credentials(
+        os.environ["DB_JOB_ADMIN_USER"],
+        os.environ["DB_JOB_ADMIN_PASSWORD"],
+        os.environ["DB_JOB_HOST"],
+        os.environ["DB_JOB_PORT"],
+        db_name,
+    )
+
+
+def get_primary_writer_credentials(
     db_name: str,
 ) -> engine_utils.Credentials:
     """Get connection parameters for the db."""
     return engine_utils.Credentials(
-        os.environ["DB_EDITOR_USER"],
-        os.environ["DB_EDITOR_PASSWORD"],
-        os.environ["DB_HOST"],
-        os.environ["DB_PORT"],
+        os.environ["DB_PRIMARY_EDITOR_USER"],
+        os.environ["DB_PRIMARY_EDITOR_PASSWORD"],
+        os.environ["DB_PRIMARY_HOST"],
+        os.environ["DB_PRIMARY_PORT"],
         db_name,
     )
 
 
-def get_processing_worker_credentials(
+def get_primary_processing_worker_credentials(
     db_name: str,
 ) -> engine_utils.Credentials:
     """Get connection parameters for the db."""
     return engine_utils.Credentials(
-        os.environ["DB_PROCESSING_WORKER_USER"],
-        os.environ["DB_PROCESSING_WORKER_PASSWORD"],
-        os.environ["DB_HOST"],
-        os.environ["DB_PORT"],
+        os.environ["DB_PRIMARY_PROCESSING_WORKER_USER"],
+        os.environ["DB_PRIMARY_PROCESSING_WORKER_PASSWORD"],
+        os.environ["DB_PRIMARY_HOST"],
+        os.environ["DB_PRIMARY_PORT"],
         db_name,
     )
 
 
-def create_db(worker_id: str) -> str:
+def create_primary_db(worker_id: str) -> str:
     """Create a new database for the test session."""
-    db_name = os.environ["DB_NAME"] + f"_test_{worker_id}"
-    _create_from_template(db_name, os.environ["DB_NAME"])
+    db_name = os.environ["DB_PRIMARY_NAME"] + f"_test_{worker_id}"
+    _create_from_template(
+        db_name,
+        os.environ["DB_PRIMARY_NAME"],
+        get_primary_admin_credentials("postgres"),
+    )
     return db_name
 
 
 def create_job_db(worker_id: str) -> str:
     """Create a new database for the test session."""
     db_name = f"test_job_{worker_id}"
-    _create_from_template(db_name, os.environ["DB_JOB_TEMPLATE_NAME"])
+    _create_from_template(
+        db_name,
+        os.environ["DB_JOB_TEMPLATE_NAME"],
+        get_job_admin_credentials("postgres"),
+    )
     return db_name

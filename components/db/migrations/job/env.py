@@ -35,12 +35,12 @@ if config.config_file_name is not None:
 target_metadata = BaseJobDb.metadata
 
 ADMIN_CREDENTIALS = engine_utils.Credentials(
-    user=os.environ["DB_ADMIN_USER"],
-    password=os.environ["DB_ADMIN_PASSWORD"],
-    host=os.environ["DB_HOST"],
-    port=os.environ["DB_PORT"],
+    user=os.environ["DB_JOB_ADMIN_USER"],
+    password=os.environ["DB_JOB_ADMIN_PASSWORD"],
+    host=os.environ["DB_JOB_HOST"],
+    port=os.environ["DB_JOB_PORT"],
     db_name=os.environ["DB_JOB_TEMPLATE_NAME"],
-    role=os.environ["DB_OWNER_ROLE"],
+    role=os.environ["DB_JOB_OWNER_ROLE"],
 )
 
 config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())

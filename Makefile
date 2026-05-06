@@ -13,8 +13,8 @@ E2E_DIR := $(COMPONENTS_DIR)/e2e
 
 # Env variables
 export AIRFLOW_HOME := $(DAGS_DIR)/.airflow/
-export AIRFLOW_CONN_PINTA_PROCESSING_DB :=postgres://$(PINTA_DB_EDITOR_USER):$(PINTA_DB_EDITOR_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
-export AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER :=postgres://$(DB_PROCESSING_WORKER_USER):$(DB_PROCESSING_WORKER_PASSWORD)@host.docker.internal:$(DB_PORT)/$(DB_NAME)
+export AIRFLOW_CONN_PINTA_PROCESSING_DB :=postgres://$(DB_PRIMARY_EDITOR_USER):$(DB_PRIMARY_EDITOR_PASSWORD)@$(DB_PRIMARY_HOST):$(DB_PRIMARY_PORT)/$(DB_PRIMARY_NAME)
+export AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER :=postgres://$(DB_PRIMARY_PROCESSING_WORKER_USER):$(DB_PRIMARY_PROCESSING_WORKER_PASSWORD)@host.docker.internal:$(DB_PRIMARY_PORT)/$(DB_PRIMARY_NAME)
 export AIRFLOW__CORE__DAGS_FOLDER := $(DAGS_DIR)/src/pinta_dags/dags
 export AIRFLOW__CORE__LOAD_EXAMPLES := false
 export AIRFLOW__API__EXPOSE_CONFIG := true
@@ -72,10 +72,10 @@ db-migrate-all: db-migrate-primary db-migrate-job db-sync-users
 
 db-sync-users:
 	@docker compose exec -T \
-	  -e PGPASSWORD=$(DB_ADMIN_PASSWORD) \
+	  -e PGPASSWORD=$(DB_PRIMARY_ADMIN_PASSWORD) \
 	  db psql \
 	  -h localhost \
-	  -U $(DB_ADMIN_USER) -d $(DB_NAME) \
+	  -U $(DB_PRIMARY_ADMIN_USER) -d $(DB_PRIMARY_NAME) \
 	  < components/db/scripts/create_development_users.sql
 
 db-restart: restart db-migrate-all
