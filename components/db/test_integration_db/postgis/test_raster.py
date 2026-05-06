@@ -7,7 +7,7 @@ import pytest
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_db.main_db.schema import Schema
+from pinta_db.primary_db.schema import Schema
 from pinta_db_utils.postgis import raster
 
 

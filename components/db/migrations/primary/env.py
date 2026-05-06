@@ -22,9 +22,9 @@ import dotenv
 dotenv.load_dotenv()
 
 from migrations import common  # noqa: E402
-from pinta_db.common.base import BaseMainDb  # noqa: E402
-from pinta_db.main_db import schema  # noqa: E402
-from pinta_db.main_db.models.all import *  # noqa: F403, E402
+from pinta_db.common.base import BasePrimaryDb  # noqa: E402
+from pinta_db.primary_db import schema  # noqa: E402
+from pinta_db.primary_db.models.all import *  # noqa: F403, E402
 from pinta_db_utils import engine_utils  # noqa: E402
 
 config = alembic.context.config
@@ -32,7 +32,7 @@ config = alembic.context.config
 if config.config_file_name is not None:
     logging.config.fileConfig(config.config_file_name)
 
-target_metadata = BaseMainDb.metadata
+target_metadata = BasePrimaryDb.metadata
 
 ADMIN_CREDENTIALS = engine_utils.Credentials(
     user=os.environ["DB_ADMIN_USER"],

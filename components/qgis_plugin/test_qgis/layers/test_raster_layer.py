@@ -20,7 +20,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from pinta_db.main_db.models.dem import Dem
+from pinta_db.primary_db.models.dem import Dem
 from pytest_mock import MockerFixture
 from qgis.core import QgsRasterLayer
 
