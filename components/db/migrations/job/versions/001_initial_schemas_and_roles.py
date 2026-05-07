@@ -104,7 +104,7 @@ def upgrade() -> None:
         schema=USER_SCHEMA, role=PROCESSING_WORKER, privileges=("USAGE",)
     )
     schema_op.grant_default_privileges_on_tables_in_schema(
-        schema=REFERENCE_SCHEMA,
+        schema=USER_SCHEMA,
         schema_owner=OWNER,
         role=PROCESSING_WORKER,
         privileges=("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"),
