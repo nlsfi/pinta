@@ -13,6 +13,8 @@ from pinta_db_utils.postgis import raster
 
 from pinta_processing import pipelines
 
+logging.basicConfig(level=logging.INFO)
+
 LOGGER = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
@@ -40,7 +42,7 @@ def run(connection_string: str, test_data_dir: str) -> None:
         # overviews exists, just init staging table for each overview
         raster.initialize_overview_tables(session, "dem", "dem")
 
-        for file_path in list(folder.glob("*.asc")):
+        for file_path in folder.glob("*.asc"):
             LOGGER.info("Processing file %s", file_path)
             pipeline = pipelines.rasterio_to_postgis(
                 session=session, input_path=file_path, schema="dem", table_name="dem"
@@ -58,4 +60,5 @@ def run(connection_string: str, test_data_dir: str) -> None:
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    LOGGER.info("Loading data from %s", args.input_dir)
     run(args.db_connection, args.input_dir)

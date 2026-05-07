@@ -2243,6 +2243,9 @@ dependencies = [
 build = [
     { name = "uv" },
 ]
+load-test-data = [
+    { name = "psycopg" },
+]
 
 [package.dev-dependencies]
 development = [
@@ -2265,10 +2268,11 @@ requires-dist = [
     { name = "laspy" },
     { name = "lazrs" },
     { name = "pinta-db", extras = ["shapely"], editable = "components/db" },
+    { name = "psycopg", marker = "extra == 'load-test-data'" },
     { name = "rasterio" },
     { name = "uv", marker = "extra == 'build'" },
 ]
-provides-extras = ["build"]
+provides-extras = ["build", "load-test-data"]
 
 [package.metadata.requires-dev]
 development = [

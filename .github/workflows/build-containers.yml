@@ -81,6 +81,33 @@ jobs:
       - name: Run migrations
         run: make db-migrate-all
 
+      - name: Load test data from test-data image
+        run: |
+          set -euo pipefail
+
+          set -a
+          . .env
+          set +a
+
+          DATA_DIR="$(pwd)/test-data"
+          rm -rf "$DATA_DIR"
+          mkdir -p "$DATA_DIR"
+
+          docker create --name pinta-test-data-helper --entrypoint sleep --pull always ghcr.io/nlsfi/pinta/test-data:latest infinity
+          docker cp pinta-test-data-helper:/data ./data.zip
+          docker rm pinta-test-data-helper
+
+          python3 -m zipfile -e data.zip "$DATA_DIR"
+
+          cd components/processing
+          uv sync --locked --extra load-test-data
+
+          uv run --extra load-test-data python -m build.load_test_data \
+            -c "postgresql+psycopg://${DB_PRIMARY_ADMIN_USER}:${DB_PRIMARY_ADMIN_PASSWORD}@${DB_PRIMARY_HOST}:${DB_PRIMARY_PORT}/${DB_PRIMARY_NAME}" \
+            -i "$DATA_DIR"
+
+          rm -rf "$DATA_DIR"
+
       - name: Commit initialized DB state to image
         run: |
           set -euo pipefail
@@ -92,6 +119,7 @@ jobs:
           # mount it into a fresh helper container and copy it into /pgdata
           # before committing, so the image is self-contained.
           DB_VOLUME="${COMPOSE_PROJECT_NAME}_db-data"
+          echo "DB_VOLUME=$DB_VOLUME"
 
           docker run -d --name pinta-db-committer \
             -v "${DB_VOLUME}:/pgdata-src:ro" \
@@ -105,7 +133,7 @@ jobs:
             --change 'CMD ["postgres"]' \
             pinta-db-committer pinta/db:latest
 
-          docker image inspect pinta/db:latest >/dev/null
+          docker image inspect pinta/db:latest > /dev/null
 
       - name: Resolve image tag
         id: image_tag

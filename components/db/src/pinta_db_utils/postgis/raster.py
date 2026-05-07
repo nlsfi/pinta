@@ -220,6 +220,7 @@ def merge_staging_tables(
     )
 
     session.exec(insert_statement)  # type: ignore[call-overload]
+    session.commit()
 
     _create_raster_index(session, schema, table_name)
     constraints.add_constraint_extent(session, schema, table_name)

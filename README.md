@@ -9,12 +9,12 @@
 * Open project in devcontainer, see [instructions](.devcontainer/README.md)
 * Activate virtual environment: `source .venv/bin/activate`
 * Create a `.env` from `.env.example` and fill empty values and modify configurations if necessary
-* Start the containers downloaded from GitHub container registry: `make up`
+* Start the containers downloaded from GitHub container registry: `make restart-fully`
 
 Alternatively, you can build the containers from scratch:
 
-* Build all containers: `make restart-fully`
-* Run migrations: `make db-migrate`
+* Build all containers: `make build`
+* Start the containers: `make up`
 
 Now all development tools and Git hooks are automatically installed in your virtual environment when using Dev
 Containers.
@@ -83,3 +83,7 @@ Unless otherwise noted, source code is licensed under the MIT license.
 Exceptions:
 
 * components/qgis_plugin/ - licensed under GPLv3
+
+### Test data in containers
+
+The database container contains data from the National Land Survey of Finland [Topographic Database](https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/datasets-and-interfaces/product-descriptions/elevation-model-2-m) 04/2026.
