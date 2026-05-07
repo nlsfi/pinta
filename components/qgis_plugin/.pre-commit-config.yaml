@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.6
+    rev: ad1b27d73581aa16cca06fc4a0761fc563ffe8e8  # frozen: v1.5.6
     hooks:
       - id: insert-license  # Insert a short license disclaimer as a header comment in source files
         files: \.py$
@@ -9,7 +9,7 @@ repos:
           - copyright-header.txt
           - --use-current-year
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
+    rev: c48217e1fc006c2dddd14df54e83b67da15de5cd  # frozen: 7.3.0
     hooks:
       - id: flake8
         additional_dependencies:
@@ -17,6 +17,6 @@ repos:
           - flake8-qgis==2.0.1
 
   - repo: https://github.com/nlsfi/qgis-plugin-dev-tools
-    rev: v0.11.0
+    rev: 86577eb2e1fe5dc2ebb7020b6808a275ad20083c  # frozen: v0.12.0
     hooks:
       - id: update-translations
