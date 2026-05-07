@@ -1,0 +1,98 @@
+name: Build DB Documentation
+
+on:
+  push:
+    branches: [ main, doc/db-diagrams ]
+    paths:
+      - 'components/db/src/pinta_db/**'
+      - 'components/db/migrations/**'
+      - 'components/db/scripts/initialize_processing_tables.py'
+      - 'components/db/tbls_*.yml'
+      - '.github/workflows/build-db-tbls.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Serialise runs so concurrent pushes don't race on the shared PR branch.
+concurrency:
+  group: build-db-tbls
+  cancel-in-progress: false
+
+env:
+  PR_BRANCH: auto/db-tbls
+  TBLS_OUTPUT_DIRS: components/db/docs/primary_db components/db/docs/job_db
+
+jobs:
+  build-tbls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Build database image
+        run: |
+          docker buildx bake \
+            --file docker-compose.yml \
+            --load \
+            --set *.cache-from=type=gha \
+            --set *.cache-to=type=gha,mode=max \
+            db
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+
+      - name: Start database
+        run: make up
+
+      - name: Run migrations
+        run: make db-migrate-all
+
+      - name: Generate tbls documentation
+        run: make db-build-documentation
+
+      - name: Open or update PR with regenerated tbls docs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # `-A` stages adds, modifications, and deletions so files removed by
+          # tbls --rm-dist (tables that no longer exist) drop out of git too.
+          git add -A $TBLS_OUTPUT_DIRS
+          if git diff --staged --quiet -- $TBLS_OUTPUT_DIRS; then
+            echo "No tbls doc changes to commit."
+            exit 0
+          fi
+
+          git checkout -B "$PR_BRANCH"
+          git commit -m "chore(db): regenerate tbls documentation"
+
+          # Force-push only when an open PR is being updated
+          if gh pr view "$PR_BRANCH" --json number >/dev/null 2>&1; then
+            git push --force origin "$PR_BRANCH"
+            echo "Existing PR for $PR_BRANCH updated with new commit."
+          else
+            git push origin "$PR_BRANCH"
+            gh pr create \
+              --base main \
+              --head "$PR_BRANCH" \
+              --title "chore(db): regenerate tbls documentation" \
+              --body "Automatically regenerated tbls documentation after changes to schema or migrations on \`main\`. Triggered by @$ACTOR." \
+              --reviewer "$ACTOR" \
+              --assignee "$ACTOR"
+          fi
