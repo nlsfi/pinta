@@ -38,6 +38,9 @@ sync-all-but-qgis-and-airflow:
 down:
 	docker compose down -v --remove-orphans
 
+pull:
+	docker compose pull
+
 up:
 	docker compose up -d
 	@echo -n "Waiting for containers to be healthy"
@@ -55,9 +58,8 @@ build-qgis:
 build-db:
 	docker compose build db
 
-restart-fully: down build up
+restart-fully: down pull up
 
-restart: down up
 
 # Database targets
 # ================
