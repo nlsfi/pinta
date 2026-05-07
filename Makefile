@@ -30,7 +30,7 @@ sync:
 	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
 
 sync-all-but-qgis-and-airflow:
-	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build
+	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build --no-extra airflow
 
 # Docker Compose targets
 # =================
@@ -83,6 +83,7 @@ db-restart: restart db-migrate-all
 db-restart-fully: down build-db up db-migrate-all
 
 db-build-documentation:
+	# Meant to be run by CI for maintaining documentation.
 	uv run --directory $(DB_DIR) scripts/initialize_processing_tables.py
 	docker compose run --rm --user $$(id -u):$$(id -g) tbls doc --rm-dist --config .tbls_primary.yml
 	docker compose run --rm --user $$(id -u):$$(id -g) tbls doc --rm-dist --config .tbls_job.yml
