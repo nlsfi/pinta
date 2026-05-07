@@ -3,7 +3,10 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-"""Generate role/privilege diagrams and tables from databases."""
+"""Generate role/privilege diagrams and tables from databases.
+
+Meant to be run by CI for maintaining documentation.
+"""
 
 import os
 from collections import defaultdict

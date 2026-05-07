@@ -3,15 +3,9 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-"""Materialise the canonical `processing` schema raster tables.
+"""Materialize the canonical `processing` schema raster tables.
 
-Pipelines normally create these on demand via
-`pinta_db_utils.postgis.raster.initialize_raster_table`/`initialize_overview_tables`,
-so introspection-based tooling (tbls, eralchemy via DB URI, etc.) cannot see
-them in a freshly migrated database. Running this script once after migrations
-materialises the empty tables so they show up in generated documentation.
-
-Idempotent: existing tables are left untouched.
+Meant to be run by CI for maintaining documentation.
 """
 
 import logging
