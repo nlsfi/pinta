@@ -26,7 +26,7 @@ repos:
     hooks:
       - id: markdownlint
         files: \.md$
-        exclude: CHANGELOG\.md$
+        exclude: ^(components/db/.*_db/.*\.md|components/.*/CHANGELOG\.md)
         args: [ "--fix" ]
   # TOML formatter
   - repo: https://github.com/ComPWA/taplo-pre-commit

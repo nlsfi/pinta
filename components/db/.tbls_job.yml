@@ -1,0 +1,15 @@
+docPath: docs/job_db
+
+dsn: postgres://${DB_JOB_ADMIN_USER}:${DB_JOB_ADMIN_PASSWORD}@db:5432/${DB_JOB_TEMPLATE_NAME}?sslmode=disable
+
+exclude:
+  - public.*
+  - alembic.*
+
+er:
+  format: mermaid
+  comment: false
+  hideDef: true
+  distance: 1
+
+disableOutputSchema: true

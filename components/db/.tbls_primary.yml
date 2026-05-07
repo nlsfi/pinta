@@ -1,0 +1,15 @@
+docPath: docs/primary_db
+
+dsn: postgres://${DB_PRIMARY_ADMIN_USER}:${DB_PRIMARY_ADMIN_PASSWORD}@db:5432/${DB_PRIMARY_NAME}?sslmode=disable
+
+exclude:
+  - public.*
+  - alembic.*
+
+er:
+  format: mermaid
+  comment: false
+  hideDef: true
+  distance: 1
+
+disableOutputSchema: true

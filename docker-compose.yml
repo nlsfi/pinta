@@ -63,6 +63,22 @@ services:
         target: /components
         read_only: true
 
+  tbls:
+    # DB documentation tool
+    profiles:
+      - documentation
+    depends_on:
+      - db
+    image: ghcr.io/k1low/tbls:v1.94.5
+    env_file:
+      - ".env.example"
+      - ".env.e2e"
+    working_dir: /db
+    volumes:
+      - type: bind
+        source: ${REPO_DIR:-.}/components/db
+        target: /db
+        read_only: false
 
 volumes:
   db-data:

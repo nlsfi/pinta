@@ -1,5 +1,12 @@
 # Database component
 
+Database-specific documentation:
+
+* Primary DB: [schema documentation](./docs/primary_db/README.md) and [role/privilege documentation](./docs/primary_db/roles.md)
+* Job DB: [schema documentation](./docs/job_db/README.md) and [role/privilege documentation](./docs/job_db/roles.md)
+
+## Installation
+
 Install all dependencies and extras with `uv sync --all-extras`.
 
 ## Creating migrations
