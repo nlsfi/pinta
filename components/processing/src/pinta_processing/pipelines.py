@@ -5,7 +5,7 @@
 
 from pathlib import Path
 
-from pinta_db import env
+from pinta_common import env
 from sqlmodel import Session
 
 from pinta_processing import core, filters, reader, writer

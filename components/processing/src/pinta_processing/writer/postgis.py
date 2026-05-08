@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 import sqlmodel
 from affine import Affine
-from pinta_db import env
+from pinta_common import env
 from rasterio.windows import Window, from_bounds
 
 from pinta_processing import core, exceptions

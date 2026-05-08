@@ -19,7 +19,7 @@ import dataclasses
 import json
 from pathlib import Path
 
-from pinta_db import env as db_env
+from pinta_common import env as env_common
 from pinta_db.common.base import BaseModel
 from pinta_db.primary_db.models.all import Dem, PointCloudTile, ProductionArea
 from pinta_db_utils import model_utils
@@ -60,7 +60,7 @@ class ModelLayerConfig:
             wkb_type=_geometry_type_to_qgis_wkb(
                 model_utils.geometry_type(db_model, geom_column)
             ),
-            srid=db_env.SRID,
+            srid=env_common.SRID,
             style_path=style_path,
         )
 

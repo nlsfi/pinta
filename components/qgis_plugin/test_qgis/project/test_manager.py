@@ -18,7 +18,7 @@
 import typing
 
 import pytest
-from pinta_db import env
+from pinta_common import env
 from qgis.core import QgsProject
 
 from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
