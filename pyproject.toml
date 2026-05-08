@@ -45,6 +45,9 @@ lint = [
   "ruff>=0.15.5",
   "mypy>=1.19.1",
 ]
+ci = [
+  "import-linter",
+]
 
 [tool.flake8]
 spellcheck-targets = "names"
@@ -172,3 +175,62 @@ exclude = "^test"
 
 [tool.pytest.ini_options]
 addopts = "-n auto --import-mode=importlib"
+
+
+[tool.importlinter]
+root_packages = [
+  "pinta_dags",
+  "pinta_e2e_utils",
+  "pinta_qgis_plugin",
+  "pinta_processing",
+  "pinta_processing_test_utils",
+  "pinta_db",
+  "pinta_db_utils",
+  "pinta_db_test_utils",
+  "pinta_test_utils",
+  "pinta_common",
+]
+
+[[tool.importlinter.contracts]]
+name = "Pinta component layers"
+type = "layers"
+layers = [
+  "pinta_e2e_utils : pinta_dags",
+  "pinta_qgis_plugin : pinta_processing : pinta_processing_test_utils",
+  "pinta_db : pinta_db_utils : pinta_db_test_utils",
+  "pinta_common",
+]
+
+[[tool.importlinter.contracts]]
+name = "Production must not import test helpers"
+type = "forbidden"
+source_modules = [
+  "pinta_dags",
+  "pinta_qgis_plugin",
+  "pinta_processing",
+  "pinta_db",
+  "pinta_db_utils",
+  "pinta_common",
+]
+forbidden_modules = [
+  "pinta_test_utils",
+  "pinta_db_test_utils",
+  "pinta_processing_test_utils",
+  "pinta_e2e_utils",
+]
+
+[[tool.importlinter.contracts]]
+name = "Pinta package siblings are acyclic"
+type = "acyclic_siblings"
+ancestors = [
+  "pinta_dags",
+  "pinta_e2e_utils",
+  "pinta_qgis_plugin",
+  "pinta_processing",
+  "pinta_processing_test_utils",
+  "pinta_db",
+  "pinta_db_utils",
+  "pinta_db_test_utils",
+  "pinta_test_utils",
+  "pinta_common",
+]
