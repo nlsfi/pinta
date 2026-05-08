@@ -55,7 +55,6 @@ def run(connection_string: str, test_data_dir: str) -> None:
                 level=level, table_name="dem"
             )
             raster.merge_staging_tables("dem", overview_table, session=session)
-        raster.finalize_overview_tables(session, "dem", "dem")
 
 
 if __name__ == "__main__":

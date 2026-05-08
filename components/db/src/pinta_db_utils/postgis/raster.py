@@ -91,11 +91,14 @@ def initialize_overview_tables(
     table_name: str,
     staging_tables: int = 1,
 ) -> None:
-    """Initialize overview tables with optional staging tables.
+    """Initialize, register and index overview tables with optional staging tables.
 
     Creates a main table and staging tables with:
     - rid: serial primary key
     - rast: raster column
+
+    The main overview tables are also registered against the reference raster
+    table with PostGIS overview constraints and receive raster envelope indexes.
     """
     for level in DEFAULT_OVERVIEW_LEVELS:
         overview_name = OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
@@ -120,6 +123,9 @@ def initialize_overview_tables(
             constraints.add_raster_constraints(
                 session, schema, staging_name, pixel_size=env.DEM_PIXEL_SIZE * level
             )
+
+        _register_overview_table(session, schema, table_name, overview_name, level)
+        _create_raster_index(session, schema, overview_name)
 
 
 def merge_staging_tables(
@@ -239,32 +245,28 @@ def merge_staging_tables(
     session.commit()
 
 
-def finalize_overview_tables(
+def _register_overview_table(
     session: sqlmodel.Session,
     schema: str,
     reference_table_name: str,
+    overview_name: str,
+    level: int,
 ) -> None:
-    """Register overview tables and add raster indexes."""
-    for level in DEFAULT_OVERVIEW_LEVELS:
-        overview_name = OVERVIEW_TABLE_NAME.format(
-            level=level, table_name=reference_table_name
+    session.exec(  # type: ignore[call-overload]
+        sa.text(
+            "SELECT AddOverviewConstraints("
+            ":ovschema, :ovtable, :ovcolumn, :refschema, "
+            ":reftable, :refcolumn, :ovfactor)"
+        ).bindparams(
+            ovschema=schema,
+            ovtable=overview_name,
+            ovcolumn="rast",
+            refschema=schema,
+            reftable=reference_table_name,
+            refcolumn="rast",
+            ovfactor=level,
         )
-        session.exec(  # type: ignore[call-overload]
-            sa.text(
-                "SELECT AddOverviewConstraints("
-                ":ovschema, :ovtable, :ovcolumn, :refschema, "
-                ":reftable, :refcolumn, :ovfactor)"
-            ).bindparams(
-                ovschema=schema,
-                ovtable=overview_name,
-                ovcolumn="rast",
-                refschema=schema,
-                reftable=reference_table_name,
-                refcolumn="rast",
-                ovfactor=level,
-            )
-        )
-        _create_raster_index(session, schema, overview_name)
+    )
 
 
 def _set_raster_table_options(
