@@ -344,10 +344,16 @@ def test_initialize_raster_table_twice(
 def test_initialize_overview_tables(
     processing_worker_db: sqlmodel.Session, staging_tables: int
 ):
-    """Test creating overview tables."""
+    """Test creating, registering and indexing overview tables."""
     table_name = "test_raster_overview"
     schema = Schema.PROCESSING.value
 
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        session=processing_worker_db,
+        staging_tables=0,
+    )
     raster.initialize_overview_tables(
         table_name=table_name,
         schema=schema,
@@ -365,9 +371,9 @@ def test_initialize_overview_tables(
         _assert_table_has_default_columns(
             processing_worker_db, schema, overview_table_name
         )
-        # only pk index
+        # primary key and raster envelope index
         _assert_table_index_count(
-            processing_worker_db, schema, overview_table_name, expected_count=1
+            processing_worker_db, schema, overview_table_name, expected_count=2
         )
 
         if staging_tables == 0:
@@ -421,7 +427,7 @@ def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
 
 
 def test_register_overview(processing_worker_db: sqlmodel.Session):
-    """Test registering overview tables and verifying their constraints."""
+    """Test overview tables are registered during initialization."""
     table_name = "dem"
     schema = Schema.PROCESSING.value
     raster.initialize_raster_table(
@@ -433,11 +439,6 @@ def test_register_overview(processing_worker_db: sqlmodel.Session):
         table_name=table_name,
         schema=schema,
         session=processing_worker_db,
-    )
-    raster.finalize_overview_tables(
-        session=processing_worker_db,
-        schema=schema,
-        reference_table_name=table_name,
     )
     # Verify overview tables are registered in raster_overviews catalog
     overviews_result = processing_worker_db.exec(  # type: ignore[call-overload]

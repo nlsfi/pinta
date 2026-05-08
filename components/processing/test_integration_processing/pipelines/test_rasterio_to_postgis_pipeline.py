@@ -217,7 +217,6 @@ def test_rasterio_to_postgis(
     raster.merge_staging_tables(
         schema, ol_128_name, staging_tables, processing_worker_session
     )
-    raster.finalize_overview_tables(processing_worker_session, schema, table_name)
 
     # Verify 4 tiles were written to database
     tile_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
