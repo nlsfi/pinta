@@ -82,6 +82,13 @@ repos:
     rev: 86577eb2e1fe5dc2ebb7020b6808a275ad20083c  # frozen: v0.12.0
     hooks:
       - id: normalize-xml
+  - repo: local
+    hooks:
+      - id: import-linter
+        name: "Lint imports"
+        entry: "uv run lint-imports"
+        language: system
+        pass_filenames: false
 
 
   # commit-msg hooks
