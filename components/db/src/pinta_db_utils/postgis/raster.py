@@ -12,7 +12,7 @@ import geoalchemy2
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_db import env
+from pinta_common import env
 from pinta_db_utils.postgis import constraints
 
 OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"

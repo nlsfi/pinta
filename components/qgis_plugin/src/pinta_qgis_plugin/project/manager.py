@@ -19,7 +19,7 @@
 import logging
 import typing
 
-from pinta_db import env as db_env
+from pinta_common import env as env_common
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsRectangle
 from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools.decorations import log_if_fails
@@ -54,7 +54,7 @@ def initialize_project() -> None:
     # global setting "projections\defaultProjectCrs" as it will affect every project
     # created by the QGIS installation.
     QgsProject.instance().setCrs(
-        QgsCoordinateReferenceSystem.fromEpsgId(int(db_env.SRID))
+        QgsCoordinateReferenceSystem.fromEpsgId(int(env_common.SRID))
     )
     iface.mapCanvas().setExtent(QgsRectangle(*plugin_env.PINTA_INITIAL_PROJECT_EXTENT))
 

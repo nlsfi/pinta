@@ -9,7 +9,7 @@ import psycopg
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_db import env
+from pinta_common import env
 
 DEFAULT_EMPTY_RASTER_ANCHOR = (41248, 7880720)  # upper left
 DEFAULT_COVERAGE_TILE_GRID_ANCHOR = (500000, 6570000)
