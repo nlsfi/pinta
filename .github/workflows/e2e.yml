@@ -35,8 +35,8 @@ jobs:
           docker buildx bake \
             --file docker-compose.yml \
             --load \
-            --set *.cache-from=type=gha \
-            --set *.cache-to=type=gha,mode=max
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max"
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57

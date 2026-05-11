@@ -21,7 +21,6 @@ concurrency:
 
 env:
   PR_BRANCH: auto/db-tbls
-  TBLS_OUTPUT_DIRS: components/db/docs/primary_db components/db/docs/job_db
 
 jobs:
   build-tbls:
@@ -46,8 +45,8 @@ jobs:
           docker buildx bake \
             --file docker-compose.yml \
             --load \
-            --set *.cache-from=type=gha \
-            --set *.cache-to=type=gha,mode=max \
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max" \
             db
 
       - name: Install uv
@@ -71,10 +70,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          TBLS_OUTPUT_DIRS=(
+            "components/db/docs/primary_db"
+            "components/db/docs/job_db"
+          )
+
           # `-A` stages adds, modifications, and deletions so files removed by
           # tbls --rm-dist (tables that no longer exist) drop out of git too.
-          git add -A $TBLS_OUTPUT_DIRS
-          if git diff --staged --quiet -- $TBLS_OUTPUT_DIRS; then
+          git add -A -- "${TBLS_OUTPUT_DIRS[@]}"
+          if git diff --staged --quiet -- "${TBLS_OUTPUT_DIRS[@]}"; then
             echo "No tbls doc changes to commit."
             exit 0
           fi
