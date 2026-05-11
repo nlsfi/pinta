@@ -8,9 +8,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-from airflow import sdk
 from airflow.models import DagBag, dagbag
-from airflow.sdk import Variable
+from airflow.sdk import Variable, task
 
 from pinta_dags.dags import process_production_areas
 
@@ -47,8 +46,8 @@ def mock_task(
     mocker: "MockerFixture",
 ) -> "MagicMock":
     return mocker.patch(
-        "pinta_dags.dags.process_production_areas.sdk.task",
-        wraps=sdk.task,
+        "pinta_dags.dags.process_production_areas.task",
+        wraps=task,
     )
 
 
@@ -71,7 +70,7 @@ def test_process_production_areas_dag_runs_workflow(
     (area_dir / "tile.laz").write_bytes(b"fake laz data")
 
     monkeypatch.setenv("AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH", str(tmp_path))
-    monkeypatch.setenv("AIRFLOW_VAR_PINTA_CONTAINER_BASE_PATH", str(tmp_path))
+    monkeypatch.setenv("AIRFLOW_VAR_PINTA_CONTAINER_TARGET_BASE_PATH", str(tmp_path))
 
     mock_process_metadata_module = mocker.MagicMock()
     mock_variable_set = mocker.patch.object(Variable, "set")
