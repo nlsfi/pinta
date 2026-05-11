@@ -47,7 +47,9 @@ def mock_task_docker(
 def base_path_variable(monkeypatch: pytest.MonkeyPatch) -> None:
     """Store the point cloud base path as an Airflow Variable."""
     monkeypatch.setenv("AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH", str(_TEST_DATA_PATH))
-    monkeypatch.setenv("AIRFLOW_VAR_PINTA_CONTAINER_BASE_PATH", str(_TEST_DATA_PATH))
+    monkeypatch.setenv(
+        "AIRFLOW_VAR_PINTA_CONTAINER_TARGET_BASE_PATH", str(_TEST_DATA_PATH)
+    )
 
 
 def test_process_production_areas_dag_updates_qgis_layers(

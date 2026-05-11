@@ -66,7 +66,8 @@ To trigger a major release for the component, the commit message body must conta
 ### Imports
 
 Imports should follow the [Google style guide](https://google.github.io/styleguide/pyguide.html#22-imports) except for
-classes. Classes could be imported directly from the module.
+classes and airflow sdk. Classes could be imported directly
+from the module as well as airflow sdk components.
 
 ## Release steps
 

@@ -7,8 +7,7 @@
 
 import datetime
 
-from airflow import sdk
-from airflow.sdk import DAG
+from airflow.sdk import DAG, chain, dag, task
 
 from pinta_dags import config
 from pinta_dags.sensors.folder_hash_sensor import FolderHashSensor
@@ -20,7 +19,7 @@ def create_process_production_areas_dag(
 ) -> DAG:
     """Create and return the process production areas DAG."""
 
-    @sdk.dag(
+    @dag(
         dag_id=dag_id,
         dag_display_name="Process production areas",
         schedule=datetime.timedelta(minutes=5),
@@ -32,7 +31,7 @@ def create_process_production_areas_dag(
             base_path="{{ var.value.pinta_point_cloud_base_path }}",
         )
 
-        @sdk.task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def process_areas(
             connection_uri: str, base_path: str, changed_folders: list[dict[str, str]]
         ) -> None:
@@ -49,7 +48,7 @@ def create_process_production_areas_dag(
                         Path(base_path) / change["folder_path"], session
                     )
 
-        @sdk.task
+        @task
         def store_checksums(changed_folders: list[dict[str, str]]) -> None:
             from pathlib import Path
 
@@ -61,11 +60,11 @@ def create_process_production_areas_dag(
         changed = check_for_changes.output
         areas_result = process_areas(
             "{{ conn.pinta_processing_db_container.get_hook().get_uri() }}",
-            "{{ var.value.pinta_container_base_path }}",
+            "{{ var.value.pinta_container_target_base_path }}",
             changed,
         )
         checksums_task = store_checksums(changed)
-        sdk.chain(areas_result, checksums_task)
+        chain(areas_result, checksums_task)
 
     return process_production_areas_dag()
 
