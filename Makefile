@@ -30,7 +30,7 @@ sync:
 	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
 
 sync-all-but-qgis-and-airflow:
-	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build --no-extra airflow
+	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build
 
 # Docker Compose targets
 # =================
