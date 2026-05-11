@@ -42,3 +42,11 @@ jobs:
           uv sync --locked
           uv run pytest -v
         working-directory: components/qgis_plugin
+
+  notify-teams:
+    needs: unit_tests
+    if: ${{ always() && needs.unit_tests.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: QGIS unit tests
+    secrets: inherit

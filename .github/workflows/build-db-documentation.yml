@@ -96,3 +96,10 @@ jobs:
               --reviewer "$ACTOR" \
               --assignee "$ACTOR"
           fi
+  notify-teams:
+    needs: build-tbls
+    if: ${{ always() && needs.build-tbls.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: Build DB Documentation
+    secrets: inherit

@@ -18,3 +18,10 @@ jobs:
     with:
       component-path: components/processing
       test_folder: test_processing
+  notify-teams:
+    needs: unittests
+    if: ${{ always() && needs.unittests.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: Processing unit tests
+    secrets: inherit
