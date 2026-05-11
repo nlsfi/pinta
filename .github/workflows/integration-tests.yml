@@ -52,3 +52,11 @@ jobs:
       - name: Run tests
         run: |
           make test-integration
+
+  notify-teams:
+    needs: integration-tests
+    if: ${{ always() && needs.integration-tests.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: Integration tests
+    secrets: inherit

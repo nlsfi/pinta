@@ -183,3 +183,11 @@ jobs:
         run: |
           docker rm -f pinta-db-committer >/dev/null 2>&1 || true
           docker compose down -v --remove-orphans
+
+  notify-teams:
+    needs: build
+    if: ${{ always() && needs.build.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: Build containers
+    secrets: inherit

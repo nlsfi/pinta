@@ -1,0 +1,70 @@
+name: Notify Teams
+
+on:
+  workflow_call:
+    inputs:
+      job_name:
+        required: true
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    env:
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+    steps:
+      - name: Send Teams webhook card
+        if: ${{ env.TEAMS_WEBHOOK_URL != '' }}
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          ACTOR: ${{ github.actor }}
+          SHA: ${{ github.sha }}
+          SOURCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          SERVER_URL: ${{ github.server_url }}
+          JOB_NAME: ${{ inputs.job_name }}
+        run: |
+          RUN_URL="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          COMMIT_URL="${SERVER_URL}/${REPOSITORY}/commit/${SHA}"
+          SHORT_SHA="${SHA:0:7}"
+
+          curl -sS \
+            -H "Content-Type: application/json" \
+            --data @- \
+            "$TEAMS_WEBHOOK_URL" <<EOF
+          {
+            "type": "AdaptiveCard",
+            "version": "1.4",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "❌ ${JOB_NAME} failed on ${SOURCE_BRANCH}",
+                "weight": "Bolder",
+                "size": "Large",
+                "color": "Attention",
+                "wrap": true
+              },
+              {
+                "type": "FactSet",
+                "facts": [
+                  { "title": "Repository", "value": "${REPOSITORY}" },
+                  { "title": "Workflow", "value": "${WORKFLOW}" },
+                  { "title": "Job", "value": "${JOB_NAME}" },
+                  { "title": "Branch", "value": "${SOURCE_BRANCH}" },
+                  { "title": "Run", "value": "#${RUN_NUMBER}" },
+                  { "title": "Actor", "value": "${ACTOR}" },
+                  { "title": "Commit", "value": "${SHORT_SHA}" }
+                ]
+              },
+              {
+                "type": "TextBlock",
+                "text": "[View failed run](${RUN_URL}) | [View commit](${COMMIT_URL})",
+                "wrap": true
+              }
+            ]
+          }
+          EOF

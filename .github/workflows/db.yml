@@ -22,3 +22,10 @@ jobs:
     with:
       component-path: components/db
       test_folder: test_db
+  notify-teams:
+    needs: unittests
+    if: ${{ always() && needs.unittests.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: DB unit tests
+    secrets: inherit

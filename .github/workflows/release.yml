@@ -58,3 +58,11 @@ jobs:
         if: steps.release.outputs.released == 'true'
         working-directory: components/${{ matrix.component }}
         run: uv publish dist/*
+
+  notify-teams:
+    needs: release
+    if: ${{ always() && needs.release.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: Release
+    secrets: inherit

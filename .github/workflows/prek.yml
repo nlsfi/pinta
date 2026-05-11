@@ -14,3 +14,11 @@ jobs:
       - uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
         with:
           extra-args: --all-files --skip update-translations
+
+  notify-teams:
+    needs: prek
+    if: ${{ always() && needs.prek.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: prek
+    secrets: inherit

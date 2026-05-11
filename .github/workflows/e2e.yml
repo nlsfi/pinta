@@ -49,3 +49,11 @@ jobs:
 
       - name: Run e2e tests in QGIS container
         run: make test-e2e-in-container
+
+  notify-teams:
+    needs: e2e
+    if: ${{ always() && needs.e2e.result == 'failure' && github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/notify-teams.yml
+    with:
+      job_name: E2E
+    secrets: inherit
