@@ -28,7 +28,13 @@ RUN apt-get update && \
       docker-compose-plugin \
       vim \
       nano \
-      openssh-client && \
+      openssh-client \
+      # Runtime libraries required by the prebuilt LASTools binaries
+      libjpeg62 \
+      libpng16-16t64 \
+      libtiff6 \
+      libgeotiff5 \
+      libwebp7 && \
     \
     rm -rf /var/lib/apt/lists/*
 
