@@ -18,6 +18,7 @@ export AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER :=postgres://$(DB_PRIMARY_PROC
 export AIRFLOW__CORE__DAGS_FOLDER := $(DAGS_DIR)/src/pinta_dags/dags
 export AIRFLOW__CORE__LOAD_EXAMPLES := false
 export AIRFLOW__API__EXPOSE_CONFIG := true
+export QGIS_GLOBAL_SETTINGS_FILE := $(QGIS_DIR)/settings.ini
 
 
 # UV targets

@@ -1,5 +1,9 @@
 # Pinta QGIS plugin component
 
+Launch development QGIS with `uv run --all-extras qpdt s` from the devcontainer shell in this directory, or with `make qgis-start` from the project root.
+
+Make sure you have copied the necessary environment variables from [.env.example](/.env.example)
+
 ## Providing custom basemaps
 
 It is possible to provide custom basemaps for Pinta QGIS plugin. Just copy the
@@ -31,13 +35,7 @@ Here is an example of a basemap layer config:
 
 ```
 
-## Development environment
-
-### Setting up development environment
-
-* Make sure you have opened project in devcontainer and have setup the environment and infra
-* Launch development QGIS: `uv run --all-extras qpdt s` from devcontainer shell in this directory or `make qgis-start`
-  in project root
+## Development
 
 ### Translating with QT Linguistic
 
