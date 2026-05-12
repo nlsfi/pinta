@@ -7,6 +7,7 @@
 
 * Copy .env.example to .env and adjust settings
 * Open project in devcontainer, see [instructions](.devcontainer/README.md)
+* Optional: save LASTools license as ./external/LAStools/lastoolslicense.txt
 * Activate virtual environment: `source .venv/bin/activate`
 * Create a `.env` from `.env.example` and fill empty values and modify configurations if necessary
 * Start the containers downloaded from GitHub container registry: `make restart-fully`
