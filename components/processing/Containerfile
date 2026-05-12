@@ -1,3 +1,7 @@
+ARG PROCESSING_BUILD_DEPS_IMAGE=ghcr.io/nlsfi/pinta/processing-build-deps:latest
+
+FROM ${PROCESSING_BUILD_DEPS_IMAGE} AS processing-build-deps
+
 FROM redhat/ubi10:10.1
 
 # Proxy args
@@ -38,9 +42,9 @@ RUN if [ -n "$ADDITIONAL_REPO_CONTENTS" ]; then \
   && mv /usr/bin/python3{,9} \
   && ln -s /usr/bin/python3.12 /usr/bin/python3
 
-COPY --from=ghcr.io/nlsfi/pinta/processing-build-deps:latest /usr/local/lib64/ /usr/local/lib64/
-COPY --from=ghcr.io/nlsfi/pinta/processing-build-deps:latest /usr/local/lib/ /usr/local/lib/
-COPY --from=ghcr.io/nlsfi/pinta/processing-build-deps:latest /usr/local/include/nlohmann/json.hpp /usr/local/include/nlohmann/
+COPY --from=processing-build-deps /usr/local/lib64/ /usr/local/lib64/
+COPY --from=processing-build-deps /usr/local/lib/ /usr/local/lib/
+COPY --from=processing-build-deps /usr/local/include/nlohmann/json.hpp /usr/local/include/nlohmann/
 
 # Update paths to include the newly added libraries and headers
 RUN echo "/usr/local/lib64" > /etc/ld.so.conf.d/proj.conf && \
