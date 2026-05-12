@@ -84,6 +84,8 @@ Exceptions:
 
 * components/qgis_plugin/ - licensed under GPLv3
 
-### Test data in containers
+### Test data license
 
-The database container contains data from the National Land Survey of Finland [Topographic Database](https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/datasets-and-interfaces/product-descriptions/elevation-model-2-m) 04/2026.
+The database container contains data from the National Land Survey of Finland [Topographic Database](https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/datasets-and-interfaces/product-descriptions/elevation-model-2-m) (04/2026).
+
+Test data under [test_data/point_clouds](/test_data/point_clouds) is licensed under [CC 4.0](https://www.maanmittauslaitos.fi/en/opendata-licence-cc40). The data is based on point clouds with a density of 0.5 points/m² provided by the National Land Survey of Finland. The data has been further thinned.
