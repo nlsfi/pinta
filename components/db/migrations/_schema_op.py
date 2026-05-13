@@ -74,6 +74,22 @@ def grant_default_privileges_on_tables_in_schema(
     )
 
 
+def grant_default_privileges_on_sequences_in_schema(
+    schema: str,
+    schema_owner: str,
+    role: str,
+    privileges: tuple[str, ...],
+    grant_option: bool = False,  # noqa: FBT001, FBT002
+) -> None:
+    """Grant specified default privileges on sequences in the schema to the role."""
+    privileges_str = ", ".join(privileges)
+    grant_option_str = " WITH GRANT OPTION" if grant_option else ""
+    op.execute(
+        f"ALTER DEFAULT PRIVILEGES FOR ROLE {schema_owner} IN SCHEMA {schema} "
+        f"GRANT {privileges_str} ON SEQUENCES TO {role}{grant_option_str}"
+    )
+
+
 def grant_role_to_role(role: str, target: str) -> None:
     """Grant role membership to the target role."""
     op.execute(f"GRANT {role} TO {target}")
