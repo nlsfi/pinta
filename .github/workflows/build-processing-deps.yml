@@ -23,6 +23,7 @@ jobs:
       image-name: processing-build-deps
       registry-image: ghcr.io/nlsfi/pinta/processing-build-deps
       push: ${{ github.event_name == 'push' || github.event_name == 'release' }}
+      create-build-dependecies-dir: true
   notify-teams:
     needs: build
     if: ${{ always() && needs.build.result == 'failure' && github.ref == 'refs/heads/main' }}

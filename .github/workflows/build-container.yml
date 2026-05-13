@@ -24,6 +24,11 @@ on:
         required: false
         default: false
         type: boolean
+      create-build-dependecies-dir:
+        description: Whether to create an empty build-dependecies directory in the build context
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -41,6 +46,10 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Create empty build-dependecies directory
+        if: ${{ inputs.create-build-dependecies-dir }}
+        run: mkdir -p "${{ inputs.context }}/build-dependecies"
 
       - name: Build container image
         run: |
