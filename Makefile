@@ -121,6 +121,7 @@ airflow-set-variables:
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_point_cloud_base_path $(ROOT_DIR)/test_data/point_clouds
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_container_source_base_path $(REPO_DIR)/test_data/point_clouds
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_container_target_base_path /data
+	uv run --directory $(DAGS_DIR) airflow variables set pinta_data_base_path $(REPO_DIR)/test_data
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_srid 3067
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_dem_pixel_size 2
 	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_dem_nodata -9999
