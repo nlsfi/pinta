@@ -6,6 +6,7 @@
 from pathlib import Path
 
 from pinta_common import env
+from pinta_db_utils.postgis import raster
 from sqlmodel import Session
 
 from pinta_processing import core, filters, reader, writer
@@ -29,27 +30,35 @@ def rasterio_to_postgis(  # noqa: PLR0913
     crs: str | None = f"EPSG:{env.SRID}",
 ) -> core.Pipeline:
     """Read rasterio input and write it to PostGIS with overviews."""
-    return (
-        reader.RasterioReader(input_path, crs=crs)
-        # Calculate and write overviews
-        | core.Tee(
-            _overview_to_postgis(
-                2, schema, f"o_2_{table_name}", session, staging_tables
-            )
-        )
-        | core.Tee(
-            _overview_to_postgis(
-                8, schema, f"o_8_{table_name}", session, staging_tables
-            )
-        )
-        | core.Tee(
-            _overview_to_postgis(
-                128, schema, f"o_128_{table_name}", session, staging_tables
-            )
-        )
-        # Write original data
-        | writer.PostgisWriter(schema, table_name, session, staging_tables)
+    return core.Pipeline(
+        [
+            reader.RasterioReader(input_path, crs=crs),
+            # Calculate and write overviews
+            *_generate_overview_stages(schema, table_name, session, staging_tables),
+            # Write original data
+            writer.PostgisWriter(schema, table_name, session, staging_tables),
+        ]
     )
+
+
+def _generate_overview_stages(
+    schema: str,
+    table_name: str,
+    session: Session,
+    staging_tables: int,
+) -> list[core.Stage]:
+    return [
+        core.Tee(
+            _overview_to_postgis(
+                level,
+                schema,
+                raster.OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name),
+                session,
+                staging_tables,
+            )
+        )
+        for level in raster.DEFAULT_OVERVIEW_LEVELS
+    ]
 
 
 def _overview_to_postgis(
