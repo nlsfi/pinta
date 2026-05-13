@@ -5,20 +5,33 @@
 
 """PostGIS raster utilities."""
 
+import logging
+
 import psycopg
 import sqlalchemy as sa
 import sqlmodel
 
 from pinta_common import env
+from pinta_db_utils.postgis import utils
 
 DEFAULT_EMPTY_RASTER_ANCHOR = (41248, 7880720)  # upper left
 DEFAULT_COVERAGE_TILE_GRID_ANCHOR = (500000, 6570000)
+LOGGER = logging.getLogger(__name__)
 
 
 def add_constraint_regular_blocking(
     session: sqlmodel.Session, schema: str, table_name: str, tile_size_meters: int
 ) -> None:
     """Add x/y block size constraints to the raster table."""
+    if not utils.session_user_owns_table(session, schema, table_name):
+        LOGGER.info(
+            "Skipping regular blocking constraint creation for %s.%s because "
+            "session user is not the table owner",
+            schema,
+            table_name,
+        )
+        return
+
     anchor_x = DEFAULT_COVERAGE_TILE_GRID_ANCHOR[0]
     anchor_y = DEFAULT_COVERAGE_TILE_GRID_ANCHOR[1]
 
@@ -53,6 +66,15 @@ def add_constraint_extent(
     session: sqlmodel.Session, schema: str, table_name: str
 ) -> None:
     """Add extent constraints to the raster table."""
+    if not utils.session_user_owns_table(session, schema, table_name):
+        LOGGER.info(
+            "Skipping extent constraint creation for %s.%s because session user "
+            "is not the table owner",
+            schema,
+            table_name,
+        )
+        return
+
     session.exec(  # type: ignore[call-overload]
         sa.text(
             "SELECT AddRasterConstraints("
@@ -75,6 +97,15 @@ def add_raster_constraints(
 
     Constraints are generated using empty dummy raster tile.
     """
+    if not utils.session_user_owns_table(session, schema, table_name):
+        LOGGER.info(
+            "Skipping raster constraint creation for %s.%s because session user "
+            "is not the table owner",
+            schema,
+            table_name,
+        )
+        return
+
     _make_empty_raster(
         session=session,
         schema=schema,
