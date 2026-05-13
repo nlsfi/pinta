@@ -273,6 +273,63 @@ def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
     )
 
 
+def test_merge_staging_tables_uses_main_table_rid_sequence(
+    processing_worker_db: sqlmodel.Session,
+):
+    """Test merging staging tables assigns rids from the main table sequence."""
+    table_name = "test_raster_merge_rid_sequence"
+    schema = Schema.PROCESSING.value
+
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        staging_tables=1,
+        session=processing_worker_db,
+    )
+
+    processing_worker_db.exec(  # type: ignore[call-overload]
+        sa.text(f"""
+            INSERT INTO "{schema}"."{table_name}" ("rast")
+            SELECT ST_AddBand(
+                ST_MakeEmptyRaster(256, 256, 41248, 7880720, 2, -2, 0, 0, 3067),
+                1,
+                '32BF'::text,
+                0,
+                -9999
+            )
+        """)
+    )
+    main_rid = processing_worker_db.exec(  # type: ignore[call-overload]
+        sa.text(f'SELECT rid FROM "{schema}"."{table_name}"')
+    ).one()[0]
+    processing_worker_db.exec(  # type: ignore[call-overload]
+        sa.text(f"""
+            INSERT INTO "{schema}"."{table_name}_p0" ("rast")
+            SELECT ST_AddBand(
+                ST_MakeEmptyRaster(256, 256, 41760, 7880720, 2, -2, 0, 0, 3067),
+                1,
+                '32BF'::text,
+                0,
+                -9999
+            )
+        """)
+    )
+    processing_worker_db.commit()
+
+    raster.merge_staging_tables(
+        table_name=table_name,
+        schema=schema,
+        staging_tables=1,
+        session=processing_worker_db,
+    )
+
+    rids = processing_worker_db.exec(  # type: ignore[call-overload]
+        sa.text(f'SELECT rid FROM "{schema}"."{table_name}" ORDER BY rid')
+    ).all()
+
+    assert [row[0] for row in rids] == [main_rid, main_rid + 1]
+
+
 def test_initialize_raster_table_with_extra_columns(
     processing_worker_db: sqlmodel.Session,
 ):

@@ -6,6 +6,7 @@
 """PostGIS raster utilities."""
 
 import enum
+import logging
 from collections import abc
 
 import geoalchemy2
@@ -13,10 +14,12 @@ import sqlalchemy as sa
 import sqlmodel
 
 from pinta_common import env
-from pinta_db_utils.postgis import constraints
+from pinta_db_utils.postgis import constraints, utils
 
 OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"
 DEFAULT_OVERVIEW_LEVELS = [2, 8, 128]
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TableType(enum.Enum):
@@ -126,6 +129,7 @@ def initialize_overview_tables(
 
         _register_overview_table(session, schema, table_name, overview_name, level)
         _create_raster_index(session, schema, overview_name)
+        session.commit()
 
 
 def merge_staging_tables(
@@ -212,17 +216,13 @@ def merge_staging_tables(
     main_table = sa.Table(
         table_name,
         sa.MetaData(),
-        sa.Column("rid", sa.Integer()),
         sa.Column("rast", geoalchemy2.Raster()),
         schema=schema,
     )
 
     insert_statement = sa.insert(main_table).from_select(
-        [main_table.c.rid, main_table.c.rast],
-        sa.select(
-            sa.func.row_number().over().cast(sa.BigInteger).label("rid"),
-            tiles_to_main_table.c.rast,
-        ).select_from(tiles_to_main_table),
+        [main_table.c.rast],
+        sa.select(tiles_to_main_table.c.rast).select_from(tiles_to_main_table),
     )
 
     session.exec(insert_statement)  # type: ignore[call-overload]
@@ -252,6 +252,15 @@ def _register_overview_table(
     overview_name: str,
     level: int,
 ) -> None:
+    if not utils.session_user_owns_table(session, schema, overview_name):
+        LOGGER.info(
+            "Skipping overview registration for %s.%s because session user is "
+            "not the table owner",
+            schema,
+            overview_name,
+        )
+        return
+
     session.exec(  # type: ignore[call-overload]
         sa.text(
             "SELECT AddOverviewConstraints("
@@ -296,6 +305,7 @@ def _create_raster_table(
 
     Returns True if table was created, False if it already existed.
     """
+    LOGGER.info("Creating raster table %s.%s", schema, table_name)
     # Check if table already exists
     inspector = sa.inspect(session.connection())
     if table_name in inspector.get_table_names(schema=schema):
@@ -330,6 +340,15 @@ def _create_raster_index(
     table_name: str,
 ) -> None:
     """Create a GIST index on the raster envelope."""
+    if not utils.session_user_owns_table(session, schema, table_name):
+        LOGGER.info(
+            "Skipping raster index creation for %s.%s because session user is "
+            "not the table owner",
+            schema,
+            table_name,
+        )
+        return
+
     index = sa.Index(
         f"{table_name}_rast_idx",
         sa.func.ST_Envelope(
