@@ -10,7 +10,7 @@ def get_test_data_path(relative_path: str | Path, check_if_exists: bool = True) 
     """
     Return the absolute path to a file or folder inside test_data, relative to the project root.
     """
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = get_project_root()
     test_data_dir = project_root / "test_data"
     if check_if_exists:
         assert test_data_dir.exists(), (
@@ -20,3 +20,8 @@ def get_test_data_path(relative_path: str | Path, check_if_exists: bool = True) 
     if check_if_exists:
         assert resource.exists(), f"Resource not found at {resource}"
     return resource
+
+
+def get_project_root() -> Path:
+    """Return the absolute path to the project root."""
+    return Path(__file__).parent.parent.parent.parent.parent

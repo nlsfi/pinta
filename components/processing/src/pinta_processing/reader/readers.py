@@ -65,6 +65,7 @@ class RasterioReader(core.Stage):
                 self.crs is not None
                 and dataset.crs is not None
                 and dataset.crs != self.crs
+                and f'["EPSG","{self.crs.split(":")[1]}"]' not in dataset.crs
             ):
                 msg = (
                     f"CRS mismatch: raster file has CRS {dataset.crs} "

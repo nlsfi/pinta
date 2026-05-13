@@ -7,6 +7,19 @@ import os
 
 from pinta_common import exceptions
 
+TRUTHY_STRINGS = (
+    "1",
+    "true",
+    "yes",
+    "t",
+)
+
+
+def is_truthy(value: str) -> bool:
+    """Check if the env variable represents a truthy value."""
+    return value.lower() in TRUTHY_STRINGS
+
+
 try:
     SRID = os.environ["DB_SRID"]
 except KeyError as e:
@@ -23,3 +36,6 @@ except KeyError as e:
     raise exceptions.MissingEnvironmentError(e.args[0]) from None
 
 DEFAULT_TILE_SIZE = int(os.environ.get("DB_DEFAULT_TILE_SIZE", "256"))
+
+# When set to a non-empty value, LASTools commands are invoked with `-demo`
+LASTOOLS_DEMO_MODE = is_truthy(os.environ.get("LASTOOLS_DEMO_MODE", ""))

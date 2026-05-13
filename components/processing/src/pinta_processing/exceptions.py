@@ -12,3 +12,12 @@ class InvalidStageInputError(Exception):
         self.expected_type = expected_type
         self.received_type = received_type
         super().__init__(f"{stage_name} expected {expected_type}, got {received_type}")
+
+
+class LasToolsError(Exception):
+    """Raised when an error occurs in LasTools."""
+
+    def __init__(self, stage_name: str, command: str, error_message: str) -> None:
+        super().__init__(
+            f"Error with lastools in {stage_name} with {command}: {error_message}"
+        )
