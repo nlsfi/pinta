@@ -56,3 +56,12 @@ if data_dir := Variable.get("pinta_container_source_base_path", None):
             read_only=False,
         )
     )
+if data_base_path := Variable.get("pinta_data_base_path", "/test_data"):
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target="/input",
+            source=data_base_path,
+            type="bind",
+            read_only=True,
+        )
+    )

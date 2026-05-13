@@ -20,6 +20,10 @@ If necessary, code changes can be updated for Airflow use immediately by running
 or `make airflow-reserialize` from the root of the repository.
 Airflow also automatically updates DAG file changes periodically.
 
+### Developing DAGs locally
+
+If you want to run the load dem DAG, you can place test data inside the repo root `test_data` folder, which is automatically mounted to the processing container.
+
 ## Updating Airflow
 
 * Update the Airflow version with `uv add --optional airflow apache-airflow[postgres,standard]==3.1.8 --constraint https://raw.githubusercontent.com/apache/airflow/constraints-3.1.8/constraints-3.12.txt`
