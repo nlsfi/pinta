@@ -49,6 +49,24 @@ jobs:
       - name: Run migrations
         run: make db-migrate-all
 
+      - name: Install LASTools runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libjpeg62 \
+            libpng16-16t64 \
+            libtiff6 \
+            libgeotiff5 \
+            libwebp7
+
+      - name: Download LASTools binaries
+        run: |
+          mkdir -p external/LAStools
+          curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz \
+            -o /tmp/lastools.tar.gz
+          tar -xzf /tmp/lastools.tar.gz -C external/LAStools
+          rm /tmp/lastools.tar.gz
+
       - name: Run tests
         run: |
           make test-integration
