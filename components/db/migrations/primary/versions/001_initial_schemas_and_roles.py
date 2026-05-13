@@ -125,6 +125,22 @@ def upgrade() -> None:
         schema=DEM_SCHEMA, schema_owner=OWNER, role=READER, privileges=("SELECT",)
     )
 
+    schema_op.grant_privileges_on_schema(
+        schema=DEM_SCHEMA, role=PROCESSING_WORKER, privileges=("USAGE", "CREATE")
+    )
+    schema_op.grant_default_privileges_on_tables_in_schema(
+        schema=DEM_SCHEMA,
+        schema_owner=OWNER,
+        role=PROCESSING_WORKER,
+        privileges=("SELECT", "INSERT", "UPDATE", "DELETE"),
+    )
+    schema_op.grant_default_privileges_on_sequences_in_schema(
+        schema=DEM_SCHEMA,
+        schema_owner=OWNER,
+        role=PROCESSING_WORKER,
+        privileges=("SELECT", "USAGE"),
+    )
+
 
 def downgrade() -> None:
     """Downgrade schema."""
