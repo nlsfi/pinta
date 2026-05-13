@@ -124,3 +124,6 @@ exc
 psycopg
 param
 tis
+lastools
+blast2
+fullmatch
