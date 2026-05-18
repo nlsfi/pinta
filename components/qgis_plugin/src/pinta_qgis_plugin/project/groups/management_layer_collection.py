@@ -18,23 +18,25 @@
 
 import logging
 
-from pinta_qgis_plugin.layers import config, raster_layer
-from pinta_qgis_plugin.layers.collections.base_layer_collection import (
+from pinta_qgis_plugin.layers import vector_layer
+from pinta_qgis_plugin.project.config import management_layers
+from pinta_qgis_plugin.project.groups.base_layer_collection import (
     BaseLayerCollection,
 )
 
 LOGGER = logging.getLogger(__name__)
 
-PROVIDER = "wms"
+PROVIDER_LIB = "postgres"
 
 
-class BasemapLayerCollection(BaseLayerCollection):
-    """Collection of base map layers."""
+class ManagementLayerCollection(BaseLayerCollection):
+    """Collection of management layers."""
 
-    collection_id = "base_map"
+    collection_id = "management"
 
     def _add_to_project(self) -> None:
-        for layer_config in reversed(config.BASEMAP_LAYERS):
+        """Add layers to the project."""
+        for layer_config in reversed(management_layers.VECTOR_LAYERS):
             self._add_map_layer_to_project(
-                raster_layer.create_raster_layer(layer_config, PROVIDER)
+                vector_layer.create_vector_layer(layer_config, PROVIDER_LIB)
             )

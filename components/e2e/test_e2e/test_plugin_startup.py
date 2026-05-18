@@ -13,13 +13,13 @@ if TYPE_CHECKING:
 def test_plugin_startup_adds_all_layers_to_project(
     qgis_plugin: "Plugin",
 ) -> None:
-    from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (  # noqa: PLC0415
+    from pinta_qgis_plugin.project.groups.basemap_layer_collection import (  # noqa: PLC0415
         BasemapLayerCollection,
     )
-    from pinta_qgis_plugin.layers.collections.dem_layer_collection import (  # noqa: PLC0415
+    from pinta_qgis_plugin.project.groups.dem_layer_collection import (  # noqa: PLC0415
         DemLayerCollection,
     )
-    from pinta_qgis_plugin.layers.collections.management_layer_collection import (  # noqa: PLC0415
+    from pinta_qgis_plugin.project.groups.management_layer_collection import (  # noqa: PLC0415
         ManagementLayerCollection,
     )
 

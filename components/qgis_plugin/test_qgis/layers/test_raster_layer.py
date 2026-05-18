@@ -25,6 +25,7 @@ from pytest_mock import MockerFixture
 from qgis.core import QgsRasterLayer
 
 from pinta_qgis_plugin.layers import config, raster_layer
+from pinta_qgis_plugin.project.config import background_layers
 
 PROVIDER = "postgresraster"
 
@@ -68,7 +69,9 @@ def test_create_postgis_raster_layer_returns_layer(
     mock_uri: MagicMock,
     dem_raster_layer: QgsRasterLayer,
 ):
-    result = raster_layer.create_postgis_raster_layer(config.DEM_LAYER, PROVIDER)
+    result = raster_layer.create_postgis_raster_layer(
+        background_layers.DEM_LAYER, PROVIDER
+    )
     assert result is dem_raster_layer
 
 
@@ -76,7 +79,7 @@ def test_create_postgis_raster_layer_sets_data_source(
     mock_uri: MagicMock,
     dem_raster_layer: QgsRasterLayer,
 ):
-    raster_layer.create_postgis_raster_layer(config.DEM_LAYER, PROVIDER)
+    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
     mock_uri.setDataSource.assert_called_once_with("dem", "dem", "rast")
 
 
@@ -86,8 +89,10 @@ def test_create_postgis_raster_layer_applies_style(
     dem_raster_layer: QgsRasterLayer,
 ):
     mock_apply = mocker.patch.object(raster_layer.styles, "apply_style")
-    raster_layer.create_postgis_raster_layer(config.DEM_LAYER, PROVIDER)
-    mock_apply.assert_called_once_with(dem_raster_layer, config.DEM_LAYER.style_path)
+    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
+    mock_apply.assert_called_once_with(
+        dem_raster_layer, background_layers.DEM_LAYER.style_path
+    )
 
 
 def test_create_postgis_raster_layer_with_invalid_layer_raises_exception(
@@ -103,7 +108,7 @@ def test_create_postgis_raster_layer_with_invalid_layer_raises_exception(
     )
 
     with pytest.raises(raster_layer.LayerCreationError):
-        raster_layer.create_postgis_raster_layer(config.DEM_LAYER, PROVIDER)
+        raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
 
 
 def test_create_postgis_raster_layer_without_style_skips_apply(
@@ -112,7 +117,7 @@ def test_create_postgis_raster_layer_without_style_skips_apply(
     empty_raster_layer: QgsRasterLayer,
 ):
     config_no_style = config.RasterModelLayerConfig.create(
-        db_model=config.DEM_LAYER.db_model,
+        db_model=background_layers.DEM_LAYER.db_model,
         layer_name="No style",
         style_path=None,
     )

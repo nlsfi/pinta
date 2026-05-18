@@ -22,8 +22,8 @@ import pytest
 from pytest_mock import MockerFixture
 from qgis.core import QgsProject, QgsVectorLayer
 
-from pinta_qgis_plugin.layers import config
-from pinta_qgis_plugin.layers.collections import basemap_layer_collection
+from pinta_qgis_plugin.project.config import background_layers
+from pinta_qgis_plugin.project.groups import basemap_layer_collection
 
 
 @pytest.fixture
@@ -63,7 +63,9 @@ def test_add_to_project_with_valid_layer_adds_to_project(
         return_value=production_area_layer,
     )
     layer_collection.add_to_project()
-    assert mock_qgs_project.addMapLayer.call_count == len(config.BASEMAP_LAYERS)
+    assert mock_qgs_project.addMapLayer.call_count == len(
+        background_layers.BASEMAP_LAYERS
+    )
     mock_qgs_project.addMapLayer.assert_called_with(
         production_area_layer, addToLegend=True
     )
