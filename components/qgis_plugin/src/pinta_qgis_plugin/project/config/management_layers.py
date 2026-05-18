@@ -21,26 +21,16 @@ from qgis_plugin_tools.tools import i18n
 
 from pinta_qgis_plugin.layers.config import ModelLayerConfig
 
-COMMON_ALIASES = {
-    "id": i18n.tr("Identifier"),
-}
-
 PRODUCTION_AREA = ModelLayerConfig.create(
     db_model=ProductionArea,
     layer_name=i18n.tr("Production area"),
     layer_id="production_area",
-    aliases={
-        **COMMON_ALIASES,
-    },
 )
 
 POINT_CLOUD_TILE = ModelLayerConfig.create(
     db_model=PointCloudTile,
     layer_name=i18n.tr("Point cloud tile"),
     layer_id="point_cloud_tile",
-    aliases={
-        **COMMON_ALIASES,
-    },
 )
 
 VECTOR_LAYERS = [
