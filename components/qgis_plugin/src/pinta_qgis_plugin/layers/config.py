@@ -23,44 +23,71 @@ from pinta_common import env as env_common
 from pinta_db.common.base import BaseModel
 from pinta_db_utils import model_utils
 from qgis.core import QgsWkbTypes
+from qgis_plugin_tools.tools import i18n
 
 PINTA_LAYER_ID = "PINTA_LAYER_ID"
 
+COMMON_ALIASES = {
+    "id": i18n.tr("Identifier"),
+}
+
 
 @dataclasses.dataclass
-class ModelLayerConfig:
-    """Configuration for a QGIS layer."""
+class VectorLayerConfig:
+    """Configuration for a vector layer."""
 
-    db_model: type[BaseModel]
+    schema: str
+    table_name: str
     layer_name: str
     layer_id: str
-    aliases: dict[str, str]
-    geom_column: str
     key_column: str
     wkb_type: QgsWkbTypes.Type
-    srid: str
+    srid: str = env_common.SRID
+    geom_column: str = "geom"
+    aliases: dict[str, str] = dataclasses.field(
+        default_factory=lambda: {**COMMON_ALIASES}
+    )
     style_path: Path | None = None
+
+
+@dataclasses.dataclass
+class RasterLayerConfig:
+    """Configuration for a raster layer."""
+
+    schema: str
+    table_name: str
+    layer_name: str
+    layer_id: str
+    rast_column: str = "rast"
+    style_path: Path | None = None
+
+
+@dataclasses.dataclass
+class ModelLayerConfig(VectorLayerConfig):
+    """Configuration for a QGIS layer."""
 
     @staticmethod
     def create(
         db_model: type[BaseModel],
         layer_name: str,
         layer_id: str,
-        aliases: dict[str, str],
+        aliases: dict[str, str] | None = None,
         style_path: Path | None = None,
     ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
         return ModelLayerConfig(
-            db_model=db_model,
+            schema=_model_schema(db_model),
+            table_name=db_model.__tablename__,
             layer_name=layer_name,
-            aliases=aliases,
+            aliases={**COMMON_ALIASES}
+            if aliases is None
+            else {**COMMON_ALIASES, **aliases},
             geom_column=geom_column,
             key_column=model_utils.primary_key_column(db_model),
-            wkb_type=_geometry_type_to_qgis_wkb(
+            wkb_type=geometry_type_to_qgis_wkb(
                 model_utils.geometry_type(db_model, geom_column)
             ),
-            srid=env_common.SRID,
             style_path=style_path,
             layer_id=layer_id,
         )
@@ -121,14 +148,8 @@ class BasemapLayerConfig:
 
 
 @dataclasses.dataclass
-class RasterModelLayerConfig:
+class RasterModelLayerConfig(RasterLayerConfig):
     """Configuration for a PostGIS raster layer."""
-
-    db_model: type[BaseModel]
-    layer_name: str
-    layer_id: str
-    rast_column: str
-    style_path: Path | None = None
 
     @staticmethod
     def create(
@@ -140,7 +161,8 @@ class RasterModelLayerConfig:
     ) -> "RasterModelLayerConfig":
         """Create a RasterModelLayerConfig instance."""
         return RasterModelLayerConfig(
-            db_model=db_model,
+            schema=_model_schema(db_model),
+            table_name=db_model.__tablename__,
             layer_name=layer_name,
             layer_id=layer_id,
             rast_column=rast_column,
@@ -148,9 +170,14 @@ class RasterModelLayerConfig:
         )
 
 
-def _geometry_type_to_qgis_wkb(geometry_type: str) -> QgsWkbTypes.Type:
+def geometry_type_to_qgis_wkb(geometry_type: str) -> QgsWkbTypes.Type:
+    """Convert a geometry type string to a QgsWkbTypes.Type."""
     mapping = {
         "POLYGON": QgsWkbTypes.Polygon,
         "MULTIPOLYGON": QgsWkbTypes.MultiPolygon,
     }
     return mapping.get(geometry_type.upper())
+
+
+def _model_schema(db_model: type[BaseModel]) -> str:
+    return db_model.__table_args__.get("schema")

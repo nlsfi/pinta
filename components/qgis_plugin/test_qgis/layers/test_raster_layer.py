@@ -125,7 +125,7 @@ def test_create_postgis_raster_layer_without_style_skips_apply(
     empty_raster_layer: QgsRasterLayer,
 ):
     config_no_style = config.RasterModelLayerConfig.create(
-        db_model=background_layers.DEM_LAYER.db_model,
+        db_model=Dem,
         layer_name="No style",
         layer_id="no_style",
         style_path=None,
@@ -155,8 +155,8 @@ def test_raster_model_layer_config_create_derives_schema_and_table():
         layer_name="Test",
         layer_id="test",
     )
-    assert layer_config.db_model.__table_args__.get("schema") == "dem"
-    assert layer_config.db_model.__tablename__ == "dem"
+    assert layer_config.schema == "dem"
+    assert layer_config.table_name == "dem"
     assert layer_config.rast_column == "rast"
     assert layer_config.style_path is None
 
