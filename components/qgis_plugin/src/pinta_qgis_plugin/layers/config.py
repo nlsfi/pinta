@@ -21,12 +21,8 @@ from pathlib import Path
 
 from pinta_common import env as env_common
 from pinta_db.common.base import BaseModel
-from pinta_db.primary_db.models.all import Dem, PointCloudTile, ProductionArea
 from pinta_db_utils import model_utils
 from qgis.core import QgsWkbTypes
-from qgis_plugin_tools.tools import i18n
-
-from pinta_qgis_plugin import env
 
 
 @dataclasses.dataclass
@@ -150,44 +146,3 @@ def _geometry_type_to_qgis_wkb(geometry_type: str) -> QgsWkbTypes.Type:
         "MULTIPOLYGON": QgsWkbTypes.MultiPolygon,
     }
     return mapping.get(geometry_type.upper())
-
-
-_STYLES_PATH = Path(__file__).parent.parent / "resources" / "styles"
-
-
-COMMON_ALIASES = {
-    "id": i18n.tr("Identifier"),
-}
-
-PRODUCTION_AREA = ModelLayerConfig.create(
-    db_model=ProductionArea,
-    layer_name=i18n.tr("Production area"),
-    aliases={
-        **COMMON_ALIASES,
-    },
-)
-
-POINT_CLOUD_TILE = ModelLayerConfig.create(
-    db_model=PointCloudTile,
-    layer_name=i18n.tr("Point cloud tile"),
-    aliases={
-        **COMMON_ALIASES,
-    },
-)
-
-VECTOR_LAYERS = [
-    PRODUCTION_AREA,
-    POINT_CLOUD_TILE,
-]
-
-BASEMAP_LAYERS = BasemapLayerConfig.from_json(env.PINTA_BASE_MAP_LAYER_CONFIG)
-
-DEM_LAYER = RasterModelLayerConfig.create(
-    db_model=Dem,
-    layer_name=i18n.tr("Elevation model"),
-    style_path=_STYLES_PATH / "elevation_model.qml",
-)
-
-DEM_LAYERS = [
-    DEM_LAYER,
-]

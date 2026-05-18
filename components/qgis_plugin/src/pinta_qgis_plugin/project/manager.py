@@ -25,11 +25,11 @@ from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools.decorations import log_if_fails
 
 from pinta_qgis_plugin import env as plugin_env
-from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
+from pinta_qgis_plugin.project.groups.basemap_layer_collection import (
     BasemapLayerCollection,
 )
-from pinta_qgis_plugin.layers.collections.dem_layer_collection import DemLayerCollection
-from pinta_qgis_plugin.layers.collections.management_layer_collection import (
+from pinta_qgis_plugin.project.groups.dem_layer_collection import DemLayerCollection
+from pinta_qgis_plugin.project.groups.management_layer_collection import (
     ManagementLayerCollection,
 )
 

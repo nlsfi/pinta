@@ -16,27 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
-"""DEM layer collection."""
-
 import logging
 
-from pinta_qgis_plugin.layers import config, raster_layer
-from pinta_qgis_plugin.layers.collections.base_layer_collection import (
+from pinta_qgis_plugin.layers import raster_layer
+from pinta_qgis_plugin.project.config import background_layers
+from pinta_qgis_plugin.project.groups.base_layer_collection import (
     BaseLayerCollection,
 )
 
 LOGGER = logging.getLogger(__name__)
 
-PROVIDER = "postgresraster"
+PROVIDER = "wms"
 
 
-class DemLayerCollection(BaseLayerCollection):
-    """Collection of DEM raster layers."""
+class BasemapLayerCollection(BaseLayerCollection):
+    """Collection of base map layers."""
 
-    collection_id = "dem"
+    collection_id = "base_map"
 
     def _add_to_project(self) -> None:
-        for layer_config in reversed(config.DEM_LAYERS):
+        for layer_config in reversed(background_layers.BASEMAP_LAYERS):
             self._add_map_layer_to_project(
-                raster_layer.create_postgis_raster_layer(layer_config, PROVIDER)
+                raster_layer.create_raster_layer(layer_config, PROVIDER)
             )

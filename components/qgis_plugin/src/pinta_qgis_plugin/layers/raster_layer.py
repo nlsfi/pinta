@@ -20,8 +20,9 @@ import logging
 
 from qgis.core import QgsRasterLayer
 
+from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.exceptions import LayerCreationError
-from pinta_qgis_plugin.layers import database, styles
+from pinta_qgis_plugin.layers import styles
 from pinta_qgis_plugin.layers.config import BasemapLayerConfig, RasterModelLayerConfig
 
 LOGGER = logging.getLogger(__name__)

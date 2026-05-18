@@ -22,8 +22,8 @@ import pytest
 from pytest_mock import MockerFixture
 from qgis.core import QgsProject, QgsRasterLayer
 
-from pinta_qgis_plugin.layers import config
-from pinta_qgis_plugin.layers.collections import dem_layer_collection
+from pinta_qgis_plugin.project.config import background_layers
+from pinta_qgis_plugin.project.groups import dem_layer_collection
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def test_add_to_project_with_valid_layer_adds_to_project(
         return_value=dem_layer,
     )
     layer_collection.add_to_project()
-    assert mock_qgs_project.addMapLayer.call_count == len(config.DEM_LAYERS)
+    assert mock_qgs_project.addMapLayer.call_count == len(background_layers.DEM_LAYERS)
     mock_qgs_project.addMapLayer.assert_called_with(dem_layer, addToLegend=True)
 
 

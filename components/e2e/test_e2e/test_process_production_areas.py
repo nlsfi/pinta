@@ -66,7 +66,7 @@ def test_process_production_areas_dag_updates_qgis_layers(
 
     dag.test()
 
-    from pinta_qgis_plugin.layers.collections.management_layer_collection import (  # noqa: PLC0415
+    from pinta_qgis_plugin.project.groups.management_layer_collection import (  # noqa: PLC0415
         ManagementLayerCollection,
     )
 

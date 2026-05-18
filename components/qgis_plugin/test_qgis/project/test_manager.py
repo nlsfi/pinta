@@ -21,16 +21,16 @@ import pytest
 from pinta_common import env
 from qgis.core import QgsProject
 
-from pinta_qgis_plugin.layers.collections.basemap_layer_collection import (
+from pinta_qgis_plugin.project import manager
+from pinta_qgis_plugin.project.groups.basemap_layer_collection import (
     BasemapLayerCollection,
 )
-from pinta_qgis_plugin.layers.collections.dem_layer_collection import (
+from pinta_qgis_plugin.project.groups.dem_layer_collection import (
     DemLayerCollection,
 )
-from pinta_qgis_plugin.layers.collections.management_layer_collection import (
+from pinta_qgis_plugin.project.groups.management_layer_collection import (
     ManagementLayerCollection,
 )
-from pinta_qgis_plugin.project import manager
 
 if typing.TYPE_CHECKING:
     from unittest.mock import MagicMock
