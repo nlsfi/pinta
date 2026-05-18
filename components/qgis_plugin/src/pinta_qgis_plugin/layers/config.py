@@ -24,6 +24,8 @@ from pinta_db.common.base import BaseModel
 from pinta_db_utils import model_utils
 from qgis.core import QgsWkbTypes
 
+PINTA_LAYER_ID = "PINTA_LAYER_ID"
+
 
 @dataclasses.dataclass
 class ModelLayerConfig:
@@ -31,6 +33,7 @@ class ModelLayerConfig:
 
     db_model: type[BaseModel]
     layer_name: str
+    layer_id: str
     aliases: dict[str, str]
     geom_column: str
     key_column: str
@@ -42,6 +45,7 @@ class ModelLayerConfig:
     def create(
         db_model: type[BaseModel],
         layer_name: str,
+        layer_id: str,
         aliases: dict[str, str],
         style_path: Path | None = None,
     ) -> "ModelLayerConfig":
@@ -58,6 +62,7 @@ class ModelLayerConfig:
             ),
             srid=env_common.SRID,
             style_path=style_path,
+            layer_id=layer_id,
         )
 
 
@@ -121,6 +126,7 @@ class RasterModelLayerConfig:
 
     db_model: type[BaseModel]
     layer_name: str
+    layer_id: str
     rast_column: str
     style_path: Path | None = None
 
@@ -128,6 +134,7 @@ class RasterModelLayerConfig:
     def create(
         db_model: type[BaseModel],
         layer_name: str,
+        layer_id: str,
         style_path: Path | None = None,
         rast_column: str = "rast",
     ) -> "RasterModelLayerConfig":
@@ -135,6 +142,7 @@ class RasterModelLayerConfig:
         return RasterModelLayerConfig(
             db_model=db_model,
             layer_name=layer_name,
+            layer_id=layer_id,
             rast_column=rast_column,
             style_path=style_path,
         )

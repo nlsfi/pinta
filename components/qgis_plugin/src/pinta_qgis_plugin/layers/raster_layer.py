@@ -23,7 +23,11 @@ from qgis.core import QgsRasterLayer
 from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.exceptions import LayerCreationError
 from pinta_qgis_plugin.layers import styles
-from pinta_qgis_plugin.layers.config import BasemapLayerConfig, RasterModelLayerConfig
+from pinta_qgis_plugin.layers.config import (
+    PINTA_LAYER_ID,
+    BasemapLayerConfig,
+    RasterModelLayerConfig,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,5 +63,7 @@ def create_postgis_raster_layer(
 
     if config.style_path is not None:
         styles.apply_style(layer, config.style_path)
+
+    layer.setCustomProperty(PINTA_LAYER_ID, config.layer_id)
 
     return layer

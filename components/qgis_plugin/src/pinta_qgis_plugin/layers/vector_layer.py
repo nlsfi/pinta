@@ -23,7 +23,7 @@ from qgis.core import QgsDataSourceUri, QgsVectorLayer
 from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.exceptions import LayerCreationError
 from pinta_qgis_plugin.layers import styles
-from pinta_qgis_plugin.layers.config import ModelLayerConfig
+from pinta_qgis_plugin.layers.config import PINTA_LAYER_ID, ModelLayerConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,5 +54,7 @@ def create_vector_layer(config: ModelLayerConfig, provider: str) -> QgsVectorLay
 
     if config.style_path is not None:
         styles.apply_style(layer, config.style_path)
+
+    layer.setCustomProperty(PINTA_LAYER_ID, config.layer_id)
 
     return layer

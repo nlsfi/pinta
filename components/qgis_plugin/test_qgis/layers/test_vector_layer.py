@@ -22,7 +22,7 @@ import pytest
 from pytest_mock import MockerFixture
 from qgis.core import QgsVectorLayer
 
-from pinta_qgis_plugin.layers import vector_layer
+from pinta_qgis_plugin.layers import config, vector_layer
 from pinta_qgis_plugin.project.config import management_layers
 
 PROVIDER = "postgres"
@@ -72,6 +72,15 @@ def test_create_layer_with_valid_layer_returns_layer(
     mock_uri.setWkbType.assert_called_once()
     mock_uri.setSrid.assert_called_once_with("3067")
     assert production_area_layer.readOnly
+
+
+def test_create_layer_sets_layer_id(production_area_layer: QgsVectorLayer):
+    vector_layer.create_vector_layer(management_layers.PRODUCTION_AREA, PROVIDER)
+
+    assert (
+        production_area_layer.customProperty(config.PINTA_LAYER_ID)
+        == management_layers.PRODUCTION_AREA.layer_id
+    )
 
 
 def test_create_layer_with_invalid_layer_raises_exception(

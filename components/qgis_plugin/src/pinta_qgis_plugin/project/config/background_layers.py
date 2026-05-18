@@ -31,6 +31,7 @@ BASEMAP_LAYERS = BasemapLayerConfig.from_json(env.PINTA_BASE_MAP_LAYER_CONFIG)
 DEM_LAYER = RasterModelLayerConfig.create(
     db_model=Dem,
     layer_name=i18n.tr("Elevation model"),
+    layer_id="dem_primary",
     style_path=_STYLES_PATH / "elevation_model.qml",
 )
 

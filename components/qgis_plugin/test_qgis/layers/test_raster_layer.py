@@ -83,6 +83,14 @@ def test_create_postgis_raster_layer_sets_data_source(
     mock_uri.setDataSource.assert_called_once_with("dem", "dem", "rast")
 
 
+def test_create_postgis_raster_layer_sets_layer_id(dem_raster_layer: QgsRasterLayer):
+    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
+    assert (
+        dem_raster_layer.customProperty(config.PINTA_LAYER_ID)
+        == background_layers.DEM_LAYER.layer_id
+    )
+
+
 def test_create_postgis_raster_layer_applies_style(
     mocker: MockerFixture,
     mock_uri: MagicMock,
@@ -119,6 +127,7 @@ def test_create_postgis_raster_layer_without_style_skips_apply(
     config_no_style = config.RasterModelLayerConfig.create(
         db_model=background_layers.DEM_LAYER.db_model,
         layer_name="No style",
+        layer_id="no_style",
         style_path=None,
     )
     fake_layer = empty_raster_layer
@@ -144,6 +153,7 @@ def test_raster_model_layer_config_create_derives_schema_and_table():
     layer_config = config.RasterModelLayerConfig.create(
         db_model=Dem,
         layer_name="Test",
+        layer_id="test",
     )
     assert layer_config.db_model.__table_args__.get("schema") == "dem"
     assert layer_config.db_model.__tablename__ == "dem"
@@ -156,6 +166,7 @@ def test_raster_model_layer_config_create_with_style_path():
     layer_config = config.RasterModelLayerConfig.create(
         db_model=Dem,
         layer_name="Test",
+        layer_id="test",
         style_path=path,
     )
     assert layer_config.style_path == path
