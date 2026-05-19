@@ -18,6 +18,7 @@
 
 import logging
 
+from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.layers import vector_layer
 from pinta_qgis_plugin.project.config import management_layers
 from pinta_qgis_plugin.project.groups.base_layer_collection import (
@@ -38,5 +39,7 @@ class ManagementLayerCollection(BaseLayerCollection):
         """Add layers to the project."""
         for layer_config in reversed(management_layers.VECTOR_LAYERS):
             self._add_map_layer_to_project(
-                vector_layer.create_vector_layer(layer_config, PROVIDER_LIB)
+                vector_layer.create_vector_layer(
+                    layer_config, PROVIDER_LIB, database.get_database_uri()
+                )
             )

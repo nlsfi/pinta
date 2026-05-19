@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 import pytest
 from pinta_db.primary_db.models.dem import Dem
 from pytest_mock import MockerFixture
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsDataSourceUri, QgsRasterLayer
 
 from pinta_qgis_plugin.layers import config, raster_layer
 from pinta_qgis_plugin.project.config import background_layers
@@ -46,12 +46,6 @@ def dem_raster_layer(
     fake_layer = empty_raster_layer
     fake_layer.setName("Elevation model")
     mocker.patch.object(
-        raster_layer.database,
-        "get_database_uri",
-        autospec=True,
-        return_value=mock_uri,
-    )
-    mocker.patch.object(
         raster_layer,
         "_create_qgs_raster_layer",
         autospec=True,
@@ -70,7 +64,7 @@ def test_create_postgis_raster_layer_returns_layer(
     dem_raster_layer: QgsRasterLayer,
 ):
     result = raster_layer.create_postgis_raster_layer(
-        background_layers.DEM_LAYER, PROVIDER
+        background_layers.DEM_LAYER, PROVIDER, mock_uri
     )
     assert result is dem_raster_layer
 
@@ -79,12 +73,31 @@ def test_create_postgis_raster_layer_sets_data_source(
     mock_uri: MagicMock,
     dem_raster_layer: QgsRasterLayer,
 ):
-    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
+    raster_layer.create_postgis_raster_layer(
+        background_layers.DEM_LAYER, PROVIDER, mock_uri
+    )
     mock_uri.setDataSource.assert_called_once_with("dem", "dem", "rast")
 
 
+def test_create_postgis_raster_layer_uses_provided_uri(
+    mock_uri: MagicMock,
+    dem_raster_layer: QgsRasterLayer,
+):
+    raster_layer.create_postgis_raster_layer(
+        background_layers.DEM_LAYER,
+        PROVIDER,
+        mock_uri,
+    )
+
+    raster_layer._create_qgs_raster_layer.assert_called_once_with(
+        mock_uri.uri.return_value, background_layers.DEM_LAYER.layer_name, PROVIDER
+    )
+
+
 def test_create_postgis_raster_layer_sets_layer_id(dem_raster_layer: QgsRasterLayer):
-    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
+    uri = MagicMock(spec=QgsDataSourceUri)
+    uri.uri.return_value = "postgresraster://test"
+    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER, uri)
     assert (
         dem_raster_layer.customProperty(config.PINTA_LAYER_ID)
         == background_layers.DEM_LAYER.layer_id
@@ -97,7 +110,9 @@ def test_create_postgis_raster_layer_applies_style(
     dem_raster_layer: QgsRasterLayer,
 ):
     mock_apply = mocker.patch.object(raster_layer.styles, "apply_style")
-    raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
+    raster_layer.create_postgis_raster_layer(
+        background_layers.DEM_LAYER, PROVIDER, mock_uri
+    )
     mock_apply.assert_called_once_with(
         dem_raster_layer, background_layers.DEM_LAYER.style_path
     )
@@ -116,7 +131,11 @@ def test_create_postgis_raster_layer_with_invalid_layer_raises_exception(
     )
 
     with pytest.raises(raster_layer.LayerCreationError):
-        raster_layer.create_postgis_raster_layer(background_layers.DEM_LAYER, PROVIDER)
+        raster_layer.create_postgis_raster_layer(
+            background_layers.DEM_LAYER,
+            PROVIDER,
+            MagicMock(spec=QgsDataSourceUri),
+        )
 
 
 def test_create_postgis_raster_layer_without_style_skips_apply(
@@ -137,14 +156,11 @@ def test_create_postgis_raster_layer_without_style_skips_apply(
         return_value=True,
     )
     mocker.patch.object(
-        raster_layer.database, "get_database_uri", autospec=True, return_value=mock_uri
-    )
-    mocker.patch.object(
         raster_layer, "_create_qgs_raster_layer", autospec=True, return_value=fake_layer
     )
     mock_apply = mocker.patch.object(raster_layer.styles, "apply_style", autospec=True)
 
-    raster_layer.create_postgis_raster_layer(config_no_style, PROVIDER)
+    raster_layer.create_postgis_raster_layer(config_no_style, PROVIDER, mock_uri)
 
     mock_apply.assert_not_called()
 

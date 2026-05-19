@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from pytest_mock import MockerFixture
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsDataSourceUri, QgsVectorLayer
 
 from pinta_qgis_plugin.layers import config, vector_layer
 from pinta_qgis_plugin.project.config import management_layers
@@ -42,12 +42,6 @@ def production_area_layer(
     fake_layer = empty_multipolygon_layer
     fake_layer.setName("Production area")
     mocker.patch.object(
-        vector_layer.database,
-        "get_database_uri",
-        autospec=True,
-        return_value=mock_uri,
-    )
-    mocker.patch.object(
         vector_layer,
         "_create_qgs_vector_layer",
         autospec=True,
@@ -61,7 +55,7 @@ def test_create_layer_with_valid_layer_returns_layer(
     production_area_layer: QgsVectorLayer,
 ):
     result = vector_layer.create_vector_layer(
-        management_layers.PRODUCTION_AREA, PROVIDER
+        management_layers.PRODUCTION_AREA, PROVIDER, mock_uri
     )
 
     assert result is production_area_layer
@@ -74,8 +68,23 @@ def test_create_layer_with_valid_layer_returns_layer(
     assert production_area_layer.readOnly
 
 
+def test_create_layer_uses_provided_uri(
+    mock_uri: MagicMock,
+    production_area_layer: QgsVectorLayer,
+):
+    vector_layer.create_vector_layer(
+        management_layers.PRODUCTION_AREA, PROVIDER, mock_uri
+    )
+
+    vector_layer._create_qgs_vector_layer.assert_called_once_with(
+        mock_uri, management_layers.PRODUCTION_AREA.layer_name, PROVIDER
+    )
+
+
 def test_create_layer_sets_layer_id(production_area_layer: QgsVectorLayer):
-    vector_layer.create_vector_layer(management_layers.PRODUCTION_AREA, PROVIDER)
+    uri = MagicMock(spec=QgsDataSourceUri)
+    uri.uri.return_value = "postgres://test"
+    vector_layer.create_vector_layer(management_layers.PRODUCTION_AREA, PROVIDER, uri)
 
     assert (
         production_area_layer.customProperty(config.PINTA_LAYER_ID)
@@ -96,6 +105,10 @@ def test_create_layer_with_invalid_layer_raises_exception(
     )
 
     with pytest.raises(vector_layer.LayerCreationError):
-        vector_layer.create_vector_layer(management_layers.PRODUCTION_AREA, PROVIDER)
+        vector_layer.create_vector_layer(
+            management_layers.PRODUCTION_AREA,
+            PROVIDER,
+            MagicMock(spec=QgsDataSourceUri),
+        )
 
     mock_layer.setReadOnly.assert_not_called()

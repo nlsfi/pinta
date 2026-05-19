@@ -18,9 +18,8 @@
 
 import logging
 
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsDataSourceUri, QgsRasterLayer
 
-from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.exceptions import LayerCreationError
 from pinta_qgis_plugin.layers import styles
 from pinta_qgis_plugin.layers.config import (
@@ -48,10 +47,9 @@ def create_raster_layer(config: BasemapLayerConfig, provider: str) -> QgsRasterL
 
 
 def create_postgis_raster_layer(
-    config: RasterLayerConfig, provider: str
+    config: RasterLayerConfig, provider: str, uri: QgsDataSourceUri
 ) -> QgsRasterLayer:
     """Create a PostGIS raster layer from a database model configuration."""
-    uri = database.get_database_uri()
     uri.setDataSource(config.schema, config.table_name, config.rast_column)
 
     layer = _create_qgs_raster_layer(uri.uri(), config.layer_name, provider)

@@ -43,6 +43,11 @@ try:
     PINTA_DB_EDITOR_USER = os.environ["DB_PRIMARY_EDITOR_USER"]
     PINTA_DB_EDITOR_PASSWORD = os.environ["DB_PRIMARY_EDITOR_PASSWORD"]
 
+    PINTA_JOB_DB_HOST = os.environ["DB_JOB_HOST"]
+    PINTA_JOB_DB_PORT = os.environ["DB_JOB_PORT"]
+    PINTA_JOB_DB_EDITOR_USER = os.environ["DB_JOB_EDITOR_USER"]
+    PINTA_JOB_DB_EDITOR_PASSWORD = os.environ["DB_JOB_EDITOR_PASSWORD"]
+
     PINTA_INITIAL_PROJECT_EXTENT = typing.cast(
         "tuple[float, float, float, float]",
         tuple(map(float, os.environ["PINTA_INITIAL_PROJECT_EXTENT"].split(","))),
