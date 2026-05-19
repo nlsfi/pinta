@@ -60,6 +60,7 @@ class RasterLayerConfig:
     layer_name: str
     layer_id: str
     rast_column: str = "rast"
+    aliases: dict[str, str] = dataclasses.field(default_factory=dict)
     style_path: Path | None = None
 
 
@@ -104,6 +105,7 @@ class BasemapLayerConfig:
     uri_parameters: "UriParameters"
     user_name: str | None = None
     password: str | None = None
+    aliases: dict[str, str] = dataclasses.field(default_factory=dict)
 
     @dataclasses.dataclass
     class UriParameters:

@@ -21,7 +21,7 @@ import logging
 from qgis.core import QgsDataSourceUri, QgsVectorLayer
 
 from pinta_qgis_plugin.exceptions import LayerCreationError
-from pinta_qgis_plugin.layers import styles
+from pinta_qgis_plugin.layers import styles, utils
 from pinta_qgis_plugin.layers.config import PINTA_LAYER_ID, VectorLayerConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ def create_vector_layer(
         raise LayerCreationError(config.layer_name)
 
     layer.setReadOnly(config.read_only)
+    utils.set_field_aliases(layer, config.aliases)
 
     if config.style_path is not None:
         styles.apply_style(layer, config.style_path)

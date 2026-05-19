@@ -111,6 +111,36 @@ def test_create_layer_sets_layer_id(production_area_layer: QgsVectorLayer):
     )
 
 
+def test_create_layer_sets_field_aliases(mocker: MockerFixture, mock_uri: MagicMock):
+    layer = QgsVectorLayer(
+        "MultiPolygon?field=id:integer&field=name:string", "", "memory"
+    )
+    mocker.patch.object(
+        vector_layer,
+        "_create_qgs_vector_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.VectorLayerConfig(
+        schema="management",
+        table_name="production_area",
+        layer_name="Production area",
+        layer_id="production_area",
+        key_column="id",
+        wkb_type=management_layers.PRODUCTION_AREA.wkb_type,
+        aliases={
+            "id": "Identifier",
+            "name": "Name",
+            "missing": "Missing",
+        },
+    )
+
+    vector_layer.create_vector_layer(layer_config, PROVIDER, mock_uri)
+
+    assert layer.attributeAlias(layer.fields().lookupField("id")) == "Identifier"
+    assert layer.attributeAlias(layer.fields().lookupField("name")) == "Name"
+
+
 def test_create_layer_with_invalid_layer_raises_exception(
     mocker: MockerFixture,
 ):

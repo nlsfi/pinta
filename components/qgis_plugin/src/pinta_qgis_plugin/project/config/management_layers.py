@@ -19,6 +19,7 @@
 from pinta_db.primary_db.models.all import PointCloudTile, ProductionArea
 from qgis_plugin_tools.tools import i18n
 
+from pinta_qgis_plugin.layers import config
 from pinta_qgis_plugin.layers.config import ModelLayerConfig
 
 PRODUCTION_AREA = ModelLayerConfig.create(
@@ -26,6 +27,11 @@ PRODUCTION_AREA = ModelLayerConfig.create(
     layer_name=i18n.tr("Production area"),
     layer_id="production_area",
     read_only=True,
+    aliases={
+        **config.COMMON_ALIASES,
+        "name": i18n.tr("Name"),
+        "database_name": i18n.tr("Database name"),
+    },
 )
 
 POINT_CLOUD_TILE = ModelLayerConfig.create(
@@ -33,6 +39,11 @@ POINT_CLOUD_TILE = ModelLayerConfig.create(
     layer_name=i18n.tr("Point cloud tile"),
     layer_id="point_cloud_tile",
     read_only=True,
+    aliases={
+        **config.COMMON_ALIASES,
+        "file_path": i18n.tr("File path"),
+        "production_area_id": i18n.tr("Production area ID"),
+    },
 )
 
 VECTOR_LAYERS = [
