@@ -128,5 +128,7 @@ lastools
 blast2
 fullmatch
 removeprefix
+tm35
+laz
 lastools
 blast2

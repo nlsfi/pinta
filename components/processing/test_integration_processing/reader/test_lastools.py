@@ -4,6 +4,8 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 
+import typing
+
 import numpy as np
 import pytest
 from pinta_test_utils import pinta_utils
@@ -11,15 +13,31 @@ from pinta_test_utils import pinta_utils
 from pinta_processing import core
 from pinta_processing.exceptions import LasToolsError
 from pinta_processing.reader import lastools
+from pinta_processing.scripts import find_intersecting_tiles, process_metadata
 from pinta_processing.utils import tm35_map_sheet_utils
+
+if typing.TYPE_CHECKING:
+    from sqlmodel import Session
 
 LAZ_DIR = "point_clouds/2025/production_area_1"
 CRS = "EPSG:3067"
+BUFFER_M = 50.0
 
 
 @pytest.fixture(autouse=True)
 def _ensure_lastools_is_available(lastools_in_path: None) -> None:
     pass
+
+
+@pytest.fixture
+def add_tiles_to_db(session: "Session") -> None:
+    laz_dir = pinta_utils.get_test_data_path(LAZ_DIR)
+
+    # Store every tile in the folder so the spatial query has something to find.
+    tiles = process_metadata.create_point_cloud_tiles_from_folder(laz_dir)
+    production_area = process_metadata.find_production_area(laz_dir, session)
+    process_metadata.add_tiles_to_production_area(production_area, tiles, session)
+    session.commit()
 
 
 def test_blast2dem_reader_produces_raster_from_laz():
@@ -77,16 +95,20 @@ def test_blast2dem_reader_output_overlaps_input_bounds():
         assert np.any(dataset.array != dataset.nodata)
 
 
-def test_blast2dem_reader_with_sensible_parameters():
-    target_code = "T5124H1_5"
+@pytest.mark.usefixtures("add_tiles_to_db")
+def test_blast2dem_reader_with_sensible_parameters(session: "Session"):
     laz_dir = pinta_utils.get_test_data_path(LAZ_DIR)
+
+    target_code = "T5124H1_5"
     target_path = laz_dir / f"{target_code}.laz"
 
-    # T5124H1_5 is interior to the H1 sub-sheet, so all 8 neighbors exist
-    neighbor_paths = []
-    assert len(neighbor_paths) == 8
-
     bounds = tm35_map_sheet_utils.calculate_sheet_bounds_for_tile(target_code)
+    neighbor_paths = find_intersecting_tiles.find_neighboring_tm35_laz_files(
+        target_path, BUFFER_M, session
+    )
+
+    # T5124H1_5 is interior to the H1 sub-sheet, so all 8 neighbors exist
+    assert len(neighbor_paths) == 8
 
     stage = lastools.Blast2DemReader(
         input_path=target_path,
@@ -99,7 +121,7 @@ def test_blast2dem_reader_with_sensible_parameters():
             "ll": [bounds[0], bounds[1]],
             "ncols": 1000,
             "nrows": 1000,
-            "neighbors": [str(p) for p in neighbor_paths],
+            "neighbors": [str(neighbor) for neighbor in neighbor_paths],
         },
     )
     dataset = stage.process(None)
