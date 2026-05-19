@@ -28,6 +28,7 @@ from pinta_qgis_plugin.project.groups.basemap_layer_collection import (
 from pinta_qgis_plugin.project.groups.dem_layer_collection import (
     DemLayerCollection,
 )
+from pinta_qgis_plugin.project.groups.job_layer_collection import JobLayerCollection
 from pinta_qgis_plugin.project.groups.management_layer_collection import (
     ManagementLayerCollection,
 )
@@ -75,6 +76,27 @@ def mock_basemap_layer_collection(mocker: "MockerFixture") -> "MagicMock":
     return mock_basemap_layer_collection
 
 
+@pytest.fixture
+def mock_job_layer_collection(mocker: "MockerFixture") -> "MagicMock":
+    mock_job = mocker.MagicMock(spec=JobLayerCollection)
+    mocker.patch.object(
+        JobLayerCollection,
+        "get",
+        autospec=True,
+        return_value=mock_job,
+    )
+    return mock_job
+
+
+@pytest.fixture
+def mock_job_layer_cleanup(mocker: "MockerFixture") -> "MagicMock":
+    return mocker.patch.object(
+        JobLayerCollection,
+        "remove_all_from_project",
+        autospec=True,
+    )
+
+
 def test_initialize_layers_should_initialize_all_layers(
     mock_management_layer_collection: "MagicMock",
     mock_dem_layer_collection: "MagicMock",
@@ -91,8 +113,24 @@ def test_initialize_layers_should_initialize_all_layers(
 
 def test_remove_layers_should_remove_all_layers(
     mock_management_layer_collection: "MagicMock",
+    mock_dem_layer_collection: "MagicMock",
     mock_basemap_layer_collection: "MagicMock",
+    mock_job_layer_cleanup: "MagicMock",
 ):
     manager.clean_project()
     mock_basemap_layer_collection.remove_from_project.assert_called_once()
+    mock_dem_layer_collection.remove_from_project.assert_called_once()
     mock_management_layer_collection.remove_from_project.assert_called_once()
+    mock_job_layer_cleanup.assert_called_once_with()
+
+
+def test_open_production_area_adds_job_layers(
+    mock_job_layer_collection: "MagicMock",
+):
+    manager.open_production_area("production_area_db", "group_name")
+
+    mock_job_layer_collection.set_database_name.assert_called_once_with(
+        "production_area_db"
+    )
+    mock_job_layer_collection.set_group_name.assert_called_once_with("group_name")
+    mock_job_layer_collection.add_to_project.assert_called_once_with()

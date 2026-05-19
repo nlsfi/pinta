@@ -29,6 +29,7 @@ from pinta_qgis_plugin.project.groups.basemap_layer_collection import (
     BasemapLayerCollection,
 )
 from pinta_qgis_plugin.project.groups.dem_layer_collection import DemLayerCollection
+from pinta_qgis_plugin.project.groups.job_layer_collection import JobLayerCollection
 from pinta_qgis_plugin.project.groups.management_layer_collection import (
     ManagementLayerCollection,
 )
@@ -65,3 +66,12 @@ def clean_project() -> None:
     BasemapLayerCollection.get().remove_from_project()
     DemLayerCollection.get().remove_from_project()
     ManagementLayerCollection.get().remove_from_project()
+    JobLayerCollection.remove_all_from_project()
+
+
+def open_production_area(database_name: str, group_name: str) -> None:
+    """Open production area layer."""
+    collection = typing.cast("JobLayerCollection", JobLayerCollection.get())
+    collection.set_database_name(database_name)
+    collection.set_group_name(group_name)
+    collection.add_to_project()
