@@ -34,3 +34,17 @@ def get_database_uri() -> QgsDataSourceUri:
     )
 
     return uri
+
+
+def get_job_database_uri(database_name: str) -> QgsDataSourceUri:
+    """Get QgsDataSourceUri for a job database."""
+    uri = QgsDataSourceUri()
+    uri.setConnection(
+        env.PINTA_JOB_DB_HOST,
+        env.PINTA_JOB_DB_PORT,
+        database_name,
+        env.PINTA_JOB_DB_EDITOR_USER,
+        env.PINTA_JOB_DB_EDITOR_PASSWORD,
+    )
+
+    return uri

@@ -20,7 +20,6 @@ import logging
 
 from qgis.core import QgsDataSourceUri, QgsVectorLayer
 
-from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.exceptions import LayerCreationError
 from pinta_qgis_plugin.layers import styles
 from pinta_qgis_plugin.layers.config import PINTA_LAYER_ID, VectorLayerConfig
@@ -34,10 +33,10 @@ def _create_qgs_vector_layer(
     return QgsVectorLayer(uri.uri(), name, provider)
 
 
-def create_vector_layer(config: VectorLayerConfig, provider: str) -> QgsVectorLayer:
+def create_vector_layer(
+    config: VectorLayerConfig, provider: str, uri: QgsDataSourceUri
+) -> QgsVectorLayer:
     """Create vector layer from database model configuration."""
-    uri = database.get_database_uri()
-
     uri.setDataSource(config.schema, config.table_name, config.geom_column)
     uri.setKeyColumn(config.key_column)
     uri.setWkbType(config.wkb_type)

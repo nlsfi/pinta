@@ -20,6 +20,7 @@
 
 import logging
 
+from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.layers import raster_layer
 from pinta_qgis_plugin.project.config import background_layers
 from pinta_qgis_plugin.project.groups.base_layer_collection import (
@@ -39,5 +40,7 @@ class DemLayerCollection(BaseLayerCollection):
     def _add_to_project(self) -> None:
         for layer_config in reversed(background_layers.DEM_LAYERS):
             self._add_map_layer_to_project(
-                raster_layer.create_postgis_raster_layer(layer_config, PROVIDER)
+                raster_layer.create_postgis_raster_layer(
+                    layer_config, PROVIDER, database.get_database_uri()
+                )
             )
