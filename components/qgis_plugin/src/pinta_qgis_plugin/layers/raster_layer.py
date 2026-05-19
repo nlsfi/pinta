@@ -21,7 +21,7 @@ import logging
 from qgis.core import QgsDataSourceUri, QgsRasterLayer
 
 from pinta_qgis_plugin.exceptions import LayerCreationError
-from pinta_qgis_plugin.layers import styles
+from pinta_qgis_plugin.layers import styles, utils
 from pinta_qgis_plugin.layers.config import (
     PINTA_LAYER_ID,
     BasemapLayerConfig,
@@ -43,6 +43,7 @@ def create_raster_layer(config: BasemapLayerConfig, provider: str) -> QgsRasterL
     if not layer.isValid():
         LOGGER.error("Uri of the invalid layer %s", layer.source())
         raise LayerCreationError(config.layer_name)
+    utils.set_field_aliases(layer, config.aliases)
     return layer
 
 
@@ -56,6 +57,7 @@ def create_postgis_raster_layer(
     if not layer.isValid():
         LOGGER.error("Uri of the invalid layer %s", layer.source())
         raise LayerCreationError(config.layer_name)
+    utils.set_field_aliases(layer, config.aliases)
 
     if config.style_path is not None:
         styles.apply_style(layer, config.style_path)

@@ -104,6 +104,63 @@ def test_create_postgis_raster_layer_sets_layer_id(dem_raster_layer: QgsRasterLa
     )
 
 
+def test_create_postgis_raster_layer_sets_field_aliases(
+    mocker: MockerFixture,
+    mock_uri: MagicMock,
+):
+    layer = MagicMock()
+    layer.isValid.return_value = True
+    layer.fields.return_value.lookupField.side_effect = lambda field_name: {
+        "value": 0,
+    }.get(field_name, -1)
+    mocker.patch.object(
+        raster_layer,
+        "_create_qgs_raster_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.RasterLayerConfig(
+        schema="dem",
+        table_name="dem",
+        layer_name="Elevation model",
+        layer_id="dem",
+        aliases={
+            "value": "Value",
+            "missing": "Missing",
+        },
+    )
+
+    raster_layer.create_postgis_raster_layer(layer_config, PROVIDER, mock_uri)
+
+    layer.setFieldAlias.assert_called_once_with(0, "Value")
+
+
+def test_create_raster_layer_sets_field_aliases(
+    mocker: MockerFixture,
+):
+    layer = MagicMock()
+    layer.isValid.return_value = True
+    layer.fields.return_value.lookupField.return_value = 1
+    mocker.patch.object(
+        raster_layer,
+        "_create_qgs_raster_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.BasemapLayerConfig(
+        layer_name="Basemap",
+        uri_parameters=config.BasemapLayerConfig.UriParameters(
+            url="https://example.com/{z}/{x}/{y}.png",
+            type="xyz",
+        ),
+        aliases={"class": "Class"},
+    )
+
+    raster_layer.create_raster_layer(layer_config, PROVIDER)
+
+    layer.setFieldAlias.assert_called_once_with(1, "Class")
+
+
 def test_create_postgis_raster_layer_applies_style(
     mocker: MockerFixture,
     mock_uri: MagicMock,
