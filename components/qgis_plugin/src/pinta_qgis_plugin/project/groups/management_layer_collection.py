@@ -17,6 +17,10 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import textwrap
+
+from qgis.core import QgsAction, QgsVectorLayer
+from qgis_plugin_tools.tools import i18n
 
 from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.layers import vector_layer
@@ -38,8 +42,40 @@ class ManagementLayerCollection(BaseLayerCollection):
     def _add_to_project(self) -> None:
         """Add layers to the project."""
         for layer_config in reversed(management_layers.VECTOR_LAYERS):
-            self._add_map_layer_to_project(
-                vector_layer.create_vector_layer(
-                    layer_config, PROVIDER_LIB, database.get_database_uri()
-                )
+            layer = vector_layer.create_vector_layer(
+                layer_config, PROVIDER_LIB, database.get_database_uri()
             )
+            self._add_map_layer_to_project(layer)
+            if layer_config.layer_id == "production_area":
+                _add_open_production_area_layers(layer)
+
+
+def _add_open_production_area_layers(layer: QgsVectorLayer) -> None:
+    """Add open production area layer to the project."""
+    action_manager = layer.actions()
+    action = QgsAction(
+        QgsAction.GenericPython,
+        description=i18n.tr("Add production area related layers to map"),
+        action="",
+        icon=None,
+        capture=True,
+        shortTitle=i18n.tr("Open production area"),
+        actionScopes=["Feature"],
+    )
+
+    action.setCommand(
+        textwrap.dedent("""
+        from pinta_qgis_plugin.project.manager import open_production_area
+        db_name = \'[%database_name%]\'
+        group_name = \'[%name%]\'
+        open_production_area(db_name, group_name)
+    """)
+    )
+    action_manager.addAction(action)
+
+    attribute_table_config = layer.attributeTableConfig()
+    attribute_table_config.setActionWidgetVisible(True)
+    attribute_table_config.setActionWidgetStyle(
+        attribute_table_config.ActionWidgetStyle.ButtonList
+    )
+    layer.setAttributeTableConfig(attribute_table_config)

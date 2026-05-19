@@ -71,6 +71,66 @@ def test_add_to_project_with_valid_layer_adds_to_project(
     )
 
 
+def test_add_to_project_adds_open_action_to_production_area_layer(
+    layer_collection: management_layer_collection.ManagementLayerCollection,
+    mocker: MockerFixture,
+    mock_qgs_project: MagicMock,
+    production_area_layer: QgsVectorLayer,
+):
+    mocker.patch.object(
+        management_layer_collection.vector_layer,
+        "create_vector_layer",
+        autospec=True,
+        return_value=production_area_layer,
+    )
+    mock_add_action = mocker.patch.object(
+        management_layer_collection,
+        "_add_open_production_area_layers",
+        autospec=True,
+    )
+
+    layer_collection.add_to_project()
+
+    mock_add_action.assert_called_once_with(production_area_layer)
+
+
+def test_add_open_production_area_layers_configures_feature_action(
+    mocker: MockerFixture,
+):
+    action_manager = mocker.MagicMock()
+    action = mocker.MagicMock()
+    attribute_table_config = mocker.MagicMock()
+    attribute_table_config.ActionWidgetStyle.ButtonList = "button-list"
+    layer = mocker.MagicMock()
+    layer.actions.return_value = action_manager
+    layer.attributeTableConfig.return_value = attribute_table_config
+    mock_qgs_action = mocker.patch.object(
+        management_layer_collection,
+        "QgsAction",
+        autospec=True,
+    )
+    mock_qgs_action.GenericPython = "generic-python"
+    mock_qgs_action.return_value = action
+
+    management_layer_collection._add_open_production_area_layers(layer)
+
+    mock_qgs_action.assert_called_once_with(
+        "generic-python",
+        description="Add production area related layers to map",
+        action="",
+        icon=None,
+        capture=True,
+        shortTitle="Open production area",
+        actionScopes=["Feature"],
+    )
+    command = action.setCommand.call_args.args[0]
+    assert command is not None
+    action_manager.addAction.assert_called_once_with(action)
+    attribute_table_config.setActionWidgetVisible.assert_called_once_with(True)
+    attribute_table_config.setActionWidgetStyle.assert_called_once_with("button-list")
+    layer.setAttributeTableConfig.assert_called_once_with(attribute_table_config)
+
+
 def test_remove_layers_removes_all_layers(
     production_area_layer: QgsVectorLayer,
     layer_collection: management_layer_collection.ManagementLayerCollection,
