@@ -47,7 +47,7 @@ def create_vector_layer(
     if not layer.isValid():
         raise LayerCreationError(config.layer_name)
 
-    layer.setReadOnly(True)
+    layer.setReadOnly(config.read_only)
 
     if config.style_path is not None:
         styles.apply_style(layer, config.style_path)

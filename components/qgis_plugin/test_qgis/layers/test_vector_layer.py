@@ -65,7 +65,26 @@ def test_create_layer_with_valid_layer_returns_layer(
     mock_uri.setKeyColumn.assert_called_once_with("id")
     mock_uri.setWkbType.assert_called_once()
     mock_uri.setSrid.assert_called_once_with("3067")
-    assert production_area_layer.readOnly
+    assert production_area_layer.readOnly() is True
+
+
+def test_create_layer_honors_read_only_config(
+    mock_uri: MagicMock,
+    production_area_layer: QgsVectorLayer,
+):
+    read_only_config = config.VectorLayerConfig(
+        schema="management",
+        table_name="production_area",
+        layer_name="Production area",
+        layer_id="production_area",
+        key_column="id",
+        wkb_type=management_layers.PRODUCTION_AREA.wkb_type,
+        read_only=True,
+    )
+
+    vector_layer.create_vector_layer(read_only_config, PROVIDER, mock_uri)
+
+    assert production_area_layer.readOnly() is True
 
 
 def test_create_layer_uses_provided_uri(

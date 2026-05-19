@@ -48,6 +48,7 @@ class VectorLayerConfig:
         default_factory=lambda: {**COMMON_ALIASES}
     )
     style_path: Path | None = None
+    read_only: bool = False
 
 
 @dataclasses.dataclass
@@ -67,12 +68,13 @@ class ModelLayerConfig(VectorLayerConfig):
     """Configuration for a QGIS layer."""
 
     @staticmethod
-    def create(
+    def create(  # noqa: PLR0913
         db_model: type[BaseModel],
         layer_name: str,
         layer_id: str,
         aliases: dict[str, str] | None = None,
         style_path: Path | None = None,
+        read_only: bool = False,  # noqa: FBT001, FBT002
     ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
@@ -90,6 +92,7 @@ class ModelLayerConfig(VectorLayerConfig):
             ),
             style_path=style_path,
             layer_id=layer_id,
+            read_only=read_only,
         )
 
 

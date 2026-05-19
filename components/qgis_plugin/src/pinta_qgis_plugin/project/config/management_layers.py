@@ -25,12 +25,14 @@ PRODUCTION_AREA = ModelLayerConfig.create(
     db_model=ProductionArea,
     layer_name=i18n.tr("Production area"),
     layer_id="production_area",
+    read_only=True,
 )
 
 POINT_CLOUD_TILE = ModelLayerConfig.create(
     db_model=PointCloudTile,
     layer_name=i18n.tr("Point cloud tile"),
     layer_id="point_cloud_tile",
+    read_only=True,
 )
 
 VECTOR_LAYERS = [

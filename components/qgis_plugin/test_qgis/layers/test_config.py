@@ -19,8 +19,9 @@
 from pathlib import Path
 
 import pytest
+from pinta_db.primary_db.models.all import ProductionArea
 
-from pinta_qgis_plugin.layers.config import BasemapLayerConfig
+from pinta_qgis_plugin.layers.config import BasemapLayerConfig, ModelLayerConfig
 
 
 @pytest.fixture
@@ -90,3 +91,14 @@ def test_basemap_layer_config_can_create_proper_uri(
         "&url=https://tile.openstreetmap.org/{z}/{x}/{y}.png&type=xyz"
         "&format=image/png&dpiMode=7&tilePixelRatio=1&zmin=0&zmax=19"
     )
+
+
+def test_model_layer_config_create_can_set_read_only():
+    layer_config = ModelLayerConfig.create(
+        db_model=ProductionArea,
+        layer_name="Production area",
+        layer_id="production_area",
+        read_only=True,
+    )
+
+    assert layer_config.read_only is True
