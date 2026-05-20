@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: update-translations
+        name: Update gettext translations
+        entry: ./src/pinta_backend/scripts/update-translations.sh
+        language: system
+        pass_filenames: false
+        files: ^src/pinta_backend/.*\.py$

@@ -1,0 +1,53 @@
+[project]
+name = "pinta_backend"
+version = "0.0.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+]
+
+
+[tool.uv]
+default-groups = ["dev", "lint"]
+
+[dependency-groups]
+dev = [
+  "dotenv>=0.9.9",
+  "pytest-dotenv>=0.5.2",
+  "pytest-xdist>=3.8.0",
+  "pytest-mock>=3.15.1",
+]
+lint = [
+  "prek",
+  "mypy",
+  "ruff",
+]
+
+[tool.uv.sources]
+pinta-lib = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "pinta_backend"
+include = ["py.typed"]
+
+[tool.ruff]
+# Extend the root `pyproject.toml`
+extend = "../../pyproject.toml"
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib -n auto -p no:pytest-qgis"
+
+[tool.mypy]
+python_version = "3.12"
+follow_imports = "normal"
+show_column_numbers = true
+namespace_packages = true
+ignore_missing_imports = true
+exclude = "^test"
