@@ -139,3 +139,11 @@ geomfromtext
 bindparam
 asgdalraster
 memoryview
+fastapi
+starlette
+Awaitable
+localedir
+contextvars
+middlewares
+asynccontextmanager
+uvicorn

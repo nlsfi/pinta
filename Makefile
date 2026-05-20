@@ -9,6 +9,7 @@ COMPONENTS_DIR := $(ROOT_DIR)/components
 DB_DIR := $(COMPONENTS_DIR)/db
 QGIS_DIR := $(COMPONENTS_DIR)/qgis_plugin
 DAGS_DIR := $(COMPONENTS_DIR)/dags
+BACKEND_DIR := $(COMPONENTS_DIR)/backend
 E2E_DIR := $(COMPONENTS_DIR)/e2e
 
 # Env variables
@@ -131,6 +132,17 @@ airflow-start: airflow-migrate airflow-set-variables
 
 airflow-reserialize: airflow-set-variables
 	uv run --directory $(DAGS_DIR) airflow dags reserialize
+
+# Backend targets
+# =================
+backend-start:
+	uv run --directory $(BACKEND_DIR) python -m pinta_backend
+
+backend-ts:
+	uv run --directory $(BACKEND_DIR) bash ./src/pinta_backend/scripts/update-translations.sh
+
+backend-tc:
+	uv run --directory $(BACKEND_DIR) bash ./src/pinta_backend/scripts/compile-translations.sh
 
 # Tests
 # ======
