@@ -6,8 +6,12 @@ import logging
 import pathlib
 import tempfile
 import zipfile
+from typing import Any
 
 import rasterio
+import sqlalchemy as sa
+import sqlmodel
+from rasterio.io import MemoryFile
 
 from pinta_processing import core
 
@@ -87,3 +91,69 @@ class RasterioReader(core.Stage):
                     self.path,
                 )
             return dataset
+
+
+class PostgisReader(core.Stage):
+    """Read and clip raster data from a PostGIS raster table."""
+
+    def __init__(
+        self,
+        schema: str,
+        table_name: str,
+        session: sqlmodel.Session,
+        wkt: str,
+    ) -> None:
+        super().__init__()
+        self.schema = schema
+        self.table_name = table_name
+        self.session = session
+        self.wkt = wkt
+
+    def process(self, data: core.RasterDataset | None) -> core.RasterDataset:  # noqa: ARG002
+        """Read raster tiles from PostGIS, clip them by WKT, and return a dataset."""
+        result = self.session.exec(self._clip_query(), params={"wkt": self.wkt})
+        row = result.first()
+        if row is None or row[0] is None:
+            message = (
+                f"No raster data found in {self.schema}.{self.table_name} "
+                "for the given clipping geometry"
+            )
+            raise ValueError(message)
+
+        with MemoryFile(_to_bytes(row[0])) as memory_file, memory_file.open() as src:
+            return core.RasterDataset.from_rasterio(src)
+
+    def _clip_query(self) -> sa.Select[tuple[Any]]:
+        table = sa.Table(
+            self.table_name,
+            sa.MetaData(),
+            sa.Column("rast"),
+            schema=self.schema,
+        )
+
+        srid = (
+            sa.select(sa.func.ST_SRID(table.c.rast))
+            .where(table.c.rast.is_not(None))
+            .limit(1)
+            .scalar_subquery()
+        )
+        clip_geom = sa.func.ST_GeomFromText(sa.bindparam("wkt"), srid)
+        source = (
+            sa.select(sa.func.ST_Union(table.c.rast).label("rast"))
+            .where(sa.func.ST_Intersects(table.c.rast, clip_geom))
+            .cte("source")
+        )
+
+        return sa.select(
+            sa.func.ST_AsGDALRaster(
+                sa.func.ST_Clip(source.c.rast, clip_geom, sa.true()),
+                "GTiff",
+            ).label("geotiff_data")
+        ).where(source.c.rast.is_not(None))
+
+
+def _to_bytes(value: bytes | memoryview) -> bytes:
+    """Convert DB binary values to bytes."""
+    if isinstance(value, memoryview):
+        return value.tobytes()
+    return bytes(value)

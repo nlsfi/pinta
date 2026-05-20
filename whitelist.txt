@@ -134,3 +134,8 @@ lastools
 blast2
 blast2dem
 asarray
+subquery
+geomfromtext
+bindparam
+asgdalraster
+memoryview
