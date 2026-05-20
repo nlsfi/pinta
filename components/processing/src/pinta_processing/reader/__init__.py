@@ -4,6 +4,6 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from pinta_processing.reader.lastools import Blast2DemReader
-from pinta_processing.reader.readers import RasterioReader
+from pinta_processing.reader.readers import PostgisReader, RasterioReader
 
-__all__ = ["Blast2DemReader", "RasterioReader"]
+__all__ = ["Blast2DemReader", "PostgisReader", "RasterioReader"]
