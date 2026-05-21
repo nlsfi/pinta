@@ -91,30 +91,20 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     extra_lastools_params: dict | None = None,
 ) -> core.Pipeline:
     """Read LAS/LAZ with blast2dem and write to PostGIS with overviews."""
-    return (
-        reader.Blast2DemReader(
-            input_path,
-            step=step,
-            crs=crs,
-            keep_class=keep_class,
-            extra_lastools_params=extra_lastools_params,
-        )
-        | core.Tee(
-            _overview_to_postgis(
-                2, schema, f"o_2_{table_name}", session, staging_tables
-            )
-        )
-        | core.Tee(
-            _overview_to_postgis(
-                8, schema, f"o_8_{table_name}", session, staging_tables
-            )
-        )
-        | core.Tee(
-            _overview_to_postgis(
-                128, schema, f"o_128_{table_name}", session, staging_tables
-            )
-        )
-        | writer.PostgisWriter(schema, table_name, session, staging_tables)
+    return core.Pipeline(
+        [
+            reader.Blast2DemReader(
+                input_path,
+                step=step,
+                crs=crs,
+                keep_class=keep_class,
+                extra_lastools_params=extra_lastools_params,
+            ),
+            # Calculate and write overviews
+            *_generate_overview_stages(schema, table_name, session, staging_tables),
+            # Write original data
+            writer.PostgisWriter(schema, table_name, session, staging_tables),
+        ]
     )
 
 
