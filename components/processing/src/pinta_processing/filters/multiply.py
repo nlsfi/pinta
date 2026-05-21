@@ -10,6 +10,7 @@ class MultiplyValues(core.Stage):
     """Multiply raster values by a specified factor."""
 
     def __init__(self, factor: float) -> None:
+        super().__init__()
         self.factor = factor
 
     def process(self, data: core.RasterDataset) -> core.RasterDataset:
