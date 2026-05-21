@@ -6,12 +6,14 @@ on:
     paths:
       - 'components/dags/**'
       - 'components/processing/**'
+      - 'components/backend/**'
       - '.github/workflows/integration-tests.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'components/dags/**'
       - 'components/processing/**'
+      - 'components/backend/**'
       - '.github/workflows/integration-tests.yml'
 
 jobs:
