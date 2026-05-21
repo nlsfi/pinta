@@ -13,6 +13,7 @@ class GeotiffWriter(core.Stage):
     """Write a RasterDataset to a GeoTIFF file."""
 
     def __init__(self, path: str, dtype: np.typing.DTypeLike | None = None) -> None:
+        super().__init__()
         self.path = path
         self.dtype = dtype
 

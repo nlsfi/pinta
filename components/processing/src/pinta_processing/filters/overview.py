@@ -13,6 +13,7 @@ class DownsampleOverview(core.Stage):
     """Downsample raster to a lower resolution overview using average resampling."""
 
     def __init__(self, factor: int = 2) -> None:
+        super().__init__()
         self.factor = factor
 
     def process(self, data: core.RasterDataset | None) -> core.RasterDataset | None:
