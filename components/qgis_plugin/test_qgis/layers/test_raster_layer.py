@@ -135,6 +135,43 @@ def test_create_postgis_raster_layer_sets_field_aliases(
     layer.setFieldAlias.assert_called_once_with(0, "Value")
 
 
+def test_create_postgis_raster_layer_sets_value_maps(
+    mocker: MockerFixture,
+    mock_uri: MagicMock,
+):
+    layer = MagicMock()
+    layer.isValid.return_value = True
+    layer.fields.return_value.lookupField.return_value = 2
+    mocker.patch.object(
+        raster_layer,
+        "_create_qgs_raster_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.RasterLayerConfig(
+        schema="dem",
+        table_name="dem",
+        layer_name="Elevation model",
+        layer_id="dem",
+        value_maps=[
+            config.ValueMapConfig(
+                field_name="status",
+                value_map={"Not started": "not_started", "Completed": "completed"},
+            )
+        ],
+    )
+
+    raster_layer.create_postgis_raster_layer(layer_config, PROVIDER, mock_uri)
+
+    layer.setEditorWidgetSetup.assert_called_once()
+    field_index, widget = layer.setEditorWidgetSetup.call_args.args
+    assert field_index == 2
+    assert widget.type() == "ValueMap"
+    assert widget.config() == {
+        "map": [{"Not started": "not_started"}, {"Completed": "completed"}]
+    }
+
+
 def test_create_raster_layer_sets_field_aliases(
     mocker: MockerFixture,
 ):
@@ -159,6 +196,41 @@ def test_create_raster_layer_sets_field_aliases(
     raster_layer.create_raster_layer(layer_config, PROVIDER)
 
     layer.setFieldAlias.assert_called_once_with(1, "Class")
+
+
+def test_create_raster_layer_sets_value_maps(
+    mocker: MockerFixture,
+):
+    layer = MagicMock()
+    layer.isValid.return_value = True
+    layer.fields.return_value.lookupField.return_value = 3
+    mocker.patch.object(
+        raster_layer,
+        "_create_qgs_raster_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.BasemapLayerConfig(
+        layer_name="Basemap",
+        uri_parameters=config.BasemapLayerConfig.UriParameters(
+            url="https://example.com/{z}/{x}/{y}.png",
+            type="xyz",
+        ),
+        value_maps=[
+            config.ValueMapConfig(
+                field_name="status",
+                value_map={"Queued": "queued", "Failure": "failure"},
+            )
+        ],
+    )
+
+    raster_layer.create_raster_layer(layer_config, PROVIDER)
+
+    layer.setEditorWidgetSetup.assert_called_once()
+    field_index, widget = layer.setEditorWidgetSetup.call_args.args
+    assert field_index == 3
+    assert widget.type() == "ValueMap"
+    assert widget.config() == {"map": [{"Queued": "queued"}, {"Failure": "failure"}]}
 
 
 def test_create_postgis_raster_layer_applies_style(

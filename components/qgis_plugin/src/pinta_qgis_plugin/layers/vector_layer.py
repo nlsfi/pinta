@@ -55,4 +55,7 @@ def create_vector_layer(
 
     layer.setCustomProperty(PINTA_LAYER_ID, config.layer_id)
 
+    if config.value_maps:
+        utils.set_value_maps(layer, config)
+
     return layer
