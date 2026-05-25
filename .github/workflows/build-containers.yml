@@ -10,6 +10,8 @@ on:
       - 'components/**/Containerfile'
       - 'components/**/*.sh'
       - '.github/workflows/build-containers.yml'
+      - 'components/db/migrations/**'
+      - 'test_data/**'
   pull_request:
     branches: [ main ]
     paths:
@@ -19,6 +21,8 @@ on:
       - 'components/**/Containerfile'
       - 'components/**/*.sh'
       - '.github/workflows/build-containers.yml'
+      - 'components/db/migrations/**'
+      - 'test_data/**'
   workflow_dispatch:
   release:
     types: [ created ]
