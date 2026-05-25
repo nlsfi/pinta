@@ -11,3 +11,8 @@ from pinta_backend import app
 @pytest.fixture
 def client() -> testclient.TestClient:
     return testclient.TestClient(app.api)
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"

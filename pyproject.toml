@@ -184,6 +184,8 @@ root_packages = [
   "pinta_qgis_plugin",
   "pinta_processing",
   "pinta_processing_test_utils",
+  "pinta_backend",
+  "pinta_backend_test_utils",
   "pinta_db",
   "pinta_db_utils",
   "pinta_db_test_utils",
@@ -197,6 +199,7 @@ type = "layers"
 layers = [
   "pinta_e2e_utils : pinta_dags",
   "pinta_qgis_plugin : pinta_processing : pinta_processing_test_utils",
+  "pinta_backend : pinta_backend_test_utils",
   "pinta_db : pinta_db_utils : pinta_db_test_utils",
   "pinta_common",
 ]
@@ -208,6 +211,7 @@ source_modules = [
   "pinta_dags",
   "pinta_qgis_plugin",
   "pinta_processing",
+  "pinta_backend",
   "pinta_db",
   "pinta_db_utils",
   "pinta_common",
@@ -216,6 +220,7 @@ forbidden_modules = [
   "pinta_test_utils",
   "pinta_db_test_utils",
   "pinta_processing_test_utils",
+  "pinta_backend_test_utils",
   "pinta_e2e_utils",
 ]
 
@@ -228,6 +233,8 @@ ancestors = [
   "pinta_qgis_plugin",
   "pinta_processing",
   "pinta_processing_test_utils",
+  "pinta_backend",
+  "pinta_backend_test_utils",
   "pinta_db",
   "pinta_db_utils",
   "pinta_db_test_utils",

@@ -15,6 +15,38 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/pinta_backend/routes.py:23
+#: src/pinta_backend/routes.py:75
+msgid "Airflow is not reachable."
+msgstr ""
+
+#: src/pinta_backend/routes.py:80
+#, python-brace-format
+msgid "Airflow returned an error: {error}."
+msgstr ""
+
+#: src/pinta_backend/routes.py:70
+msgid "Failed to authenticate against Airflow."
+msgstr ""
+
+#: src/pinta_backend/routes.py:30
 msgid "Hello World"
+msgstr ""
+
+#: src/pinta_backend/routes.py:55
+#, python-brace-format
+msgid "Invalid workflow parameters: {error}."
+msgstr ""
+
+#: src/pinta_backend/routes.py:65
+#, python-brace-format
+msgid "Multiple workflows found for tag '{tag}'."
+msgstr ""
+
+#: src/pinta_backend/routes.py:60
+#, python-brace-format
+msgid "No workflow found for tag '{tag}'."
+msgstr ""
+
+#: src/pinta_backend/routes.py:84
+msgid "Workflow run started."
 msgstr ""
