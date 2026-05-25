@@ -5,12 +5,14 @@
 
 """Temporary models."""
 
+import enum
 import uuid
 from pathlib import Path
 from typing import Any
 
 from geoalchemy2 import Geometry
 from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlmodel import Field, Relationship
 
 from pinta_db.common.base import BasePrimaryDb
@@ -20,11 +22,33 @@ from pinta_db.primary_db.models.base import ManagementBase
 from pinta_db_utils import model_utils
 
 
+class ProcessingStatus(enum.StrEnum):
+    """Processing status for a production area."""
+
+    NOT_STARTED = "not_started"
+    QUEUED = "queued"
+    STARTED = "started"
+    COMPLETED = "completed"
+    FAILURE = "failure"
+
+
 class ProductionArea(BasePrimaryDb, ManagementBase, table=True):  # type: ignore[call-arg]
     """Production area for elevation production."""
 
     name: str
     database_name: str | None = Field(default=None)
+    processing_status: ProcessingStatus = Field(
+        default=ProcessingStatus.NOT_STARTED,
+        sa_column=Column(
+            ENUM(
+                ProcessingStatus,
+                name="processing_status",
+                values_callable=lambda enum_cls: [status.value for status in enum_cls],
+            ),
+            nullable=False,
+            server_default=ProcessingStatus.NOT_STARTED.value,
+        ),
+    )
     geom: Any = Field(
         sa_column=Column(Geometry(MULTIPOLYGON, srid=SRID, nullable=False))
     )
