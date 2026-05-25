@@ -21,6 +21,12 @@ export AIRFLOW__CORE__LOAD_EXAMPLES := false
 export AIRFLOW__API__EXPOSE_CONFIG := true
 export QGIS_GLOBAL_SETTINGS_FILE := $(QGIS_DIR)/settings.ini
 
+# Backend SimpleAuthManager user that pinta_backend authenticates as.
+# Changing the user requires re-running 'make airflow-clean airflow-start' so
+# standalone re-generates the password file.
+PINTA_BACKEND_USERNAME ?= pinta-backend
+export AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS := admin:admin,$(PINTA_BACKEND_USERNAME):op
+
 
 # UV targets
 # ==========
@@ -135,8 +141,17 @@ airflow-reserialize: airflow-set-variables
 
 # Backend targets
 # =================
+AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
+
 backend-start:
-	uv run --directory $(BACKEND_DIR) python -m pinta_backend
+	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
+	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
+	  exit 1; \
+	}
+	@PINTA_BACKEND_AIRFLOW_BASE_URL=http://localhost:8080 \
+	 PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_USERNAME) \
+	 PINTA_BACKEND_AIRFLOW_PASSWORD="$$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' $(AIRFLOW_PASSWORD_FILE) $(PINTA_BACKEND_USERNAME))" \
+	 uv run --directory $(BACKEND_DIR) python -m pinta_backend
 
 backend-ts:
 	uv run --directory $(BACKEND_DIR) bash ./src/pinta_backend/scripts/update-translations.sh

@@ -139,6 +139,20 @@ standard = [
 ]
 
 [[package]]
+name = "apache-airflow-client"
+version = "3.1.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ef/74/9ecb08b05980b1a4172f6e65cdd289dd4c691394ad8ba76e3bdfb17f4b32/apache_airflow_client-3.1.8.tar.gz", hash = "sha256:26923a954773a11940acf1d12c4592ada38ef10c3622d2fd72c094a764bdf090", size = 223960, upload-time = "2026-03-28T17:42:36.594Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/31/f6/1f9be52165f5d1e21bf89c81aa2fae07f14c8edc691e95d0780035c48c75/apache_airflow_client-3.1.8-py3-none-any.whl", hash = "sha256:ac2add19bba9bc913df7d6609d1f3657b03aeb3b88627e378614b476e4fa6712", size = 386033, upload-time = "2026-03-28T17:42:35.148Z" },
+]
+
+[[package]]
 name = "apache-airflow-core"
 version = "3.1.8"
 source = { registry = "https://pypi.org/simple" }
@@ -2125,7 +2139,11 @@ name = "pinta-backend"
 version = "0.0.0"
 source = { editable = "components/backend" }
 dependencies = [
+    { name = "apache-airflow-client" },
     { name = "fastapi" },
+    { name = "httpx" },
+    { name = "jsonschema" },
+    { name = "pydantic-settings" },
     { name = "uvicorn" },
 ]
 
@@ -2145,7 +2163,11 @@ lint = [
 
 [package.metadata]
 requires-dist = [
+    { name = "apache-airflow-client", specifier = "==3.1.8" },
     { name = "fastapi" },
+    { name = "httpx" },
+    { name = "jsonschema" },
+    { name = "pydantic-settings" },
     { name = "uvicorn" },
 ]
 
@@ -2786,6 +2808,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings"
+version = "2.14.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/07/60/1d1e59c9c90d54591469ada7d268251f71c24bdb765f1a8a832cee8c6653/pydantic_settings-2.14.1.tar.gz", hash = "sha256:e874d3bec7e787b0c9958277956ed9b4dd5de6a80e162188fdaff7c5e26fd5fa", size = 235551, upload-time = "2026-05-08T13:40:06.542Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ae/8d/f1af3832f5e6eb13ba94ee809e72b8ecb5eef226d27ee0bef7d963d943c7/pydantic_settings-2.14.1-py3-none-any.whl", hash = "sha256:6e3c7edfd8277687cdc598f56e5cff0e9bfff0910a3749deaa8d4401c3a2b9de", size = 60964, upload-time = "2026-05-08T13:40:04.958Z" },
+]
+
+[[package]]
 name = "pydevd-pycharm"
 version = "261.22158.340"
 source = { registry = "https://pypi.org/simple" }
@@ -3205,7 +3241,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "rpds-py" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/22/f5/df4e9027acead3ecc63e50fe1e36aca1523e1719559c499951bb4b53188f/referencing-0.37.0.tar.gz", hash = "sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8", size = 78036, upload-time = "2025-10-13T15:30:48.871Z" }
 wheels = [

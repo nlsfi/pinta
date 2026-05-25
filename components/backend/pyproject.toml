@@ -7,6 +7,10 @@ requires-python = ">=3.12"
 dependencies = [
   "fastapi",
   "uvicorn",
+  "pydantic-settings",
+  "apache-airflow-client==3.1.8",
+  "httpx",
+  "jsonschema",
 ]
 
 
