@@ -5,16 +5,19 @@
 
 import logging
 
+from pinta_backend import settings
+
 LOGGER = logging.getLogger(__name__)
 
 
 def run_development_app() -> None:  # pragma: no cover  # noqa: D103
     import uvicorn  # noqa: PLC0415
 
+    app_settings = settings.get_settings()
     uvicorn.run(
         "pinta_backend.app:api",
-        host="localhost",
-        port=3011,
+        host=app_settings.api_host,
+        port=app_settings.api_port,
         reload=True,
     )
 

@@ -25,3 +25,7 @@ __pycache__
 test_data/**/*.copc.laz
 /components/dags/.airflow/
 /basemap_layer_config.json
+
+# Don't bake tests into backend container
+test_backend/
+test_integration_backend/

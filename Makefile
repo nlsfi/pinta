@@ -151,6 +151,7 @@ backend-start:
 	@PINTA_BACKEND_AIRFLOW_BASE_URL=http://localhost:8080 \
 	 PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_USERNAME) \
 	 PINTA_BACKEND_AIRFLOW_PASSWORD="$$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' $(AIRFLOW_PASSWORD_FILE) $(PINTA_BACKEND_USERNAME))" \
+	 docker compose stop backend || true
 	 uv run --directory $(BACKEND_DIR) python -m pinta_backend
 
 backend-ts:
