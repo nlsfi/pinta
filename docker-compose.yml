@@ -48,6 +48,40 @@ services:
         target: /lastools
         read_only: true
 
+  backend:
+    build:
+      context: .
+      dockerfile: components/backend/Containerfile
+      target: dev
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    image: ghcr.io/nlsfi/pinta/backend:latest
+    environment:
+      PINTA_BACKEND_PORT: "3011"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+    ports:
+      - "${COMPOSE_BACKEND_PORT:-3011}:3011"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3011/health').read()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - type: bind
+        source: ${REPO_DIR:-.}
+        target: /code
+        read_only: false
+    working_dir: /code/components/backend
+
   qgis:
     profiles:
       - e2e

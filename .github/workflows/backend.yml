@@ -6,12 +6,14 @@ on:
     paths:
       - 'components/backend/**'
       - '.github/workflows/backend.yml'
+      - '.github/workflows/build-container.yml'
       - '.github/workflows/unit-tests.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'components/backend/**'
       - '.github/workflows/backend.yml'
+      - '.github/workflows/build-container.yml'
       - '.github/workflows/unit-tests.yml'
 
 jobs:
@@ -20,10 +22,19 @@ jobs:
     with:
       component-path: components/backend
       test_folder: test_backend
+  build-container:
+    uses: ./.github/workflows/build-container.yml
+    with:
+      containerfile: components/backend/Containerfile
+      context: .
+      image-name: backend
+      registry-image: ghcr.io/nlsfi/pinta/backend
+      target: dev
+      push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
   notify-teams:
-    needs: unittests
-    if: ${{ always() && needs.unittests.result == 'failure' && github.ref == 'refs/heads/main' }}
+    needs: [ unittests, build-container ]
+    if: ${{ always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/notify-teams.yml
     with:
-      job_name: Backend unit tests
+      job_name: Backend tests and container build
     secrets: inherit

@@ -37,6 +37,14 @@ class Settings(pydantic_settings.BaseSettings):
             "PINTA_BACKEND_AIRFLOW_HTTP_TIMEOUT", "AIRFLOW_HTTP_TIMEOUT"
         ),
     )
+    api_host: str = pydantic.Field(
+        default="0.0.0.0",  # noqa: S104
+        validation_alias="PINTA_BACKEND_HOST",
+    )
+    api_port: int = pydantic.Field(
+        default=3011,
+        validation_alias="PINTA_BACKEND_PORT",
+    )
 
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore")
 

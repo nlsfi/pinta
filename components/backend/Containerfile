@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1.7
+
+ARG PYTHON_VERSION=3.12
+
+FROM quay.io/hummingbird/python:${PYTHON_VERSION} AS runtime-base
+WORKDIR /app
+
+ENV PYTHONPATH=/opt/python \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# ---------- dev builder ----------
+FROM python:${PYTHON_VERSION}-slim AS dev-builder
+WORKDIR /app
+
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
+
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml uv.lock ./
+COPY components/ ./components/
+
+WORKDIR /app/components/backend
+RUN uv venv /opt/venv && \
+    uv sync --frozen --active --no-default-groups && \
+    mkdir -p /opt/python && \
+    cp -a /opt/venv/lib/python*/site-packages/. /opt/python/
+
+# ---------- dev runtime ----------
+FROM runtime-base AS dev
+COPY --from=dev-builder /opt/python /opt/python
+ENV PYTHONPATH=/code/components/backend/src:/opt/python
+
+EXPOSE 3011
+
+CMD ["python3", "-m", "pinta_backend"]
+
+# ---------- prod builder ----------
+FROM python:${PYTHON_VERSION}-slim AS prod-builder
+WORKDIR /app
+
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir uv
+
+ARG PINTA_BACKEND_VERSION
+ARG PINTA_BACKEND_CONSTRAINT
+ARG PYPI_INDEX_URL=https://pypi.org/simple
+ARG PYPI_EXTRA_INDEX_URL
+
+RUN test -n "${PINTA_BACKEND_VERSION}" && \
+    test -n "${PINTA_BACKEND_CONSTRAINT}" && \
+    uv venv /opt/venv && \
+    UV_INDEX_URL="${PYPI_INDEX_URL}" \
+    UV_EXTRA_INDEX_URL="${PYPI_EXTRA_INDEX_URL}" \
+      uv pip install \
+      --python /opt/venv/bin/python \
+      --constraint "${PINTA_BACKEND_CONSTRAINT}" \
+      "pinta_backend==${PINTA_BACKEND_VERSION}" && \
+    mkdir -p /opt/python && \
+    cp -a /opt/venv/lib/python*/site-packages/. /opt/python/
+
+# ---------- prod runtime ----------
+FROM runtime-base AS prod
+COPY --from=prod-builder /opt/python /opt/python
+EXPOSE 3011
+
+CMD ["python3", "-m", "uvicorn", "pinta_backend.app:api", "--host", "0.0.0.0", "--port", "3011"]

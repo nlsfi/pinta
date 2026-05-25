@@ -19,6 +19,16 @@ on:
         description: Full image path for registry (e.g., ghcr.io/nlsfi/pinta/image-name)
         required: true
         type: string
+      target:
+        description: Optional Containerfile target stage to build
+        required: false
+        default: ''
+        type: string
+      tag:
+        description: Container image tag
+        required: false
+        default: latest
+        type: string
       push:
         description: Whether to push to registry
         required: false
@@ -54,10 +64,17 @@ jobs:
       - name: Build container image
         run: |
           set -euo pipefail
+          target="${{ inputs.target }}"
+
+          target_args=()
+          if [ -n "$target" ]; then
+            target_args+=(--target "$target")
+          fi
 
           docker buildx build --load \
             -f ${{ inputs.containerfile }} \
-            -t pinta/${{ inputs.image-name }}:latest \
+            "${target_args[@]}" \
+            -t pinta/${{ inputs.image-name }}:${{ inputs.tag }} \
             --label org.opencontainers.image.source=https://github.com/${{ github.repository }} \
             ${{ inputs.context }}
 
@@ -77,8 +94,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          docker tag pinta/${{ inputs.image-name }}:latest ${{ inputs.registry-image }}:latest
-          docker push ${{ inputs.registry-image }}:latest
+          docker tag pinta/${{ inputs.image-name }}:${{ inputs.tag }} ${{ inputs.registry-image }}:${{ inputs.tag }}
+          docker push ${{ inputs.registry-image }}:${{ inputs.tag }}
 
       - name: Show built images
         run: |

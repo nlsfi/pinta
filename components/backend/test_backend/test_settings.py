@@ -55,3 +55,20 @@ def test_settings_reads_both_namespaced_and_bare_env_vars(
     assert loaded.airflow_username == "service-user"
     assert loaded.airflow_password.get_secret_value() == "service-secret"
     assert loaded.airflow_http_timeout == 7.5
+    assert loaded.api_host == "0.0.0.0"
+    assert loaded.api_port == 3011
+
+
+def test_settings_reads_uvicorn_env_vars(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_BASE_URL", "http://airflow.example/")
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_USERNAME", "service-user")
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_PASSWORD", "service-secret")
+    monkeypatch.setenv("PINTA_BACKEND_HOST", "127.0.0.1")
+    monkeypatch.setenv("PINTA_BACKEND_PORT", "8020")
+
+    loaded = settings.Settings()
+
+    assert loaded.api_host == "127.0.0.1"
+    assert loaded.api_port == 8020

@@ -157,9 +157,9 @@ def backend_server(
 ) -> Generator[str, None, None]:
     airflow_url, admin_password = airflow_standalone
 
-    monkeypatch.setenv("AIRFLOW_BASE_URL", airflow_url)
-    monkeypatch.setenv("AIRFLOW_USERNAME", "admin")
-    monkeypatch.setenv("AIRFLOW_PASSWORD", admin_password)
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_BASE_URL", airflow_url)
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_USERNAME", "admin")
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_PASSWORD", admin_password)
 
     from pinta_backend import airflow_client, app, settings  # noqa: PLC0415
 
