@@ -39,17 +39,42 @@
         <translation>Tietokannan nimi</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="37"/>
-        <source>Point cloud tile</source>
-        <translation type="unfinished">Pistepilvitiilet</translation>
+        <location filename="../../project/config/management_layers.py" line="25"/>
+        <source>Pending</source>
+        <translation>Ei aloitettu</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="37"/>
+        <location filename="../../project/config/management_layers.py" line="25"/>
+        <source>Queued</source>
+        <translation>Jonossa</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="25"/>
+        <source>Started</source>
+        <translation>Käynnissä</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="25"/>
+        <source>Completed</source>
+        <translation>Valmis</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="25"/>
+        <source>Failed</source>
+        <translation>Päättynyt virheeseen</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="50"/>
+        <source>Point cloud tile</source>
+        <translation>Pistepilvitiilet</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="50"/>
         <source>File path</source>
         <translation>Tiedostopolku</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="37"/>
+        <location filename="../../project/config/management_layers.py" line="50"/>
         <source>Production area ID</source>
         <translation>Tuotantoalueen ID</translation>
     </message>
@@ -87,6 +112,11 @@
         <location filename="../../project/config/background_layers.py" line="31"/>
         <source>Elevation model</source>
         <translation>Korkeusmalli</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="25"/>
+        <source>Processing status</source>
+        <translation>Laskennan tila</translation>
     </message>
 </context>
 </TS>

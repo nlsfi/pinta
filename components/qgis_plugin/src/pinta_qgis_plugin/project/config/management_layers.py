@@ -31,7 +31,20 @@ PRODUCTION_AREA = ModelLayerConfig.create(
         **config.COMMON_ALIASES,
         "name": i18n.tr("Name"),
         "database_name": i18n.tr("Database name"),
+        "processing_status": i18n.tr("Processing status"),
     },
+    value_maps=[
+        config.ValueMapConfig(
+            field_name="processing_status",
+            value_map={
+                "pending": i18n.tr("Pending"),
+                "queued": i18n.tr("Queued"),
+                "started": i18n.tr("Started"),
+                "completed": i18n.tr("Completed"),
+                "failed": i18n.tr("Failed"),
+            },
+        )
+    ],
 )
 
 POINT_CLOUD_TILE = ModelLayerConfig.create(
