@@ -50,6 +50,7 @@ def load_dem_dag(
 
     @dag(
         dag_id=dag_id,
+        tags=[dag_id],
         dag_display_name="Load dem from files",
         schedule=None,
         max_active_runs=1,
