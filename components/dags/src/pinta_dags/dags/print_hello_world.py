@@ -5,7 +5,7 @@
 
 """Example DAG with external venv task & connection URI variable."""
 
-from airflow.sdk import DAG, chain, dag, task
+from airflow.sdk import DAG, Param, chain, dag, task
 
 from pinta_dags import config
 
@@ -19,26 +19,36 @@ def create_print_hello_world_dag(
         dag_display_name="Print hello world",
         schedule=None,
         tags=["hello_world"],
+        params={
+            "name": Param(
+                "World",
+                type="string",
+                description="Name to greet in the log line.",
+            ),
+        },
+        is_paused_upon_creation=False,
     )
     def hello_world_dag() -> None:
         @task
-        def hello_world_task(connection_uri: str) -> None:
+        def hello_world_task(connection_uri: str, name: str) -> None:
             from pinta_processing.scripts import hello_world
 
-            hello_world.log_hello_world(connection_uri)
+            hello_world.log_hello_world(connection_uri, name=name)
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-        def hello_world_task_docker(connection_uri: str) -> None:
+        def hello_world_task_docker(connection_uri: str, name: str) -> None:
             from pinta_processing.scripts import hello_world
 
-            hello_world.log_hello_world(connection_uri)
+            hello_world.log_hello_world(connection_uri, name=name)
 
         chain(
             hello_world_task(
-                "{{ conn.pinta_processing_db.get_hook().sqlalchemy_url }}"
+                "{{ conn.pinta_processing_db.get_hook().sqlalchemy_url }}",
+                "{{ params.name }}",
             ),
             hello_world_task_docker(
-                "{{ conn.pinta_processing_db.get_hook().sqlalchemy_url }}"
+                "{{ conn.pinta_processing_db.get_hook().sqlalchemy_url }}",
+                "{{ params.name }}",
             ),
         )
 

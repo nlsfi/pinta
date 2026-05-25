@@ -2316,6 +2316,7 @@ airflow = [
     { name = "pinta-dags", extra = ["airflow"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
 ]
 dev = [
+    { name = "pinta-backend" },
     { name = "pinta-lib" },
     { name = "psycopg" },
     { name = "pytest" },
@@ -2338,6 +2339,7 @@ qgis = [
 [package.metadata.requires-dev]
 airflow = [{ name = "pinta-dags", extras = ["airflow"], editable = "components/dags" }]
 dev = [
+    { name = "pinta-backend", editable = "components/backend" },
     { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg" },
     { name = "pytest", specifier = ">=9.0.2" },
