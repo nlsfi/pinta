@@ -44,6 +44,8 @@ def create_raster_layer(config: BasemapLayerConfig, provider: str) -> QgsRasterL
         LOGGER.error("Uri of the invalid layer %s", layer.source())
         raise LayerCreationError(config.layer_name)
     utils.set_field_aliases(layer, config.aliases)
+    if config.value_maps:
+        utils.set_value_maps(layer, config)
     return layer
 
 
@@ -63,5 +65,8 @@ def create_postgis_raster_layer(
         styles.apply_style(layer, config.style_path)
 
     layer.setCustomProperty(PINTA_LAYER_ID, config.layer_id)
+
+    if config.value_maps:
+        utils.set_value_maps(layer, config)
 
     return layer

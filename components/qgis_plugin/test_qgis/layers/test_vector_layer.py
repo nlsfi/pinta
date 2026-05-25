@@ -141,6 +141,40 @@ def test_create_layer_sets_field_aliases(mocker: MockerFixture, mock_uri: MagicM
     assert layer.attributeAlias(layer.fields().lookupField("name")) == "Name"
 
 
+def test_create_layer_sets_value_maps(mocker: MockerFixture, mock_uri: MagicMock):
+    layer = QgsVectorLayer(
+        "MultiPolygon?field=id:integer&field=status:string", "", "memory"
+    )
+    mocker.patch.object(
+        vector_layer,
+        "_create_qgs_vector_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.VectorLayerConfig(
+        schema="management",
+        table_name="production_area",
+        layer_name="Production area",
+        layer_id="production_area",
+        key_column="id",
+        wkb_type=management_layers.PRODUCTION_AREA.wkb_type,
+        value_maps=[
+            config.ValueMapConfig(
+                field_name="status",
+                value_map={"Not started": "not_started", "Completed": "completed"},
+            )
+        ],
+    )
+
+    vector_layer.create_vector_layer(layer_config, PROVIDER, mock_uri)
+
+    widget = layer.editorWidgetSetup(layer.fields().lookupField("status"))
+    assert widget.type() == "ValueMap"
+    assert widget.config() == {
+        "map": [{"Not started": "not_started"}, {"Completed": "completed"}]
+    }
+
+
 def test_create_layer_with_invalid_layer_raises_exception(
     mocker: MockerFixture,
 ):
