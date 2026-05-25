@@ -14,7 +14,12 @@ def create_print_hello_world_dag(
     *,
     dag_id: str,
 ) -> DAG:
-    @dag(dag_id=dag_id, dag_display_name="Print hello world", schedule=None)
+    @dag(
+        dag_id=dag_id,
+        dag_display_name="Print hello world",
+        schedule=None,
+        tags=["hello_world"],
+    )
     def hello_world_dag() -> None:
         @task
         def hello_world_task(connection_uri: str) -> None:
