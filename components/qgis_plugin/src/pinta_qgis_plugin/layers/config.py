@@ -33,13 +33,36 @@ COMMON_ALIASES = {
 
 
 @dataclasses.dataclass
-class VectorLayerConfig:
-    """Configuration for a vector layer."""
+class ValueMapConfig:
+    """Configuration for a value map."""
+
+    field_name: str
+    value_map: dict[str, str]
+
+
+@dataclasses.dataclass(kw_only=True)
+class BaseLayerConfig:
+    """Base configuration for every layer."""
+
+    layer_name: str
+    aliases: dict[str, str] = dataclasses.field(default_factory=dict)
+    value_maps: list[ValueMapConfig] | None = None
+
+
+@dataclasses.dataclass(kw_only=True)
+class DatabaseLayerConfig(BaseLayerConfig):
+    """Base configuration for database-backed layers."""
 
     schema: str
     table_name: str
-    layer_name: str
     layer_id: str
+    style_path: Path | None = None
+
+
+@dataclasses.dataclass(kw_only=True)
+class VectorLayerConfig(DatabaseLayerConfig):
+    """Configuration for a vector layer."""
+
     key_column: str
     wkb_type: QgsWkbTypes.Type
     srid: str = env_common.SRID
@@ -47,24 +70,17 @@ class VectorLayerConfig:
     aliases: dict[str, str] = dataclasses.field(
         default_factory=lambda: {**COMMON_ALIASES}
     )
-    style_path: Path | None = None
     read_only: bool = False
 
 
-@dataclasses.dataclass
-class RasterLayerConfig:
+@dataclasses.dataclass(kw_only=True)
+class RasterLayerConfig(DatabaseLayerConfig):
     """Configuration for a raster layer."""
 
-    schema: str
-    table_name: str
-    layer_name: str
-    layer_id: str
     rast_column: str = "rast"
-    aliases: dict[str, str] = dataclasses.field(default_factory=dict)
-    style_path: Path | None = None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class ModelLayerConfig(VectorLayerConfig):
     """Configuration for a QGIS layer."""
 
@@ -76,6 +92,7 @@ class ModelLayerConfig(VectorLayerConfig):
         aliases: dict[str, str] | None = None,
         style_path: Path | None = None,
         read_only: bool = False,  # noqa: FBT001, FBT002
+        value_maps: list[ValueMapConfig] | None = None,
     ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
@@ -94,18 +111,17 @@ class ModelLayerConfig(VectorLayerConfig):
             style_path=style_path,
             layer_id=layer_id,
             read_only=read_only,
+            value_maps=value_maps,
         )
 
 
-@dataclasses.dataclass
-class BasemapLayerConfig:
+@dataclasses.dataclass(kw_only=True)
+class BasemapLayerConfig(BaseLayerConfig):
     """Configuration for a basemap layer."""
 
-    layer_name: str
     uri_parameters: "UriParameters"
     user_name: str | None = None
     password: str | None = None
-    aliases: dict[str, str] = dataclasses.field(default_factory=dict)
 
     @dataclasses.dataclass
     class UriParameters:
@@ -152,7 +168,7 @@ class BasemapLayerConfig:
         return uri[1:]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class RasterModelLayerConfig(RasterLayerConfig):
     """Configuration for a PostGIS raster layer."""
 
