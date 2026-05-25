@@ -26,10 +26,12 @@ default-groups = ["dev", "lint", "qgis", "airflow"]
 pinta-qgis-plugin = { workspace = true }
 pinta-lib = { workspace = true }
 pinta-dags = { workspace = true }
+pinta-backend = { workspace = true }
 
 [dependency-groups]
 dev = [
   "pinta-lib",
+  "pinta-backend",
   "pytest>=9.0.2",
   "pytest-xdist>=3.8.0",
   "psycopg",
@@ -53,6 +55,6 @@ airflow = [
 
 [tool.pytest.ini_options]
 testpaths = [
-  "test",
+  "test_e2e",
 ]
 addopts = "-n auto --import-mode=importlib"

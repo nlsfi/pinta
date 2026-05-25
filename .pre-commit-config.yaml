@@ -69,6 +69,8 @@ repos:
       - id: mypy
         exclude: ^(components/db/.*\.py)$ # db has its own mypy
         args: [ --explicit-package-bases ] # for monorepo components
+        additional_dependencies:
+          - types-requests
   - repo: https://github.com/adrienverge/yamllint.git
     rev: cba56bcde1fdd01c1deb3f945e69764c291a6530  # frozen: v1.38.0
     hooks:

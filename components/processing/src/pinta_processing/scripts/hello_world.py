@@ -8,7 +8,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-def log_hello_world(log_text: str) -> None:
-    """Log hello world with given text."""
+def log_hello_world(log_text: str, name: str = "World") -> None:
+    """Log a greeting with the given ``name`` plus arbitrary trailing ``log_text``."""
     LOGGER.debug("Debug message")
-    LOGGER.info("Hello world with %s", log_text)
+    LOGGER.info("Hello %s with %s", name, log_text)
