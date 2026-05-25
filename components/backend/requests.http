@@ -1,0 +1,53 @@
+# Manual smoke tests for pinta_backend.
+# Works with the JetBrains HTTP Client and the VS Code REST Client extension.
+# Start the backend with `make backend-start`
+
+@host = http://localhost:3011
+
+### Health check
+GET {{host}}/health
+Accept-Language: en
+
+### Health check (Finnish — Content-Language response header should be `fi`)
+GET {{host}}/health
+Accept-Language: fi
+
+### Hello world (translated)
+GET {{host}}/hello-world
+Accept-Language: fi
+
+### Trigger hello_world workflow without parameters
+POST {{host}}/workflows/hello_world
+Content-Type: application/json
+Accept-Language: en
+
+{}
+
+### Trigger hello_world workflow with a name parameter
+POST {{host}}/workflows/hello_world
+Content-Type: application/json
+Accept-Language: en
+
+{
+  "parameters": {
+    "name": "Pinta"
+  }
+}
+
+### Trigger with invalid parameters (expect 400 with translated error)
+POST {{host}}/workflows/hello_world
+Content-Type: application/json
+Accept-Language: fi
+
+{
+  "parameters": {
+    "name": 42
+  }
+}
+
+### Trigger an unknown tag (expect 404 with translated error)
+POST {{host}}/workflows/no_such_tag
+Content-Type: application/json
+Accept-Language: en
+
+{}
