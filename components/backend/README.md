@@ -8,6 +8,8 @@ Verify that the API works:
 curl http://localhost:3011/health
 ```
 
+or play with the API manually with [requests.http](requests.http) file.
+
 ## Translations
 
 The API is localized using the `Accept-Language` request header. The response language is defined in the `Content-Language` response header.
