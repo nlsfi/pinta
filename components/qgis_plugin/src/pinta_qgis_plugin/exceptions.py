@@ -15,17 +15,41 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
+from qgis_plugin_tools.tools import custom_logging
+from qgis_plugin_tools.tools.exceptions import QgsPluginException
+from qgis_plugin_tools.tools.i18n import tr
 
 
-class LayerCreationError(RuntimeError):
+class LayerCreationError(QgsPluginException):
     def __init__(self, layer_name: str) -> None:
         super().__init__(
             f"Layer creation error: {layer_name}",
         )
 
 
-class EnvironmentVariableError(RuntimeError):
+class EnvironmentVariableError(QgsPluginException):
     def __init__(self, env_variable_name: str) -> None:
         super().__init__(
             f"Environment configuration error: {env_variable_name}",
         )
+
+
+class PintaApiError(QgsPluginException):
+    def __init__(self, message: str, details: str) -> None:
+        super().__init__(
+            message,
+            bar_msg=custom_logging.bar_msg(details=details),
+        )
+
+
+class ApiConnectionError(PintaApiError):
+    def __init__(self, conn_error: Exception) -> None:
+        super().__init__(
+            tr("Could not connect to API (is api running?)"),
+            details=tr("Error was: {}", conn_error),
+        )
+
+
+class WorkflowNotStartedError(PintaApiError):
+    def __init__(self, message: str, details: str) -> None:
+        super().__init__(message, details)

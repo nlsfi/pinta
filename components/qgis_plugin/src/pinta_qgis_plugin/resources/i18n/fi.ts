@@ -14,12 +14,12 @@
         <translation>Tunniste</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="56"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="63"/>
         <source>Add production area related layers to map</source>
         <translation>Lisää tuotantoalueen tasot karttalle</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="56"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="63"/>
         <source>Open production area</source>
         <translation>Avaa tuotantoalue</translation>
     </message>
@@ -117,6 +117,56 @@
         <location filename="../../project/config/management_layers.py" line="25"/>
         <source>Processing status</source>
         <translation>Laskennan tila</translation>
+    </message>
+    <message>
+        <location filename="../../exceptions.py" line="47"/>
+        <source>Could not connect to API (is api running?)</source>
+        <translation>Ei saatu yhteyttä APIin (onko se käynnissä?)</translation>
+    </message>
+    <message>
+        <location filename="../../exceptions.py" line="47"/>
+        <source>Error was: {}</source>
+        <translation>Virhe oli: {}</translation>
+    </message>
+    <message>
+        <location filename="../../utils/messages.py" line="50"/>
+        <source>An unhandled exception occurred. Check the log for more details.</source>
+        <translation>Hallitsematon virhe tapahtui. Tarkista loki lisätietojen varalta.</translation>
+    </message>
+    <message>
+        <location filename="../../utils/messages.py" line="45"/>
+        <source>Error occurred</source>
+        <translation>Virhe tapahtui</translation>
+    </message>
+    <message>
+        <location filename="../../utils/messages.py" line="49"/>
+        <source>Unhandled exception occurred</source>
+        <translation>Hallitsematon virhe tapahtui</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="115"/>
+        <source>Could not start workflow</source>
+        <translation>Laskennan käynnistäminen epäonnistui</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="131"/>
+        <source>Check log for more details</source>
+        <translation>Tarkista loki lisätietojen varalta</translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="78"/>
+        <source>Start reference DEM workflow for production area</source>
+        <translation>Käynnistä vertausmallin työnkulku tuotantoalueelle</translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="78"/>
+        <source>Start reference DEM workflow</source>
+        <translation>Käynnistä vertausmallin työnkulku</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="90"/>
+        <source>Reference DEM workflow task created successfully</source>
+        <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
     </message>
 </context>
 </TS>
