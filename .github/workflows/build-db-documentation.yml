@@ -1,6 +1,7 @@
 name: Build DB Documentation
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
@@ -86,8 +87,9 @@ jobs:
           git checkout -B "$PR_BRANCH"
           git commit -m "chore(db): regenerate tbls documentation"
 
-          # Force-push only when an open PR is being updated
-          if gh pr view "$PR_BRANCH" --json number >/dev/null 2>&1; then
+          # Force-push only when an open PR is being updated. `gh pr view` would
+          # match merged/closed PRs on this branch too, so filter to state=open.
+          if [ -n "$(gh pr list --head "$PR_BRANCH" --state open --json number --jq '.[0].number')" ]; then
             git push --force origin "$PR_BRANCH"
             echo "Existing PR for $PR_BRANCH updated with new commit."
           else
