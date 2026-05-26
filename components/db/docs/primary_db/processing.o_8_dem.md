@@ -15,6 +15,7 @@
 | enforce_nodata_values_rast | CHECK | CHECK ((_raster_constraint_nodata_values(rast) = '{-9999.0000000000}'::numeric[])) |
 | enforce_num_bands_rast | CHECK | CHECK ((st_numbands(rast) = 1)) |
 | enforce_out_db_rast | CHECK | CHECK ((_raster_constraint_out_db(rast) = '{f}'::boolean[])) |
+| enforce_overview_rast | CHECK | CHECK (_overview_constraint(rast, 8, 'processing'::name, 'dem'::name, 'rast'::name)) |
 | enforce_pixel_types_rast | CHECK | CHECK ((_raster_constraint_pixel_types(rast) = '{32BF}'::text[])) |
 | enforce_same_alignment_rast | CHECK | CHECK (st_samealignment(rast, '0100000000000000000000304000000000000030C0000000000024E4400000000004105E4100000000000000000000000000000000FB0B000001000100'::raster)) |
 | enforce_scalex_rast | CHECK | CHECK ((round((st_scalex(rast))::numeric, 10) = round((16)::numeric, 10))) |
@@ -28,6 +29,7 @@
 | Name | Definition |
 | ---- | ---------- |
 | o_8_dem_pkey | CREATE UNIQUE INDEX o_8_dem_pkey ON processing.o_8_dem USING btree (rid) |
+| o_8_dem_rast_idx | CREATE INDEX o_8_dem_rast_idx ON processing.o_8_dem USING gist (st_envelope(rast)) |
 
 ## Relations
 

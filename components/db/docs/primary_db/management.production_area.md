@@ -8,6 +8,7 @@
 | name | varchar |  | false |  |  |  |
 | geom | geometry(MultiPolygon,3067) |  | false |  |  |  |
 | database_name | varchar |  | true |  |  |  |
+| processing_status | processing_status | 'not_started'::processing_status | false |  |  |  |
 
 ## Constraints
 
@@ -34,6 +35,7 @@ erDiagram
   varchar name
   geometry_MultiPolygon_3067_ geom
   varchar database_name
+  processing_status processing_status
 }
 "management.point_cloud_tile" {
   uuid id
