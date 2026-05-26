@@ -19,7 +19,7 @@
 import logging
 import textwrap
 
-from qgis.core import QgsAction, QgsVectorLayer
+from qgis.core import QgsVectorLayer
 from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin.config import database
@@ -28,6 +28,7 @@ from pinta_qgis_plugin.project.config import management_layers
 from pinta_qgis_plugin.project.groups.base_layer_collection import (
     BaseLayerCollection,
 )
+from pinta_qgis_plugin.utils import layer_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,35 +48,36 @@ class ManagementLayerCollection(BaseLayerCollection):
             )
             self._add_map_layer_to_project(layer)
             if layer_config.layer_id == "production_area":
-                _add_open_production_area_layers(layer)
+                _add_open_production_area_layers_action(layer)
+                _add_start_reference_dem_workflow_action(layer)
 
 
-def _add_open_production_area_layers(layer: QgsVectorLayer) -> None:
-    """Add open production area layer to the project."""
-    action_manager = layer.actions()
-    action = QgsAction(
-        QgsAction.GenericPython,
-        description=tr("Add production area related layers to map"),
-        action="",
-        icon=None,
-        capture=True,
-        shortTitle=tr("Open production area"),
-        actionScopes=["Feature"],
-    )
-
-    action.setCommand(
-        textwrap.dedent("""
+def _add_open_production_area_layers_action(layer: QgsVectorLayer) -> None:
+    """Add open production area layer action to the the layer."""
+    command = textwrap.dedent("""
         from pinta_qgis_plugin.project.manager import open_production_area
         db_name = \'[%database_name%]\'
         group_name = \'[%name%]\'
         open_production_area(db_name, group_name)
     """)
+    layer_utils.add_action_to_vector_layer(
+        layer,
+        description=tr("Add production area related layers to map"),
+        short_title=tr("Open production area"),
+        command=command,
     )
-    action_manager.addAction(action)
 
-    attribute_table_config = layer.attributeTableConfig()
-    attribute_table_config.setActionWidgetVisible(True)
-    attribute_table_config.setActionWidgetStyle(
-        attribute_table_config.ActionWidgetStyle.ButtonList
+
+def _add_start_reference_dem_workflow_action(layer: QgsVectorLayer) -> None:
+    """Add start reference dem workflow action to the layer."""
+    command = textwrap.dedent("""
+        from pinta_qgis_plugin.workflows import dem
+        job_id = \'[%id%]\'
+        dem.start_reference_dem_workflow(job_id)
+    """)
+    layer_utils.add_action_to_vector_layer(
+        layer,
+        description=tr("Start reference DEM workflow for production area"),
+        short_title=tr("Start reference DEM workflow"),
+        command=command,
     )
-    layer.setAttributeTableConfig(attribute_table_config)

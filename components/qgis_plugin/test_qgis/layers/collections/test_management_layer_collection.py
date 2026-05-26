@@ -71,7 +71,7 @@ def test_add_to_project_with_valid_layer_adds_to_project(
     )
 
 
-def test_add_to_project_adds_open_action_to_production_area_layer(
+def test_add_to_project_adds_actions_to_production_area_layer(
     layer_collection: management_layer_collection.ManagementLayerCollection,
     mocker: MockerFixture,
     mock_qgs_project: MagicMock,
@@ -83,52 +83,72 @@ def test_add_to_project_adds_open_action_to_production_area_layer(
         autospec=True,
         return_value=production_area_layer,
     )
-    mock_add_action = mocker.patch.object(
+    mock_add_open_action = mocker.patch.object(
         management_layer_collection,
-        "_add_open_production_area_layers",
+        "_add_open_production_area_layers_action",
+        autospec=True,
+    )
+    mock_add_dem_update_action = mocker.patch.object(
+        management_layer_collection,
+        "_add_start_reference_dem_workflow_action",
         autospec=True,
     )
 
     layer_collection.add_to_project()
 
-    mock_add_action.assert_called_once_with(production_area_layer)
+    mock_add_open_action.assert_called_once_with(production_area_layer)
+    mock_add_dem_update_action.assert_called_once_with(production_area_layer)
 
 
-def test_add_open_production_area_layers_configures_feature_action(
+def test_add_open_production_area_layers_delegates_to_layer_utils(
     mocker: MockerFixture,
 ):
-    action_manager = mocker.MagicMock()
-    action = mocker.MagicMock()
-    attribute_table_config = mocker.MagicMock()
-    attribute_table_config.ActionWidgetStyle.ButtonList = "button-list"
     layer = mocker.MagicMock()
-    layer.actions.return_value = action_manager
-    layer.attributeTableConfig.return_value = attribute_table_config
-    mock_qgs_action = mocker.patch.object(
-        management_layer_collection,
-        "QgsAction",
+    mock_add_action = mocker.patch.object(
+        management_layer_collection.layer_utils,
+        "add_action_to_vector_layer",
         autospec=True,
     )
-    mock_qgs_action.GenericPython = "generic-python"
-    mock_qgs_action.return_value = action
 
-    management_layer_collection._add_open_production_area_layers(layer)
+    management_layer_collection._add_open_production_area_layers_action(layer)
 
-    mock_qgs_action.assert_called_once_with(
-        "generic-python",
-        description="Add production area related layers to map",
-        action="",
-        icon=None,
-        capture=True,
-        shortTitle="Open production area",
-        actionScopes=["Feature"],
+    mock_add_action.assert_called_once()
+    call = mock_add_action.call_args
+    assert call.args == (layer,)
+    assert call.kwargs["description"] == "Add production area related layers to map"
+    assert call.kwargs["short_title"] == "Open production area"
+    command = call.kwargs["command"]
+    assert (
+        "from pinta_qgis_plugin.project.manager import open_production_area" in command
     )
-    command = action.setCommand.call_args.args[0]
-    assert command is not None
-    action_manager.addAction.assert_called_once_with(action)
-    attribute_table_config.setActionWidgetVisible.assert_called_once_with(True)
-    attribute_table_config.setActionWidgetStyle.assert_called_once_with("button-list")
-    layer.setAttributeTableConfig.assert_called_once_with(attribute_table_config)
+    assert "open_production_area(db_name, group_name)" in command
+    assert "[%database_name%]" in command
+    assert "[%name%]" in command
+
+
+def test_add_start_reference_dem_processing_action_delegates_to_layer_utils(
+    mocker: MockerFixture,
+):
+    layer = mocker.MagicMock()
+    mock_add_action = mocker.patch.object(
+        management_layer_collection.layer_utils,
+        "add_action_to_vector_layer",
+        autospec=True,
+    )
+
+    management_layer_collection._add_start_reference_dem_workflow_action(layer)
+
+    mock_add_action.assert_called_once()
+    call = mock_add_action.call_args
+    assert call.args == (layer,)
+    assert (
+        call.kwargs["description"] == "Start reference DEM workflow for production area"
+    )
+    assert call.kwargs["short_title"] == "Start reference DEM workflow"
+    command = call.kwargs["command"]
+    assert "from pinta_qgis_plugin.workflows import dem" in command
+    assert "dem.start_reference_dem_workflow(job_id)" in command
+    assert "[%id%]" in command
 
 
 def test_remove_layers_removes_all_layers(

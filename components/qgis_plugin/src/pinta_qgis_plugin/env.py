@@ -48,6 +48,8 @@ try:
     PINTA_JOB_DB_EDITOR_USER = os.environ["DB_JOB_EDITOR_USER"]
     PINTA_JOB_DB_EDITOR_PASSWORD = os.environ["DB_JOB_EDITOR_PASSWORD"]
 
+    PINTA_BACKEND_URL = os.environ["PINTA_BACKEND_URL"]
+
     PINTA_INITIAL_PROJECT_EXTENT = typing.cast(
         "tuple[float, float, float, float]",
         tuple(map(float, os.environ["PINTA_INITIAL_PROJECT_EXTENT"].split(","))),
