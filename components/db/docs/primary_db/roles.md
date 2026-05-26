@@ -45,11 +45,11 @@ flowchart LR
 | Role | `alembic` | `dem` | `management` | `processing` | `public` |
 | --- | --- | --- | --- | --- | --- |
 | `pinta_owner` | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE |
-| `pinta_processing_worker` | — | USAGE | USAGE | USAGE, CREATE | USAGE |
+| `pinta_processing_worker` | — | USAGE, CREATE | USAGE | USAGE, CREATE | USAGE |
 | `pinta_reader` | — | USAGE | USAGE | — | USAGE |
 | `pinta_writer` | — | USAGE | USAGE | — | USAGE |
 | `admin` | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE |
-| `processing_worker` | — | USAGE | USAGE | USAGE, CREATE | USAGE |
+| `processing_worker` | — | USAGE, CREATE | USAGE | USAGE, CREATE | USAGE |
 | `qgis_editor` | — | USAGE | USAGE | — | USAGE |
 | `qgis_viewer` | — | USAGE | USAGE | — | USAGE |
 
@@ -58,6 +58,7 @@ flowchart LR
 | Grantee | Schema | Owner | Privileges |
 | --- | --- | --- | --- |
 | `pinta_owner` | `processing` | `pinta_processing_worker` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
+| `pinta_processing_worker` | `dem` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE |
 | `pinta_processing_worker` | `management` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
 | `pinta_processing_worker` | `processing` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
 | `pinta_reader` | `dem` | `pinta_owner` | SELECT |

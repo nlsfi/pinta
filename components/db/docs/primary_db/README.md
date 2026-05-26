@@ -4,7 +4,7 @@
 
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
-| [management.production_area](management.production_area.md) | 4 |  | BASE TABLE |
+| [management.production_area](management.production_area.md) | 5 |  | BASE TABLE |
 | [management.point_cloud_tile](management.point_cloud_tile.md) | 4 |  | BASE TABLE |
 | [dem.dem](dem.dem.md) | 2 |  | BASE TABLE |
 | [dem.o_2_dem](dem.o_2_dem.md) | 2 |  | BASE TABLE |
@@ -19,6 +19,12 @@
 | [processing.o_128_dem](processing.o_128_dem.md) | 2 |  | BASE TABLE |
 | [processing.o_128_dem_p0](processing.o_128_dem_p0.md) | 2 |  | BASE TABLE |
 
+## Enums
+
+| Name | Values |
+| ---- | ------- |
+| public.processing_status | completed, failure, not_started, queued, started |
+
 ## Relations
 
 ```mermaid
@@ -31,6 +37,7 @@ erDiagram
   varchar name
   geometry_MultiPolygon_3067_ geom
   varchar database_name
+  processing_status processing_status
 }
 "management.point_cloud_tile" {
   uuid id

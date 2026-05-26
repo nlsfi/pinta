@@ -41,6 +41,7 @@ erDiagram
   varchar name
   geometry_MultiPolygon_3067_ geom
   varchar database_name
+  processing_status processing_status
 }
 ```
 
