@@ -16,6 +16,8 @@ migrations = [
   "dotenv>=0.9.9",
   "psycopg[binary]>=3.3.3",
 ]
+# Opt-in psycopg3 driver, kept out of base deps so the qgis plugin stays on psycopg2.
+psycopg = ["psycopg[binary]>=3.3.3"]
 shapely = [
   "geoalchemy2[shapely]",
   "numpy>=2",
