@@ -3,9 +3,11 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import logging
 from typing import Annotated
 
 import fastapi
+from fastapi import responses
 
 from pinta_backend import airflow_client, exceptions, models
 from pinta_backend.i18n import _, get_language
@@ -17,11 +19,42 @@ AirflowClientDependency = Annotated[
     fastapi.Depends(airflow_client.get_airflow_client),
 ]
 
+LOGGER = logging.getLogger(__name__)
 
-@router.get("/health")
-async def get_health() -> models.ApiHealth:
+
+@router.get("/health", response_model=models.ApiHealth)
+async def get_health(
+    client: AirflowClientDependency,
+) -> models.ApiHealth | responses.JSONResponse:
     """Return app health status."""
-    return models.ApiHealth(parsed_language=get_language())
+    parsed_language = get_language()
+    try:
+        await client.check_authentication()
+    except (
+        exceptions.AirflowAuthError,
+        exceptions.AirflowUnreachableError,
+        exceptions.AirflowApiError,
+    ) as e:
+        detail = str(e)
+        LOGGER.exception("Airflow health check failed: %s", detail)
+        health = models.ApiHealth(
+            status=models.HealthStatus.DOWN,
+            airflow=models.ApiDependencyHealth(
+                status=models.HealthStatus.DOWN,
+                detail=detail,
+            ),
+            parsed_language=parsed_language,
+        )
+        return responses.JSONResponse(
+            status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=health.model_dump(mode="json"),
+        )
+
+    return models.ApiHealth(
+        status=models.HealthStatus.UP,
+        airflow=models.ApiDependencyHealth(status=models.HealthStatus.UP),
+        parsed_language=parsed_language,
+    )
 
 
 @router.get("/hello-world", tags=["default"])
