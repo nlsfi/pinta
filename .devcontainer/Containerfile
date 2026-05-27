@@ -34,7 +34,9 @@ RUN apt-get update && \
       libpng16-16t64 \
       libtiff6 \
       libgeotiff5 \
-      libwebp7 && \
+      libwebp7 \
+      # Backend translation tooling
+      gettext && \
     \
     rm -rf /var/lib/apt/lists/*
 

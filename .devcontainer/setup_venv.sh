@@ -26,3 +26,39 @@ if [ ! -x "$LASTOOLS_DIR/bin/blast2dem64" ]; then
 	tar -xzf "$tarball" -C "$LASTOOLS_DIR"
 	rm -f "$tarball"
 fi
+
+# Make completion for `make` targets
+cat > ~/.make-targets-completion.bash <<'EOF'
+_make_targets() {
+  local cur makefile targets
+  cur="${COMP_WORDS[COMP_CWORD]}"
+
+  if [[ -f Makefile ]]; then
+    makefile="Makefile"
+  elif [[ -f makefile ]]; then
+    makefile="makefile"
+  else
+    return 0
+  fi
+
+  targets="$(
+    grep -E '^[a-zA-Z0-9_.-]+:' "$makefile" \
+      | sed 's/:.*//' \
+      | sort -u
+  )"
+
+  COMPREPLY=($(compgen -W "$targets" -- "$cur"))
+}
+
+complete -F _make_targets make
+EOF
+
+if ! grep -q "make-targets-completion" ~/.bashrc; then
+  cat >> ~/.bashrc <<'EOF'
+
+# Makefile target completion
+if [ -f ~/.make-targets-completion.bash ]; then
+  . ~/.make-targets-completion.bash
+fi
+EOF
+fi

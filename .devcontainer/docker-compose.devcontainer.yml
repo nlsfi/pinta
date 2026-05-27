@@ -30,6 +30,7 @@ services:
       NO_PROXY: localhost,127.0.0.1
       PREK_HOME: /prek-cache
       UV_CACHE_DIR: /uv-cache
+      GIT_EDITOR: "${GIT_EDITOR:-nano}" # set on host to override default editor
 
 volumes:
   venv-workspace:
