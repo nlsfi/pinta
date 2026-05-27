@@ -163,3 +163,4 @@ ws
 getsockname
 authenticator
 Authenticator
+issubdtype
