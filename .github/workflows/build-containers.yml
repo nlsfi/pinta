@@ -55,17 +55,23 @@ jobs:
           docker buildx build --load \
             -f components/db/containers/postgis/Containerfile \
             -t pinta/db:latest \
+            --cache-from type=gha,scope=db \
+            --cache-to type=gha,scope=db,mode=max \
             components/db/containers/postgis
 
 
           docker buildx build --load \
             -f components/processing/Containerfile \
             -t pinta/processing:latest \
+            --cache-from type=gha,scope=processing \
+            --cache-to type=gha,scope=processing,mode=max \
             .
 
           docker buildx build --load \
             -f components/e2e/Containerfile \
             -t pinta/e2e:latest \
+            --cache-from type=gha,scope=e2e \
+            --cache-to type=gha,scope=e2e,mode=max \
             .
 
           # Compose uses GHCR image names, so map local builds to those names.
@@ -117,6 +123,7 @@ jobs:
           set -euo pipefail
 
           # Stop postgres cleanly so the data directory is consistent.
+          docker compose exec -T db psql -U postgres -c "CHECKPOINT;"
           docker compose stop db
 
           # The data lives in a named volume, not the container layer, so we
@@ -130,7 +137,7 @@ jobs:
             --entrypoint sh pinta/db:latest -c "sleep infinity"
 
           docker exec pinta-db-committer sh -c \
-            "cp -a /pgdata-src/. /pgdata/ && rm -f /pgdata/postmaster.pid /pgdata/.s.PGSQL.*"
+            "cp -a /pgdata-src/. /pgdata/ && rm -f /pgdata/postmaster.pid /pgdata/.s.PGSQL.* && gosu postgres pg_resetwal -f /pgdata"
 
           docker commit \
             --change 'ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]' \

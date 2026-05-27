@@ -52,12 +52,17 @@ RUN echo "/usr/local/lib64" > /etc/ld.so.conf.d/proj.conf && \
 
 # Verify that all LASTools dependencies are installed
 # hadolint ignore=DL3003
-RUN mkdir -p /lastools && cd /lastools && curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz -o lastools.tar.gz \
-  && tar -xzf lastools.tar.gz \
-  && cd bin \
-  && ldd blast2dem64 | grep "not found" && echo "Missing dependencies for LASTools!" && exit 1 || echo "All LASTools dependencies are installed." \
-  && cd .. \
-  && rm -rf lastools.tar.gz LAStools
+RUN tmp_dir="$(mktemp -d)" \
+  && curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz -o "${tmp_dir}/lastools.tar.gz" \
+  && tar -xzf "${tmp_dir}/lastools.tar.gz" -C "${tmp_dir}" \
+  && blast2dem="$(find "${tmp_dir}" -path "*/bin/blast2dem64" -type f | head -n 1)" \
+  && test -n "${blast2dem}" \
+  && if ldd "${blast2dem}" | grep "not found"; then \
+      echo "Missing dependencies for LASTools!"; \
+      exit 1; \
+    fi \
+  && echo "All LASTools dependencies are installed." \
+  && rm -rf "${tmp_dir}"
 
 # hadolint ignore=DL3013
 RUN python -m pip install --upgrade pip --no-cache-dir \

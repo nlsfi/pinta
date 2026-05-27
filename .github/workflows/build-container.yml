@@ -75,6 +75,8 @@ jobs:
             -f ${{ inputs.containerfile }} \
             "${target_args[@]}" \
             -t pinta/${{ inputs.image-name }}:${{ inputs.tag }} \
+            --cache-from type=gha,scope=${{ inputs.image-name }} \
+            --cache-to type=gha,scope=${{ inputs.image-name }},mode=max \
             --label org.opencontainers.image.source=https://github.com/${{ github.repository }} \
             ${{ inputs.context }}
 
