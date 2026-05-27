@@ -68,10 +68,16 @@ jobs:
             -t pinta/e2e:latest \
             .
 
+          docker buildx build --load \
+            -f components/dags/Containerfile \
+            -t pinta/airflow:latest \
+            .
+
           # Compose uses GHCR image names, so map local builds to those names.
           docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
+          docker tag pinta/airflow:latest "$GHCR_PREFIX/airflow:latest"
 
       - name: Copy .env.example to .env
         run: cp .env.example .env
@@ -165,6 +171,7 @@ jobs:
           docker tag pinta/db:latest "$GHCR_PREFIX/db:$TAG"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:$TAG"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:$TAG"
+          docker tag pinta/airflow:latest "$GHCR_PREFIX/airflow:$TAG"
 
       - name: Push images to GHCR
         if: github.event_name == 'push' || github.event_name == 'release'
@@ -176,6 +183,7 @@ jobs:
           docker push "$GHCR_PREFIX/db:$TAG"
           docker push "$GHCR_PREFIX/processing:$TAG"
           docker push "$GHCR_PREFIX/e2e:$TAG"
+          docker push "$GHCR_PREFIX/airflow:$TAG"
 
       - name: Show built images
         run: |

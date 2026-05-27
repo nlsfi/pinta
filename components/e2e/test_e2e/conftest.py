@@ -4,22 +4,21 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import os
-import shutil
-import sqlite3
-import tempfile
 import typing
 from collections.abc import Iterator
-from pathlib import Path
 
 import pytest
 import qgis.utils
 from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
 from pinta_e2e_utils import constants
+from pinta_e2e_utils.airflow_client import AirflowClient
 from pinta_test_utils import xdist_utils
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject
 
 if typing.TYPE_CHECKING:
+    from pathlib import Path
+
     from pinta_qgis_plugin.plugin import Plugin
     from qgis.gui import QgisInterface
     from sqlmodel import Session
@@ -33,36 +32,19 @@ Importing those modules in fixtures is OK.
 The same goes with pinta_qgis_plugin.env.py.
 """
 
+DEFAULT_BACKEND_URL = "http://localhost:3011"
+DEFAULT_AIRFLOW_URL = "http://localhost:8080"
+DEFAULT_AIRFLOW_ADMIN_USERNAME = "admin"
+DEFAULT_AIRFLOW_ADMIN_PASSWORD = "admin"
 
-def pytest_addoption(parser: pytest.Parser):
-    parser.addoption(
-        "--use-temp-airflow-home",
-        action="store_true",
-        # Use temp dir by default on CI
-        default="CI" in os.environ,
-        help="Use a temporary path for AIRFLOW_HOME for tests",
-    )
+PROCESSING_WORKER_DB_CONN_ID = "pinta_processing_db_container"
+PROCESS_PRODUCTION_AREAS_DAG_ID = "process_production_areas"
+PRODUCTION_AREA_VARIABLE = "production_area_1"
+DAG_RUN_TIMEOUT_S = 60.0
 
 
 def pytest_configure(config: pytest.Config):
     os.environ.setdefault("PINTA_DEVELOPMENT_MODE", "true")
-
-    worker_id = getattr(config, "workerinput", {}).get("workerid", "master")
-
-    if os.environ.get("AIRFLOW_HOME") and worker_id == "master":
-        return
-
-    airflow_home_dir = Path(__file__).parent.parent.joinpath(".airflow")
-    airflow_home_dir.mkdir(exist_ok=True)
-
-    if config.getoption("--use-temp-airflow-home"):
-        os.environ["AIRFLOW_HOME"] = tempfile.mkdtemp(
-            prefix=f".{worker_id}-airflow-test"
-        )
-    else:
-        os.environ["AIRFLOW_HOME"] = str(
-            airflow_home_dir / f".{worker_id}-airflow-test"
-        )
 
 
 @pytest.hookimpl
@@ -72,32 +54,15 @@ def pytest_xdist_auto_num_workers(config: "pytest.Config"):
 
 @pytest.fixture
 def _set_env_variables(
-    created_db: str, worker_id: str, monkeypatch: "pytest.MonkeyPatch"
+    created_db: str,
+    worker_id: str,
+    monkeypatch: "pytest.MonkeyPatch",
 ) -> None:
     """Set test specific environment variables."""
     monkeypatch.setenv("DB_PRIMARY_NAME", created_db)
     monkeypatch.setenv("DB_SRID", constants.SRID)
     monkeypatch.delenv("PINTA_BASE_MAP_LAYER_CONFIG", raising=False)
     monkeypatch.setenv("PINTA_INITIAL_PROJECT_EXTENT", "67734,6570084,843161,7879314")
-    monkeypatch.setenv(
-        "AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER",
-        f"postgresql://{os.environ['DB_PRIMARY_PROCESSING_WORKER_USER']}:{os.environ['DB_PRIMARY_PROCESSING_WORKER_PASSWORD']}"
-        f"@{os.environ['DB_PRIMARY_HOST']}:{os.environ['DB_PRIMARY_PORT']}/{created_db}",
-    )
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _initialize_airflow() -> None:
-    from airflow.utils.db import initdb
-
-    shutil.rmtree(os.environ["AIRFLOW_HOME"], ignore_errors=True)
-    Path(os.environ["AIRFLOW_HOME"]).mkdir(exist_ok=True)
-
-    initdb()
-
-    with sqlite3.connect(Path(os.environ["AIRFLOW_HOME"]) / "airflow.db") as connection:
-        cursor = connection.cursor()
-        cursor.execute("INSERT INTO dag_bundle (name) VALUES ('mock-dags')")
 
 
 @pytest.fixture
@@ -131,3 +96,73 @@ def qgis_plugin(
     plugin.initGui()
     yield plugin
     plugin.unload()
+
+
+@pytest.fixture(scope="session")
+def backend_url() -> str:
+    """Base URL of the containerized pinta backend."""
+    return os.environ.get("PINTA_BACKEND_URL", DEFAULT_BACKEND_URL).rstrip("/")
+
+
+@pytest.fixture(scope="session")
+def airflow_url() -> str:
+    """Base URL of the containerized Airflow API."""
+    return os.environ.get("PINTA_BACKEND_AIRFLOW_BASE_URL", DEFAULT_AIRFLOW_URL).rstrip(
+        "/"
+    )
+
+
+@pytest.fixture(scope="session")
+def airflow_client(airflow_url: str) -> AirflowClient:
+    """Admin-authenticated Airflow API client (cached for the session)."""
+    return AirflowClient.login(
+        airflow_url,
+        DEFAULT_AIRFLOW_ADMIN_USERNAME,
+        os.environ.get("AIRFLOW_ADMIN_PASSWORD", DEFAULT_AIRFLOW_ADMIN_PASSWORD),
+    )
+
+
+@pytest.fixture
+def _processing_db_pointing_at_test_db(
+    airflow_client: AirflowClient,
+    created_db: str,
+) -> Iterator[None]:
+    """Point the worker-DB Airflow connection at this test's per-worker clone.
+
+    Restored on teardown so other tests / dev runs see the original schema.
+    """
+    original = airflow_client.get_connection(PROCESSING_WORKER_DB_CONN_ID)
+    airflow_client.patch_connection(
+        PROCESSING_WORKER_DB_CONN_ID, fields={"schema": created_db}
+    )
+    try:
+        yield
+    finally:
+        airflow_client.patch_connection(
+            PROCESSING_WORKER_DB_CONN_ID,
+            fields={"schema": original.get("schema")},
+        )
+
+
+@pytest.fixture
+def processed_production_areas(
+    airflow_client: AirflowClient,
+    _processing_db_pointing_at_test_db: None,
+) -> None:
+    """Run the ``process_production_areas`` DAG against the per-test database.
+
+    Other tests can list this as a precondition to assert on the data the DAG
+    populated. The fixture fails the test if the DAG run does not succeed.
+    """
+    # The sensor only flags a folder as changed when its stored hash differs,
+    # so clear any leftover hash to guarantee a fresh run.
+    airflow_client.delete_variable(PRODUCTION_AREA_VARIABLE)
+
+    run = airflow_client.trigger_dag_run(PROCESS_PRODUCTION_AREAS_DAG_ID)
+    state = airflow_client.wait_for_dag_run(
+        PROCESS_PRODUCTION_AREAS_DAG_ID,
+        run["dag_run_id"],
+        timeout=DAG_RUN_TIMEOUT_S,
+    )
+    if state != "success":
+        pytest.fail(f"DAG run finished with state={state}")
