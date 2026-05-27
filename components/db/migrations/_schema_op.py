@@ -58,6 +58,17 @@ def grant_privileges_on_schema(
     op.execute(f"GRANT {privileges_str} ON SCHEMA {schema} TO {role}")
 
 
+def grant_privileges_on_table(
+    schema: str,
+    table: str,
+    role: str,
+    privileges: tuple[str, ...],
+) -> None:
+    """Grant specified privileges on an existing table to the role."""
+    privileges_str = ", ".join(privileges)
+    op.execute(f"GRANT {privileges_str} ON TABLE {schema}.{table} TO {role}")
+
+
 def grant_default_privileges_on_tables_in_schema(
     schema: str,
     schema_owner: str,

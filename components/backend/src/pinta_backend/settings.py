@@ -51,12 +51,9 @@ class Settings(pydantic_settings.BaseSettings):
     primary_db_host: str = pydantic.Field(validation_alias="DB_PRIMARY_HOST")
     primary_db_port: str = pydantic.Field(validation_alias="DB_PRIMARY_PORT")
     primary_db_name: str = pydantic.Field(validation_alias="DB_PRIMARY_NAME")
-    # TODO: add new user for backend
-    primary_db_user: str = pydantic.Field(
-        validation_alias="DB_PRIMARY_PROCESSING_WORKER_USER"
-    )
+    primary_db_user: str = pydantic.Field(validation_alias="DB_PRIMARY_BACKEND_USER")
     primary_db_password: pydantic.SecretStr = pydantic.Field(
-        validation_alias="DB_PRIMARY_PROCESSING_WORKER_PASSWORD"
+        validation_alias="DB_PRIMARY_BACKEND_PASSWORD"
     )
 
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore")
