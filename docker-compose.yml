@@ -58,11 +58,13 @@ services:
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
     image: ghcr.io/nlsfi/pinta/backend:latest
+    env_file:
+      - ".env"
     environment:
-      PINTA_BACKEND_PORT: "3011"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
-    ports:
-      - "${COMPOSE_BACKEND_PORT:-3011}:3011"
+    network_mode: host
+    # ports:
+    #   - "${COMPOSE_BACKEND_PORT:-3011}:3011"
     healthcheck:
       test:
         [
