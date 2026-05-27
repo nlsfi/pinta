@@ -19,7 +19,7 @@
 import pathlib
 
 from pinta_common import env
-from qgis_plugin_tools.tools import i18n
+from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin.layers import config
 
@@ -29,26 +29,26 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
     config.RasterLayerConfig(
         schema="reference",
         table_name="dem",
-        layer_name=i18n.tr("Reference DEM"),
+        layer_name=tr("Reference DEM"),
         layer_id="reference_dem",
         style_path=_STYLES_PATH / "elevation_model.qml",
     ),
     config.RasterLayerConfig(
         schema="reference",
         table_name="diff",
-        layer_name=i18n.tr("DEM difference"),
+        layer_name=tr("DEM difference"),
         layer_id="dem_diff",
     ),
     config.RasterLayerConfig(
         schema="reference",
         table_name="diff_dior",
-        layer_name=i18n.tr("DEM difference DIOR"),
+        layer_name=tr("DEM difference DIOR"),
         layer_id="dem_diff_dior",
     ),
     config.VectorLayerConfig(
         schema="reference",
         table_name="diff_polygon",
-        layer_name=i18n.tr("Polygonized DEM difference"),
+        layer_name=tr("Polygonized DEM difference"),
         layer_id="polygonized_dem_diff",
         geom_column="geom",
         key_column="id",
@@ -58,7 +58,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
     config.VectorLayerConfig(
         schema="reference",
         table_name="diff_polygon_cluster",
-        layer_name=i18n.tr("Modification area suggestions"),
+        layer_name=tr("Modification area suggestions"),
         layer_id="modification_area_suggestions",
         geom_column="geom",
         key_column="id",
@@ -66,7 +66,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         srid=env.SRID,
         aliases={
             **config.COMMON_ALIASES,
-            "energy_distribution": i18n.tr("Cluster significance"),
+            "energy_distribution": tr("Cluster significance"),
         },
     ),
 ]

@@ -19,7 +19,7 @@
 from pathlib import Path
 
 from pinta_db.primary_db.models.all import Dem
-from qgis_plugin_tools.tools import i18n
+from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin import env
 from pinta_qgis_plugin.layers.config import BasemapLayerConfig, RasterModelLayerConfig
@@ -30,7 +30,7 @@ BASEMAP_LAYERS = BasemapLayerConfig.from_json(env.PINTA_BASE_MAP_LAYER_CONFIG)
 
 DEM_LAYER = RasterModelLayerConfig.create(
     db_model=Dem,
-    layer_name=i18n.tr("Elevation model"),
+    layer_name=tr("Elevation model"),
     layer_id="dem_primary",
     style_path=_STYLES_PATH / "elevation_model.qml",
 )

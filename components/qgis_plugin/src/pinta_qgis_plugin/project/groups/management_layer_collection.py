@@ -20,7 +20,7 @@ import logging
 import textwrap
 
 from qgis.core import QgsAction, QgsVectorLayer
-from qgis_plugin_tools.tools import i18n
+from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin.config import database
 from pinta_qgis_plugin.layers import vector_layer
@@ -55,11 +55,11 @@ def _add_open_production_area_layers(layer: QgsVectorLayer) -> None:
     action_manager = layer.actions()
     action = QgsAction(
         QgsAction.GenericPython,
-        description=i18n.tr("Add production area related layers to map"),
+        description=tr("Add production area related layers to map"),
         action="",
         icon=None,
         capture=True,
-        shortTitle=i18n.tr("Open production area"),
+        shortTitle=tr("Open production area"),
         actionScopes=["Feature"],
     )
 

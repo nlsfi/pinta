@@ -17,31 +17,31 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 from pinta_db.primary_db.models.all import PointCloudTile, ProductionArea
-from qgis_plugin_tools.tools import i18n
+from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin.layers import config
 from pinta_qgis_plugin.layers.config import ModelLayerConfig
 
 PRODUCTION_AREA = ModelLayerConfig.create(
     db_model=ProductionArea,
-    layer_name=i18n.tr("Production area"),
+    layer_name=tr("Production area"),
     layer_id="production_area",
     read_only=True,
     aliases={
         **config.COMMON_ALIASES,
-        "name": i18n.tr("Name"),
-        "database_name": i18n.tr("Database name"),
-        "processing_status": i18n.tr("Processing status"),
+        "name": tr("Name"),
+        "database_name": tr("Database name"),
+        "processing_status": tr("Processing status"),
     },
     value_maps=[
         config.ValueMapConfig(
             field_name="processing_status",
             value_map={
-                "pending": i18n.tr("Pending"),
-                "queued": i18n.tr("Queued"),
-                "started": i18n.tr("Started"),
-                "completed": i18n.tr("Completed"),
-                "failed": i18n.tr("Failed"),
+                "pending": tr("Pending"),
+                "queued": tr("Queued"),
+                "started": tr("Started"),
+                "completed": tr("Completed"),
+                "failed": tr("Failed"),
             },
         )
     ],
@@ -49,13 +49,13 @@ PRODUCTION_AREA = ModelLayerConfig.create(
 
 POINT_CLOUD_TILE = ModelLayerConfig.create(
     db_model=PointCloudTile,
-    layer_name=i18n.tr("Point cloud tile"),
+    layer_name=tr("Point cloud tile"),
     layer_id="point_cloud_tile",
     read_only=True,
     aliases={
         **config.COMMON_ALIASES,
-        "file_path": i18n.tr("File path"),
-        "production_area_id": i18n.tr("Production area ID"),
+        "file_path": tr("File path"),
+        "production_area_id": tr("Production area ID"),
     },
 )
 

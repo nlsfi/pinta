@@ -4,7 +4,7 @@
 <context>
     <name>@default</name>
     <message>
-        <location filename="../../plugin.py" line="48"/>
+        <location filename="../../plugin.py" line="49"/>
         <source>Pinta plugin</source>
         <translation>Pinta lisäosa</translation>
     </message>

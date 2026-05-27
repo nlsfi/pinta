@@ -23,12 +23,12 @@ from pinta_common import env as env_common
 from pinta_db.common.base import BaseModel
 from pinta_db_utils import model_utils
 from qgis.core import QgsWkbTypes
-from qgis_plugin_tools.tools import i18n
+from qgis_plugin_tools.tools.i18n import tr
 
 PINTA_LAYER_ID = "PINTA_LAYER_ID"
 
 COMMON_ALIASES = {
-    "id": i18n.tr("Identifier"),
+    "id": tr("Identifier"),
 }
 
 
