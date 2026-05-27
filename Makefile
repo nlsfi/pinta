@@ -50,12 +50,20 @@ pull:
 	docker compose pull
 
 up:
-	docker compose up -d
-	@echo -n "Waiting for containers to be healthy"
-	@t=60; while [ $$t -gt 0 ] && [ "$$(docker inspect -f '{{.State.Health.Status}}' $$(docker compose ps -q db) 2>/dev/null)" != "healthy" ]; do \
-		sleep 1; t=$$((t-1)); echo -n "."; \
-	done; [ $$t -gt 0 ] || (echo " Timeout!" && exit 0)
-	@echo ""
+	# `processing` is an image-only service (no daemon), so we wait on the
+	# long-running services explicitly. `up` (no service arg) would still
+	# create the processing container, but `--wait` would then fail because
+	# it exits immediately.
+	docker compose up -d --wait db airflow backend
+
+up-db:
+	docker compose up -d --wait db
+
+up-airflow:
+	docker compose up -d --wait airflow
+
+up-backend:
+	docker compose up -d --wait backend
 
 build:
 	docker compose build
@@ -180,10 +188,10 @@ test-integration: sync-all-but-qgis-and-airflow
 test-qgis: sync
 	uv run --directory $(QGIS_DIR) pytest -v
 
-test-e2e: sync
+test-e2e: sync up db-migrate-all
 	uv run --directory $(E2E_DIR) pytest
 
-test-e2e-in-container:
+test-e2e-in-container: up db-migrate-all
 	docker compose run --rm qgis uv run --active pytest
 
 test-all: test test-integration test-e2e

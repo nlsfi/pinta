@@ -2309,6 +2309,9 @@ lint = [
 name = "pinta-e2e"
 version = "0.0.0"
 source = { editable = "components/e2e" }
+dependencies = [
+    { name = "requests" },
+]
 
 [package.dev-dependencies]
 airflow = [
@@ -2335,6 +2338,7 @@ qgis = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "requests" }]
 
 [package.metadata.requires-dev]
 airflow = [{ name = "pinta-dags", extras = ["airflow"], editable = "components/dags" }]

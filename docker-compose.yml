@@ -48,6 +48,79 @@ services:
         target: /lastools
         read_only: true
 
+  airflow:
+    build:
+      context: .
+      dockerfile: components/dags/Containerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    image: ghcr.io/nlsfi/pinta/airflow:latest
+    env_file:
+      - ".env"
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "admin:admin,${PINTA_BACKEND_AIRFLOW_USERNAME:-pinta-backend}:op"
+      # Pre-populated by docker-entrypoint.sh so the backend can authenticate
+      # with deterministic credentials.
+      AIRFLOW_SIMPLE_AUTH_MANAGER_PASSWORDS: '{"admin":"${AIRFLOW_ADMIN_PASSWORD:-admin}","${PINTA_BACKEND_AIRFLOW_USERNAME:-pinta-backend}":"${PINTA_BACKEND_AIRFLOW_PASSWORD:-pinta-backend}"}'
+      AIRFLOW__API__HOST: "0.0.0.0"
+      AIRFLOW__API__PORT: "8080"
+      AIRFLOW__API__EXPOSE_CONFIG: "true"
+      AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "5"
+      AIRFLOW_VAR_PINTA_PROCESSING_IMAGE: "ghcr.io/nlsfi/pinta/processing:latest"
+      AIRFLOW_VAR_PINTA_DOCKER_SOCKET_URL: "unix:///var/run/docker.sock"
+      AIRFLOW_VAR_PINTA_PROCESSING_CODE_MOUNT_DIR: "${REPO_DIR}"
+      AIRFLOW_VAR_PINTA_CONTAINER_SOURCE_BASE_PATH: "${REPO_DIR}/test_data/point_clouds"
+      AIRFLOW_VAR_PINTA_CONTAINER_TARGET_BASE_PATH: "/data"
+      AIRFLOW_VAR_PINTA_DATA_BASE_PATH: "${REPO_DIR}/test_data"
+      AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH: "${REPO_DIR}/test_data/point_clouds"
+      AIRFLOW_VAR_PINTA_PROCESSING_TASK_LOG_LEVEL: "DEBUG"
+      AIRFLOW_VAR_PINTA_DB_SRID: "${DB_SRID:-3067}"
+      AIRFLOW_VAR_PINTA_DB_DEM_PIXEL_SIZE: "${DB_DEM_PIXEL_SIZE:-2}"
+      AIRFLOW_VAR_PINTA_DB_DEM_NODATA: "${DB_DEM_NODATA:--9999}"
+      AIRFLOW_SEED_CONN_PINTA_PROCESSING_DB: "postgres://${DB_PRIMARY_EDITOR_USER}:${DB_PRIMARY_EDITOR_PASSWORD}@db:5432/${DB_PRIMARY_NAME}"
+      AIRFLOW_SEED_CONN_PINTA_PROCESSING_DB_CONTAINER: "postgres://${DB_PRIMARY_PROCESSING_WORKER_USER}:${DB_PRIMARY_PROCESSING_WORKER_PASSWORD}@host.docker.internal:${COMPOSE_DB_PORT:-5400}/${DB_PRIMARY_NAME}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${PINTA_AIRFLOW_PORT:-8080}:8080"
+    volumes:
+      - type: volume
+        source: airflow-home
+        target: /opt/airflow
+      - type: bind
+        source: ${REPO_DIR:-.}/components/dags/src/pinta_dags/dags
+        target: /opt/airflow/dags
+        read_only: true
+      # Mount the repo at the same path it has on the host so Airflow
+      # variables that point at e.g. `${REPO_DIR}/test_data` resolve both
+      # inside the airflow container (for sensors that read files directly)
+      # and on the host (for sibling worker containers that bind-mount the
+      # same paths via the docker socket).
+      - type: bind
+        source: ${REPO_DIR:-.}
+        target: ${REPO_DIR:-/repo}
+        read_only: true
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-fsS"
+        - "http://127.0.0.1:8080/api/v2/version"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+
   backend:
     build:
       context: .
@@ -62,9 +135,11 @@ services:
       - ".env"
     environment:
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
-    network_mode: host
-    # ports:
-    #   - "${COMPOSE_BACKEND_PORT:-3011}:3011"
+      PINTA_BACKEND_AIRFLOW_BASE_URL: "http://airflow:8080"
+      PINTA_BACKEND_AIRFLOW_USERNAME: "${PINTA_BACKEND_AIRFLOW_USERNAME:-pinta-backend}"
+      PINTA_BACKEND_AIRFLOW_PASSWORD: "${PINTA_BACKEND_AIRFLOW_PASSWORD:-pinta-backend}"
+    ports:
+      - "${PINTA_BACKEND_PORT:-3011}:3011"
     healthcheck:
       test:
         [
@@ -75,20 +150,30 @@ services:
         ]
       interval: 5s
       timeout: 3s
-      retries: 3
-      start_period: 10s
+      retries: 10
+      start_period: 30s
     volumes:
       - type: bind
         source: ${REPO_DIR:-.}
         target: /code
         read_only: false
     working_dir: /code/components/backend
+    depends_on:
+      db:
+        condition: service_healthy
+      airflow:
+        condition: service_healthy
 
   qgis:
     profiles:
       - e2e
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      airflow:
+        condition: service_healthy
     build:
       context: .
       dockerfile: components/e2e/Containerfile
@@ -100,6 +185,11 @@ services:
     env_file:
       - ".env.example"
       - ".env.e2e"
+    environment:
+      PINTA_BACKEND_URL: "http://backend:3011"
+      PINTA_BACKEND_AIRFLOW_BASE_URL: "http://airflow:8080"
+      PINTA_BACKEND_AIRFLOW_USERNAME: "admin"
+      PINTA_BACKEND_AIRFLOW_PASSWORD: "${AIRFLOW_ADMIN_PASSWORD:-admin}"
     volumes:
       - type: bind
         source: ${REPO_DIR:-.}/components
@@ -125,3 +215,4 @@ services:
 
 volumes:
   db-data:
+  airflow-home:
