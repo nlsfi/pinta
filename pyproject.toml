@@ -198,8 +198,8 @@ name = "Pinta component layers"
 type = "layers"
 layers = [
   "pinta_e2e_utils : pinta_dags",
-  "pinta_qgis_plugin : pinta_processing : pinta_processing_test_utils",
-  "pinta_backend : pinta_backend_test_utils",
+  "pinta_qgis_plugin",
+  "pinta_processing : pinta_processing_test_utils: pinta_backend : pinta_backend_test_utils",
   "pinta_db : pinta_db_utils : pinta_db_test_utils",
   "pinta_common",
 ]
