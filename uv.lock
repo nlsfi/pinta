@@ -2316,6 +2316,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "jsonschema" },
+    { name = "pinta-db", extra = ["psycopg"] },
     { name = "pydantic-settings" },
     { name = "uvicorn" },
 ]
@@ -2341,6 +2342,7 @@ requires-dist = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "jsonschema" },
+    { name = "pinta-db", extras = ["psycopg"], editable = "components/db" },
     { name = "pydantic-settings" },
     { name = "uvicorn" },
 ]

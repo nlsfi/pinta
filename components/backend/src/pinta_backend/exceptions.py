@@ -42,3 +42,13 @@ class MultipleDagsForTagError(AirflowClientError):
         super().__init__(f"Multiple DAGs match tag '{tag}': {dag_ids}")
         self.tag = tag
         self.dag_ids = dag_ids
+
+
+class ProductionAreaNotFoundError(Exception):
+    def __init__(self, production_area_id: str) -> None:
+        super().__init__(f"No production area with id '{production_area_id}'")
+        self.production_area_id = production_area_id
+
+
+class DatabaseUnreachableError(Exception):
+    """Raised when a database connection or query fails at the transport level."""
