@@ -20,6 +20,11 @@ class RasterDataset:
     crs: str | None  # in format EPSG:xxxx
     nodata: float | int | None = None
 
+    def __post_init__(self) -> None:
+        """Force raster arrays to float32 after construction."""
+        # Bypass frozen dataclass assignment for construction-time normalization.
+        object.__setattr__(self, "array", self.array.astype(np.float32, copy=False))
+
     @staticmethod
     def from_rasterio(src: rasterio.DatasetReader) -> "RasterDataset":
         """Construct dataset from rasterio reader."""

@@ -64,7 +64,7 @@ def test_raster_filter_without_nodata_uses_nan():
     result = stage.process(dataset)
 
     assert np.isnan(result.nodata)
-    assert result.array.dtype == np.float64
+    assert result.array.dtype == np.float32
     assert np.isnan(result.array[0, 0])
     assert np.isnan(result.array[0, 1])
     assert np.allclose(result.array[1], np.array([3.0, 4.0]))
