@@ -9,6 +9,8 @@ Compose:
 docker compose up -d
 ```
 
+Make sure that you have setup Airflow connection configuration from .env.example to your .env.
+
 The backend listens on `http://localhost:3011` by default and runs with uvicorn
 live reload enabled. Override the host port with `COMPOSE_BACKEND_PORT`:
 
@@ -19,6 +21,8 @@ curl http://localhost:3011/health
 ```
 
 or play with the API manually with [requests.http](requests.http) file.
+
+If health shows DOWN for Airflow, make sure that you have Airflow running. Run `make backend-setup-password` to populate `PINTA_BACKEND_AIRFLOW_PASSWORD` in .env.
 
 ### Local development
 

@@ -118,40 +118,48 @@ airflow-clean:
 	rm -r $(AIRFLOW_HOME)
 
 airflow-migrate:
-	uv run --directory $(DAGS_DIR) airflow db migrate
+	uv run --directory $(DAGS_DIR) --extra airflow airflow db migrate
 
 airflow-set-variables:
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_task_log_level DEBUG
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_processing_image "ghcr.io/nlsfi/pinta/processing:latest"
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_point_cloud_base_path $(ROOT_DIR)/test_data/point_clouds
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_container_source_base_path $(REPO_DIR)/test_data/point_clouds
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_container_target_base_path /data
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_data_base_path $(REPO_DIR)/test_data
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_srid 3067
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_dem_pixel_size 2
-	uv run --directory $(DAGS_DIR) airflow variables set pinta_db_dem_nodata -9999
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_task_log_level DEBUG
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_image "ghcr.io/nlsfi/pinta/processing:latest"
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_point_cloud_base_path $(ROOT_DIR)/test_data/point_clouds
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_container_source_base_path $(REPO_DIR)/test_data/point_clouds
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_container_target_base_path /data
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_data_base_path $(REPO_DIR)/test_data
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_srid 3067
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_pixel_size 2
+	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_nodata -9999
 
 airflow-start: airflow-migrate airflow-set-variables
-	uv run --directory $(DAGS_DIR) airflow standalone
+	uv run --directory $(DAGS_DIR) --extra airflow airflow standalone
 
 airflow-reserialize: airflow-set-variables
-	uv run --directory $(DAGS_DIR) airflow dags reserialize
+	uv run --directory $(DAGS_DIR) --extra airflow airflow dags reserialize
 
 # Backend targets
 # =================
 AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
+
+backend-setup-password:
+	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
+	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
+	  exit 1; \
+	}
+	@python3 "$(BACKEND_DIR)/scripts/parse_airflow_password.py" "$(AIRFLOW_PASSWORD_FILE)" "$(PINTA_BACKEND_AIRFLOW_USERNAME)" "$(ROOT_DIR)/.env"
 
 backend-start:
 	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
 	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
 	  exit 1; \
 	}
-	@PINTA_BACKEND_AIRFLOW_BASE_URL=http://localhost:8080 \
-	 PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_USERNAME) \
-	 PINTA_BACKEND_AIRFLOW_PASSWORD="$$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' $(AIRFLOW_PASSWORD_FILE) $(PINTA_BACKEND_USERNAME))" \
-	 docker compose stop backend || true
+	@airflow_password="$$(python3 "$(BACKEND_DIR)/scripts/parse_airflow_password.py" "$(AIRFLOW_PASSWORD_FILE)" "$(PINTA_BACKEND_AIRFLOW_USERNAME)" "$(ROOT_DIR)/.env")"; \
+	 docker compose stop backend || true; \
+	 PINTA_BACKEND_AIRFLOW_BASE_URL=$(PINTA_BACKEND_AIRFLOW_BASE_URL) \
+	 PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_AIRFLOW_USERNAME) \
+	 PINTA_BACKEND_AIRFLOW_PASSWORD="$$airflow_password" \
 	 uv run --directory $(BACKEND_DIR) python -m pinta_backend
 
 backend-ts:
