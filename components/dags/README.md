@@ -8,8 +8,9 @@ Start a local standalone Airflow (running in a dev-container) for development pu
 make airflow-start
 ```
 
-After execution, the Airflow logs will appear in the terminal, and the admin user password for the web interface can be
-found in the file `.airflow/simple_auth_manager_passwords.json.generated`.
+After execution, the Airflow logs will appear in the terminal. Passwords are pre-written
+deterministically to `.airflow/simple_auth_manager_passwords.json.generated` from the values of `.env`.
+Run `make airflow-clean airflow-start` to pick up changes to those passwords.
 
 Once started, Airflow can be accessed via browser at <http://localhost:8080>.
 

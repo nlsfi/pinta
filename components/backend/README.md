@@ -22,7 +22,7 @@ curl http://localhost:3011/health
 
 or play with the API manually with [requests.http](requests.http) file.
 
-If health shows DOWN for Airflow, make sure that you have Airflow running. Run `make backend-setup-password` to populate `PINTA_BACKEND_AIRFLOW_PASSWORD` in .env.
+If health shows DOWN for Airflow, make sure that you have Airflow running. The backend authenticates against Airflow using `PINTA_BACKEND_AIRFLOW_USERNAME` / `PINTA_BACKEND_AIRFLOW_PASSWORD` from `.env`.
 
 ### Local development
 

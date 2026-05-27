@@ -22,9 +22,11 @@ export AIRFLOW__API__EXPOSE_CONFIG := true
 export QGIS_GLOBAL_SETTINGS_FILE := $(QGIS_DIR)/settings.ini
 
 # Backend SimpleAuthManager user that pinta_backend authenticates as.
-# Changing the user requires re-running 'make airflow-clean airflow-start' so
-# standalone re-generates the password file.
+# Changing the user or its password requires re-running 'make airflow-clean
+# airflow-start' so the password file is rewritten.
 PINTA_BACKEND_USERNAME ?= pinta-backend
+PINTA_BACKEND_AIRFLOW_PASSWORD ?= pinta-backend
+AIRFLOW_ADMIN_PASSWORD ?= admin
 export AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS := admin:admin,$(PINTA_BACKEND_USERNAME):op
 
 
@@ -122,8 +124,21 @@ qgis-start-no-extras:
 # Airflow targets
 # ===============
 
+AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
+
 airflow-clean:
 	rm -r $(AIRFLOW_HOME)
+
+# Pre-write deterministic passwords
+airflow-write-passwords:
+	@mkdir -p "$(AIRFLOW_HOME)"
+	@if [ ! -s "$(AIRFLOW_PASSWORD_FILE)" ]; then \
+	  printf '{"admin":"%s","%s":"%s"}\n' \
+	    '$(AIRFLOW_ADMIN_PASSWORD)' \
+	    '$(PINTA_BACKEND_USERNAME)' \
+	    '$(PINTA_BACKEND_AIRFLOW_PASSWORD)' \
+	    > "$(AIRFLOW_PASSWORD_FILE)"; \
+	fi
 
 airflow-migrate:
 	uv run --directory $(DAGS_DIR) --extra airflow airflow db migrate
@@ -141,7 +156,7 @@ airflow-set-variables:
 	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_pixel_size 2
 	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_nodata -9999
 
-airflow-start: airflow-migrate airflow-set-variables
+airflow-start: airflow-write-passwords airflow-migrate airflow-set-variables
 	uv run --directory $(DAGS_DIR) --extra airflow airflow standalone
 
 airflow-reserialize: airflow-set-variables
@@ -149,26 +164,13 @@ airflow-reserialize: airflow-set-variables
 
 # Backend targets
 # =================
-AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
-
-backend-setup-password:
-	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
-	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
-	  exit 1; \
-	}
-	@python3 "$(BACKEND_DIR)/scripts/parse_airflow_password.py" "$(AIRFLOW_PASSWORD_FILE)" "$(PINTA_BACKEND_AIRFLOW_USERNAME)" "$(ROOT_DIR)/.env"
 
 backend-start:
-	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
-	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
-	  exit 1; \
-	}
-	@airflow_password="$$(python3 "$(BACKEND_DIR)/scripts/parse_airflow_password.py" "$(AIRFLOW_PASSWORD_FILE)" "$(PINTA_BACKEND_AIRFLOW_USERNAME)" "$(ROOT_DIR)/.env")"; \
-	 docker compose stop backend || true; \
-	 PINTA_BACKEND_AIRFLOW_BASE_URL=$(PINTA_BACKEND_AIRFLOW_BASE_URL) \
-	 PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_AIRFLOW_USERNAME) \
-	 PINTA_BACKEND_AIRFLOW_PASSWORD="$$airflow_password" \
-	 uv run --directory $(BACKEND_DIR) python -m pinta_backend
+	@docker compose stop backend || true
+	PINTA_BACKEND_AIRFLOW_BASE_URL=$(PINTA_BACKEND_AIRFLOW_BASE_URL) \
+	PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_AIRFLOW_USERNAME) \
+	PINTA_BACKEND_AIRFLOW_PASSWORD=$(PINTA_BACKEND_AIRFLOW_PASSWORD) \
+	uv run --directory $(BACKEND_DIR) python -m pinta_backend
 
 backend-ts:
 	uv run --directory $(BACKEND_DIR) bash ./src/pinta_backend/scripts/update-translations.sh
