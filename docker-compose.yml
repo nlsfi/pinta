@@ -116,6 +116,7 @@ services:
     image: ghcr.io/nlsfi/pinta/backend:latest
     env_file:
       - ".env"
+      - ".env.e2e"
     environment:
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       PINTA_BACKEND_AIRFLOW_BASE_URL: "http://airflow:8080"

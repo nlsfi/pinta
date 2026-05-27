@@ -11,6 +11,7 @@ from fastapi import responses
 
 from pinta_backend import airflow_client, exceptions, models
 from pinta_backend.i18n import _, get_language
+from pinta_backend.services import production_area
 
 router = fastapi.APIRouter(tags=["default"])
 
@@ -71,6 +72,7 @@ async def get_foo() -> dict[str, str]:
         404: {"model": models.ErrorResponse},
         409: {"model": models.ErrorResponse},
         502: {"model": models.ErrorResponse},
+        503: {"model": models.ErrorResponse},
     },
 )
 async def trigger_workflow(
@@ -80,8 +82,23 @@ async def trigger_workflow(
 ) -> models.WorkflowRunStarted:
     """Trigger the Airflow DAG carrying ``dag_tag`` and return its run id."""
     parameters = payload.parameters if payload is not None else None
+    production_area_id = payload.production_area_id if payload is not None else None
+
     try:
-        run = await client.trigger_dag_by_tag(dag_tag, conf=parameters)
+        with production_area.mark_as_queued(production_area_id):
+            run = await client.trigger_dag_by_tag(dag_tag, conf=parameters)
+    except exceptions.ProductionAreaNotFoundError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_404_NOT_FOUND,
+            detail=_("Production area '{id}' not found.").format(
+                id=exc.production_area_id
+            ),
+        ) from exc
+    except exceptions.DatabaseUnreachableError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=_("Database is not reachable."),
+        ) from exc
     except exceptions.InvalidWorkflowParametersError as exc:
         raise fastapi.HTTPException(
             status_code=fastapi.status.HTTP_400_BAD_REQUEST,
