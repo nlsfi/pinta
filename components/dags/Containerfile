@@ -24,12 +24,7 @@ ENV VIRTUAL_ENV=/opt/venv \
     PATH="/opt/venv/bin:$PATH"
 
 RUN uv venv /opt/venv && \
-    uv sync --frozen --active --package pinta-dags --extra airflow --no-default-groups --no-editable && \
-    # PostgresHook only emits the `postgresql+psycopg://` (psycopg3) URI when
-    # psycopg is importable in the airflow runtime. Without it, get_uri()
-    # falls back to `postgresql://` which routes to psycopg2 inside the
-    # @task.docker worker — and the processing image only ships psycopg3.
-    uv pip install --no-cache "psycopg[binary]"
+    uv sync --frozen --active --package pinta-dags --extra airflow --no-default-groups --no-editable
 
 # ---------- runtime ----------
 FROM python:${PYTHON_VERSION}-slim AS runtime
@@ -55,9 +50,6 @@ RUN apt-get update && \
 COPY --from=builder /opt/venv /opt/venv
 COPY components/dags/docker-entrypoint.sh /entrypoint.sh
 
-# The container runs as root so the airflow process can access the host's
-# /var/run/docker.sock without depending on the host's docker group id.
-# Same pattern as .devcontainer/docker-compose.devcontainer.yml.
 RUN chmod +x /entrypoint.sh && mkdir -p /opt/airflow
 
 WORKDIR /opt/airflow

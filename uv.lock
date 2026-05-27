@@ -2196,6 +2196,7 @@ dependencies = [
 [package.optional-dependencies]
 airflow = [
     { name = "apache-airflow", extra = ["docker", "postgres", "standard"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
+    { name = "pinta-db", extra = ["psycopg"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
 ]
 
 [package.dev-dependencies]
@@ -2218,6 +2219,7 @@ lint = [
 [package.metadata]
 requires-dist = [
     { name = "apache-airflow", extras = ["docker", "postgres", "standard"], marker = "extra == 'airflow'", specifier = "==3.1.8" },
+    { name = "pinta-db", extras = ["psycopg"], marker = "extra == 'airflow'", editable = "components/db" },
     { name = "pinta-processing", editable = "components/processing" },
 ]
 provides-extras = ["airflow"]
@@ -2257,6 +2259,9 @@ migrations = [
     { name = "dotenv" },
     { name = "psycopg", extra = ["binary"] },
 ]
+psycopg = [
+    { name = "psycopg", extra = ["binary"] },
+]
 shapely = [
     { name = "geoalchemy2", extra = ["shapely"], marker = "(extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra != 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely') or (extra != 'extra-10-pinta-dags-airflow' and extra == 'extra-8-pinta-db-shapely')" },
     { name = "numpy", version = "2.4.2", source = { registry = "https://pypi.org/simple" } },
@@ -2285,10 +2290,11 @@ requires-dist = [
     { name = "geoalchemy2", extras = ["shapely"], marker = "extra == 'shapely'" },
     { name = "numpy", marker = "extra == 'shapely'", specifier = ">=2" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'migrations'", specifier = ">=3.3.3" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'psycopg'", specifier = ">=3.3.3" },
     { name = "sqlmodel", specifier = ">=0.0.37" },
     { name = "uv", marker = "extra == 'build'" },
 ]
-provides-extras = ["migrations", "shapely", "build"]
+provides-extras = ["migrations", "psycopg", "shapely", "build"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2394,7 +2400,7 @@ dependencies = [
     { name = "affine" },
     { name = "laspy" },
     { name = "lazrs" },
-    { name = "pinta-db" },
+    { name = "pinta-db", extra = ["psycopg"] },
     { name = "pinta-db", extra = ["shapely"], marker = "(extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra != 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely') or (extra != 'extra-10-pinta-dags-airflow' and extra == 'extra-8-pinta-db-shapely')" },
     { name = "rasterio" },
 ]
@@ -2427,7 +2433,7 @@ requires-dist = [
     { name = "affine" },
     { name = "laspy" },
     { name = "lazrs" },
-    { name = "pinta-db", extras = ["shapely"], editable = "components/db" },
+    { name = "pinta-db", extras = ["shapely", "psycopg"], editable = "components/db" },
     { name = "psycopg", marker = "extra == 'load-test-data'" },
     { name = "rasterio" },
     { name = "uv", marker = "extra == 'build'" },
