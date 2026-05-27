@@ -4,11 +4,12 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from collections.abc import Iterator
+from unittest import mock
 
 import httpx
 import pytest
 
-from pinta_backend import app
+from pinta_backend import airflow_client, app
 from pinta_backend_test_utils import serve_in_thread, wait_until
 
 
@@ -17,15 +18,28 @@ def worker_name(worker_id: str) -> str:
     return worker_id
 
 
-@pytest.fixture(scope="session")
-def live_server() -> Iterator[str]:
-    with serve_in_thread(app.api) as base_url:
-        wait_until(
-            lambda: httpx.get(f"{base_url}/health", timeout=0.5).status_code < 500,
-            timeout=10.0,
-            message=f"Live test server at {base_url} did not become healthy",
-        )
-        yield base_url
+@pytest.fixture
+def mock_airflow_client() -> mock.AsyncMock:
+    client = mock.AsyncMock(spec=airflow_client.AirflowClient)
+    client.check_authentication.return_value = None
+    return client
+
+
+@pytest.fixture
+def live_server(mock_airflow_client: mock.AsyncMock) -> Iterator[str]:
+    app.api.dependency_overrides[airflow_client.get_airflow_client] = lambda: (
+        mock_airflow_client
+    )
+    try:
+        with serve_in_thread(app.api) as base_url:
+            wait_until(
+                lambda: httpx.get(f"{base_url}/health", timeout=0.5).status_code < 500,
+                timeout=10.0,
+                message=f"Live test server at {base_url} did not become healthy",
+            )
+            yield base_url
+    finally:
+        app.api.dependency_overrides.clear()
 
 
 @pytest.fixture

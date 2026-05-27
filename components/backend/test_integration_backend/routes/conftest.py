@@ -37,6 +37,9 @@ def backend_with_stub_airflow(
 ) -> Iterator[str]:
     stub_url, _ = stub_airflow
 
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_BASE_URL", stub_url)
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_USERNAME", STUB_AIRFLOW_USERNAME)
+    monkeypatch.setenv("PINTA_BACKEND_AIRFLOW_PASSWORD", STUB_AIRFLOW_PASSWORD)
     monkeypatch.setenv("AIRFLOW_BASE_URL", stub_url)
     monkeypatch.setenv("AIRFLOW_USERNAME", STUB_AIRFLOW_USERNAME)
     monkeypatch.setenv("AIRFLOW_PASSWORD", STUB_AIRFLOW_PASSWORD)
@@ -48,6 +51,7 @@ def backend_with_stub_airflow(
         airflow_client.get_airflow_client.cache_clear()
 
     _clear_caches()
+    app.api.dependency_overrides.clear()
     try:
         with serve_in_thread(app.api) as base_url:
             wait_until(
@@ -55,6 +59,8 @@ def backend_with_stub_airflow(
                 timeout=10.0,
                 message="pinta backend did not become healthy",
             )
+            airflow_client.get_airflow_client.cache_clear()
             yield base_url
     finally:
+        app.api.dependency_overrides.clear()
         _clear_caches()

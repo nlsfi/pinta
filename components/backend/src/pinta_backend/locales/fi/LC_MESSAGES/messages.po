@@ -13,38 +13,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/pinta_backend/routes.py:75
+#: src/pinta_backend/routes.py:108
 msgid "Airflow is not reachable."
 msgstr "Airflow ei ole tavoitettavissa."
 
-#: src/pinta_backend/routes.py:80
+#: src/pinta_backend/routes.py:113
 #, python-brace-format
 msgid "Airflow returned an error: {error}."
 msgstr "Airflow palautti virheen: {error}."
 
-#: src/pinta_backend/routes.py:70
+#: src/pinta_backend/routes.py:103
 msgid "Failed to authenticate against Airflow."
 msgstr "Airflow-todennus epäonnistui."
 
-#: src/pinta_backend/routes.py:30
+#: src/pinta_backend/routes.py:63
 msgid "Hello World"
 msgstr "Moikka Maailma"
 
-#: src/pinta_backend/routes.py:55
+#: src/pinta_backend/routes.py:88
 #, python-brace-format
 msgid "Invalid workflow parameters: {error}."
 msgstr "Virheelliset työnkulun parametrit: {error}."
 
-#: src/pinta_backend/routes.py:65
+#: src/pinta_backend/routes.py:98
 #, python-brace-format
 msgid "Multiple workflows found for tag '{tag}'."
 msgstr "Tunnisteella '{tag}' löytyi useita työnkulkuja."
 
-#: src/pinta_backend/routes.py:60
+#: src/pinta_backend/routes.py:93
 #, python-brace-format
 msgid "No workflow found for tag '{tag}'."
 msgstr "Tunnisteella '{tag}' ei löytynyt työnkulkua."
 
-#: src/pinta_backend/routes.py:84
+#: src/pinta_backend/routes.py:117
 msgid "Workflow run started."
 msgstr "Työnkulun ajo käynnistetty."

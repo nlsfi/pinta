@@ -44,6 +44,10 @@ class AirflowClient:
     def _base_url(self) -> str:
         return self._auth.base_url
 
+    async def check_authentication(self) -> None:
+        """Verify that Airflow accepts the configured credentials."""
+        await self._auth.refresh_token()
+
     async def trigger_dag_by_tag(
         self,
         tag: str,
