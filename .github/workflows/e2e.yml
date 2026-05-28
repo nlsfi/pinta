@@ -26,7 +26,9 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Copy .env.example to .env
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          sed -i "s|^REPO_DIR=.*|REPO_DIR=$GITHUB_WORKSPACE|" .env
 
       - name: Build all compose images
         env:
@@ -42,11 +44,13 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
 
       - name: Start database
-        run: make up
+        run: make up-db
 
       - name: Run migrations
         run: make db-migrate-all
 
+      # Brings up airflow + backend via the target's `up` prerequisite, so the
+      # slow airflow container only starts for the step that needs it.
       - name: Run e2e tests in QGIS container
         run: make test-e2e-in-container
 

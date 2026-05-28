@@ -1,8 +1,21 @@
 # Airflow Workflow component
 
-## Local Airflow Development
+## Development
 
-Start a local standalone Airflow (running in a dev-container) for development purposes from the root of the repository:
+By default, Airflow runs in a container, started from the repository root with Docker
+Compose:
+
+```bash
+docker compose up -d
+```
+
+(or `make up`). This is the default Airflow used in development and e2e tests, available at
+<http://localhost:8080>.
+
+### Local development
+
+Optionally run a local standalone Airflow on the host (in the dev-container) from the
+repository root. This is mainly for testing Airflow version upgrades and as a backup:
 
 ```bash
 make airflow-start
@@ -21,7 +34,7 @@ If necessary, code changes can be updated for Airflow use immediately by running
 or `make airflow-reserialize` from the root of the repository.
 Airflow also automatically updates DAG file changes periodically.
 
-### Developing DAGs locally
+#### Developing DAGs locally
 
 If you want to run the load dem DAG, you can place test data inside the repo root `test_data` folder, which is automatically mounted to the processing container.
 

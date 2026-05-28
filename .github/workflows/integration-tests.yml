@@ -46,7 +46,7 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
 
       - name: Start database
-        run: make up
+        run: make up-db
 
       - name: Run migrations
         run: make db-migrate-all

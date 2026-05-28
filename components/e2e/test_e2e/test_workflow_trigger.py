@@ -4,7 +4,7 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import requests
-from pinta_e2e_utils.airflow_client import AirflowClient
+from pinta_e2e_utils.airflow_client import AirflowClient, DagRun
 
 HELLO_WORLD_TAG = "hello_world"
 HELLO_WORLD_DAG_ID = "print_hello_world"
@@ -22,14 +22,15 @@ def test_print_hello_world_runs_to_success(
         timeout=30,
     )
     assert response.status_code == 202, response.text
-    body = response.json()
-    assert body["dag_id"] == HELLO_WORLD_DAG_ID
-    assert body["dag_run_id"].startswith("manual__")
+    dag = DagRun.from_api(response.json())
+    assert dag.id == HELLO_WORLD_DAG_ID
+    assert dag.run_id.startswith("manual__")
 
-    state = airflow_client.wait_for_dag_run(
-        body["dag_id"], body["dag_run_id"], timeout=DAG_RUN_TIMEOUT_S
+    state = airflow_client.wait_for_dag_run(dag, timeout=DAG_RUN_TIMEOUT_S)
+    assert state == "success", (
+        f"DAG run finished with state={state}\n"
+        f"{airflow_client.describe_failed_run(dag.id, dag.run_id)}"
     )
-    assert state == "success", f"DAG run finished with state={state}"
 
 
 def test_workflow_endpoint_rejects_invalid_parameters(backend_url: str) -> None:
