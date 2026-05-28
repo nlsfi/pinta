@@ -3,6 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import pytest
 import requests
 from pinta_e2e_utils.airflow_client import AirflowClient, DagRun
 
@@ -11,6 +12,7 @@ HELLO_WORLD_DAG_ID = "print_hello_world"
 DAG_RUN_TIMEOUT_S = 300.0
 
 
+@pytest.mark.xdist_group("airflow")
 def test_print_hello_world_runs_to_success(
     backend_url: str,
     airflow_client: AirflowClient,

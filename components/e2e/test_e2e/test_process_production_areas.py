@@ -9,6 +9,7 @@ PRODUCTION_AREA_VARIABLE = "production_area_1"
 SHA256_HEX_LENGTH = 64
 
 
+@pytest.mark.xdist_group("airflow")
 @pytest.mark.usefixtures("processed_production_areas")
 def test_process_production_areas_dag_runs_real_docker_tasks(
     airflow_client: AirflowClient,
