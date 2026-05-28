@@ -7,5 +7,12 @@ from pinta_processing.filters.diff import RasterDiff
 from pinta_processing.filters.filter import RasterFilter
 from pinta_processing.filters.multiply import MultiplyValues
 from pinta_processing.filters.overview import DownsampleOverview
+from pinta_processing.filters.vectorize import VectorizeRaster
 
-__all__ = ["DownsampleOverview", "MultiplyValues", "RasterDiff", "RasterFilter"]
+__all__ = [
+    "DownsampleOverview",
+    "MultiplyValues",
+    "RasterDiff",
+    "RasterFilter",
+    "VectorizeRaster",
+]
