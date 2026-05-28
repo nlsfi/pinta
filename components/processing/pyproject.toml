@@ -10,7 +10,9 @@ dependencies = [
   "lazrs",
   "pinta-db[shapely,psycopg]",
   "affine",
+  "geopandas",
   "rasterio",
+  "scipy",
 ]
 
 [project.urls]

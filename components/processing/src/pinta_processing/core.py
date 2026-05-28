@@ -7,6 +7,7 @@ import copy
 import dataclasses
 
 import affine
+import geopandas
 import numpy as np
 import rasterio
 
@@ -37,7 +38,16 @@ class RasterDataset:
         )
 
 
-type StageReturnType = RasterDataset | tuple["StageReturnType" | None, ...] | None
+@dataclasses.dataclass(frozen=True)
+class VectorDataset:
+    """Dataclass to pass vector data between processing stages."""
+
+    geodataframe: geopandas.GeoDataFrame
+
+
+type StageReturnType = (
+    RasterDataset | VectorDataset | tuple["StageReturnType" | None, ...] | None
+)
 
 
 class Stage:

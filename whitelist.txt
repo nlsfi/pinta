@@ -164,3 +164,13 @@ getsockname
 authenticator
 Authenticator
 issubdtype
+geopandas
+geodataframe
+vectorize
+scipy
+ndimage
+isnan
+arange
+stds
+sqrt
+log1p
