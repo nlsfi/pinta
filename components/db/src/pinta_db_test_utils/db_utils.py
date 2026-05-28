@@ -6,10 +6,13 @@
 import os
 
 import sqlmodel
+from sqlalchemy import bindparam
 
 from pinta_db_utils import engine_utils
 
 _CREATE_DB_LOCK_KEY = "pinta-create-db"
+
+PINTA_MANAGED_SCHEMAS = ("dem", "management", "reference", "user_data")
 
 
 def _create_from_template(
@@ -41,6 +44,26 @@ def _create_from_template(
             connection.execute(
                 sqlmodel.text("SELECT pg_advisory_unlock(hashtext(:key))"),
                 {"key": _CREATE_DB_LOCK_KEY},
+            )
+
+
+def _truncate_pinta_schemas(credentials: engine_utils.Credentials) -> None:
+    """Empty every table in the pinta-managed schemas of a cloned database."""
+    list_tables = sqlmodel.text(
+        "SELECT format('%I.%I', schemaname, tablename) "
+        "FROM pg_tables WHERE schemaname IN :schemas"
+    ).bindparams(bindparam("schemas", expanding=True))
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        tables = (
+            connection.execute(list_tables, {"schemas": list(PINTA_MANAGED_SCHEMAS)})
+            .scalars()
+            .all()
+        )
+        if tables:
+            connection.execute(
+                sqlmodel.text(
+                    f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"
+                )
             )
 
 
@@ -104,6 +127,7 @@ def create_primary_db(worker_id: str) -> str:
         os.environ["DB_PRIMARY_NAME"],
         get_primary_admin_credentials("postgres"),
     )
+    _truncate_pinta_schemas(get_primary_admin_credentials(db_name))
     return db_name
 
 
@@ -115,4 +139,5 @@ def create_job_db(worker_id: str) -> str:
         os.environ["DB_JOB_TEMPLATE_NAME"],
         get_job_admin_credentials("postgres"),
     )
+    _truncate_pinta_schemas(get_job_admin_credentials(db_name))
     return db_name
