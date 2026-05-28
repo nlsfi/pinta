@@ -2109,6 +2109,7 @@ ci = [
     { name = "import-linter" },
 ]
 dev = [
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2124,7 +2125,10 @@ lint = [
 
 [package.metadata.requires-dev]
 ci = [{ name = "import-linter" }]
-dev = [{ name = "pytest-xdist", specifier = ">=3.8.0" }]
+dev = [
+    { name = "pytest-timeout" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+]
 lint = [
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "flake8-pyproject", specifier = ">=1.2.4" },
@@ -2153,6 +2157,7 @@ dev = [
     { name = "httpx" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2177,6 +2182,7 @@ dev = [
     { name = "httpx" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
@@ -2274,6 +2280,7 @@ dev = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2303,6 +2310,7 @@ dev = [
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
@@ -2330,6 +2338,7 @@ dev = [
     { name = "psycopg" },
     { name = "pytest" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2354,6 +2363,7 @@ dev = [
     { name = "psycopg" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-mock", specifier = ">=3.0.0" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
@@ -2420,6 +2430,7 @@ development = [
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 linting = [
@@ -2447,6 +2458,7 @@ development = [
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 linting = [
