@@ -54,6 +54,7 @@ testpaths = [
   "test",
 ]
 addopts = "-n 0 --import-mode=importlib -p no:pytest-qgis"
+timeout = 60
 
 [tool.coverage.paths]
 

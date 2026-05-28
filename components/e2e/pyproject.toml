@@ -39,6 +39,7 @@ dev = [
   "pytest-xdist>=3.8.0",
   "psycopg",
   "pytest-mock>=3.0.0",
+  "pytest-timeout",
 ]
 lint = [
   "prek",
@@ -61,3 +62,4 @@ testpaths = [
   "test_e2e",
 ]
 addopts = "-n auto --dist loadgroup --maxprocesses=4 --import-mode=importlib"
+timeout = 180

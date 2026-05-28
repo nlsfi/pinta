@@ -35,6 +35,7 @@ explicit = true
 
 [dependency-groups]
 dev = [
+  "pytest-timeout",
   "pytest-xdist>=3.8.0",
 ]
 lint = [
@@ -175,6 +176,7 @@ exclude = "^test"
 
 [tool.pytest.ini_options]
 addopts = "-n auto --import-mode=importlib"
+timeout = 180
 
 
 [tool.importlinter]
