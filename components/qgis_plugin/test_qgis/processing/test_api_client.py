@@ -41,6 +41,21 @@ def test_init_sets_accept_language_header() -> None:
     assert "Accept-Language" in client.session.headers
 
 
+@pytest.mark.parametrize("dev_mode", [True, False])
+def test_init_sets_db_name_header_in_development_mode(
+    mocker: MockerFixture, dev_mode: bool
+) -> None:
+    mocker.patch.object(api_client.env, "IS_DEVELOPMENT_MODE", dev_mode)
+    mocker.patch.object(api_client.env, "PINTA_DB_NAME", "pinta_test_gw0")
+
+    client = api_client.PintaAPIClient("http://example.test")
+
+    if dev_mode:
+        assert client.session.headers["X-Pinta-Db-Name"] == "pinta_test_gw0"
+    else:
+        assert "X-Pinta-Db-Name" not in client.session.headers
+
+
 def test_start_reference_dem_workflow_posts_workflow_payload(
     client: api_client.PintaAPIClient,
     mock_post: MagicMock,

@@ -8,7 +8,24 @@ from collections.abc import Awaitable, Callable
 import fastapi
 from starlette.responses import Response
 
-from pinta_backend import i18n
+from pinta_backend import db_context, i18n
+
+
+async def db_name_override_middleware(
+    request: fastapi.Request,
+    call_next: Callable[[fastapi.Request], Awaitable[Response]],
+) -> Response:
+    """Store a requested primary-db override into the request context.
+
+    Reads the dev-only ``X-Pinta-Db-Name`` header and resolves it; when the
+    header is absent the context defaults to ``None`` so production code keeps
+    targeting the configured primary database.
+    """
+    db_context.set_db_name_override(
+        request.headers.get(db_context.DB_NAME_OVERRIDE_HEADER)
+    )
+
+    return await call_next(request)
 
 
 async def language_middleware(
@@ -44,3 +61,4 @@ async def language_middleware(
 def register(app: fastapi.FastAPI) -> None:
     """Register application middlewares."""
     app.middleware("http")(language_middleware)
+    app.middleware("http")(db_name_override_middleware)
