@@ -18,13 +18,15 @@ uv sync
 prek install
 
 # Download prebuilt LASTools binaries
+# Keep the .tar.gz for local processing container
+# build in podman (multi stage build behaves differently on podman than docker)
 if [ ! -x "$LASTOOLS_DIR/bin/blast2dem64" ]; then
 	echo "Downloading LASTools binaries to $LASTOOLS_DIR..."
 	mkdir -p "$LASTOOLS_DIR"
-	tarball=$(mktemp --suffix=.tar.gz)
+	tarball="$LASTOOLS_DIR/LAStools.tar.gz"
 	curl -fsSL "$LASTOOLS_TARBALL_URL" -o "$tarball"
 	tar -xzf "$tarball" -C "$LASTOOLS_DIR"
-	rm -f "$tarball"
+	rm -rf "$LASTOOLS_DIR/data"
 fi
 
 # Make completion for `make` targets
