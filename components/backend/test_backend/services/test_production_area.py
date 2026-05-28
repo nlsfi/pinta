@@ -82,6 +82,40 @@ def test_mark_as_queued_sets_queued_status_and_commits(
     assert mock_session.commit.call_count == 1
 
 
+def test_mark_as_queued_uses_db_override_from_context(
+    mock_session: mock.MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    area = _make_area(ProcessingStatus.NOT_STARTED)
+    _load(mock_session, area)
+    mocker.patch.object(
+        production_area.db_context,
+        "get_db_name_override",
+        return_value="pinta_test_gw0",
+    )
+
+    with production_area.mark_as_queued(str(area.id)):
+        pass
+
+    production_area.db.primary_db_session.assert_called_once_with("pinta_test_gw0")
+
+
+def test_mark_as_queued_uses_no_override_when_context_unset(
+    mock_session: mock.MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    area = _make_area(ProcessingStatus.NOT_STARTED)
+    _load(mock_session, area)
+    mocker.patch.object(
+        production_area.db_context, "get_db_name_override", return_value=None
+    )
+
+    with production_area.mark_as_queued(str(area.id)):
+        pass
+
+    production_area.db.primary_db_session.assert_called_once_with(None)
+
+
 def test_mark_as_queued_restores_previous_status_on_exception(
     mock_session: mock.MagicMock,
 ) -> None:

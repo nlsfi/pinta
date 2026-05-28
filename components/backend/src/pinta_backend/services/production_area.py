@@ -11,7 +11,7 @@ import sqlalchemy.exc
 import sqlmodel
 from pinta_db.primary_db.models.management import ProcessingStatus, ProductionArea
 
-from pinta_backend import db
+from pinta_backend import db, db_context
 from pinta_backend.exceptions import (
     DatabaseUnreachableError,
     ProductionAreaNotFoundError,
@@ -21,20 +21,24 @@ LOGGER = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def mark_as_queued(production_area_id: str | None) -> Iterator[ProductionArea | None]:
+def mark_as_queued(
+    production_area_id: str | None,
+) -> Iterator[ProductionArea | None]:
     """Mark the production area as queued for the duration of the block.
 
     Acts as a no-op when `production_area_id` is `None`. Otherwise opens a
-    primary-db session, sets the row's status to QUEUED, and on any exception
-    inside the wrapped block restores the previous status.
+    primary-db session (honouring any dev-only db override set on the request
+    context), sets the row's status to QUEUED, and on any exception inside the
+    wrapped block restores the previous status.
     """
     if production_area_id is None:
         LOGGER.debug("Production area id is None, skipping")
         yield None
         return
 
+    db_name = db_context.get_db_name_override()
     try:
-        with db.primary_db_session() as session:
+        with db.primary_db_session(db_name) as session:
             production_area: ProductionArea | None = session.exec(
                 sqlmodel.select(ProductionArea).where(
                     ProductionArea.id == production_area_id

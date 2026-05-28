@@ -80,6 +80,8 @@ class PintaAPIClient:
                 )
             }
         )
+        if env.IS_DEVELOPMENT_MODE:
+            self.session.headers["X-Pinta-Db-Name"] = env.PINTA_DB_NAME
         self._timeout = timeout
 
     @handle_api_errors(ApiEndpoint.workflows)

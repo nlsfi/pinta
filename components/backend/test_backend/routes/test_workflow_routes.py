@@ -13,7 +13,7 @@ import pytest
 from fastapi import testclient
 from pytest_mock import MockerFixture
 
-from pinta_backend import exceptions, routes
+from pinta_backend import db_context, exceptions, routes
 
 
 def _dag_run(dag_id: str = "print_hello_world", run_id: str = "manual__1") -> Any:
@@ -141,6 +141,69 @@ def test_trigger_workflow_passes_none_to_service_when_id_absent(
 
     assert response.status_code == 202
     mock_mark_as_queued.assert_called_once_with(None)
+
+
+@pytest.mark.parametrize("dev_mode", [True, False])
+def test_trigger_workflow_applies_db_override_header_via_context(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+    mocker: MockerFixture,
+    dev_mode: bool,
+) -> None:
+    mocker.patch.object(
+        db_context.settings,
+        "get_settings",
+        return_value=types.SimpleNamespace(development_mode=dev_mode),
+    )
+    captured: dict[str, str | None] = {}
+
+    @contextlib.contextmanager
+    def _capture(*_args: Any, **_kwargs: Any) -> Any:
+        captured["db_name"] = db_context.get_db_name_override()
+        yield None
+
+    mock_mark_as_queued.side_effect = _capture
+    mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
+    area_id = str(uuid.uuid4())
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello",
+        json={"production_area_id": area_id},
+        headers={"X-Pinta-Db-Name": "pinta_test_gw0"},
+    )
+
+    assert response.status_code == 202
+    assert captured["db_name"] == ("pinta_test_gw0" if dev_mode else None)
+
+
+def test_trigger_workflow_uses_no_db_override_without_header(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(
+        db_context.settings,
+        "get_settings",
+        return_value=types.SimpleNamespace(development_mode=True),
+    )
+    captured: dict[str, str | None] = {}
+
+    @contextlib.contextmanager
+    def _capture(*_args: Any, **_kwargs: Any) -> Any:
+        captured["db_name"] = db_context.get_db_name_override()
+        yield None
+
+    mock_mark_as_queued.side_effect = _capture
+    mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello", json={"production_area_id": str(uuid.uuid4())}
+    )
+
+    assert response.status_code == 202
+    assert captured["db_name"] is None
 
 
 def test_trigger_workflow_returns_503_when_database_unreachable(
