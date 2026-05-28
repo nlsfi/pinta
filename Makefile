@@ -143,23 +143,20 @@ airflow-write-passwords:
 airflow-migrate:
 	uv run --directory $(DAGS_DIR) --extra airflow airflow db migrate
 
-airflow-set-variables:
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_task_log_level DEBUG
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_image "ghcr.io/nlsfi/pinta/processing:latest"
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_point_cloud_base_path $(ROOT_DIR)/test_data/point_clouds
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_container_source_base_path $(REPO_DIR)/test_data/point_clouds
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_container_target_base_path /data
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_data_base_path $(REPO_DIR)/test_data
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_srid 3067
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_pixel_size 2
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_nodata -9999
+# Local airflow loads the static vars shared with the container from
+# .env.airflow, then sets the host-path variables.
+AIRFLOW_LOCAL_ENV = set -a && . $(ROOT_DIR)/.env.airflow && set +a && \
+	AIRFLOW_VAR_PINTA_PROCESSING_CODE_MOUNT_DIR=$(REPO_DIR) \
+	AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH=$(ROOT_DIR)/test_data/point_clouds \
+	AIRFLOW_VAR_PINTA_CONTAINER_SOURCE_BASE_PATH=$(REPO_DIR)/test_data/point_clouds \
+	AIRFLOW_VAR_PINTA_DATA_BASE_PATH=$(REPO_DIR)/test_data
 
-airflow-start: airflow-write-passwords airflow-migrate airflow-set-variables
+airflow-start: airflow-write-passwords airflow-migrate
+	$(AIRFLOW_LOCAL_ENV) \
 	uv run --directory $(DAGS_DIR) --extra airflow airflow standalone
 
-airflow-reserialize: airflow-set-variables
+airflow-reserialize:
+	$(AIRFLOW_LOCAL_ENV) \
 	uv run --directory $(DAGS_DIR) --extra airflow airflow dags reserialize
 
 # Backend targets
