@@ -95,11 +95,6 @@ services:
         source: ${REPO_DIR:-.}/components/dags/src/pinta_dags/dags
         target: /opt/airflow/dags
         read_only: true
-      # Mount the repo at the same path it has on the host so Airflow
-      # variables that point at e.g. `${REPO_DIR}/test_data` resolve both
-      # inside the airflow container (for sensors that read files directly)
-      # and on the host (for sibling worker containers that bind-mount the
-      # same paths via the docker socket).
       - type: bind
         source: ${REPO_DIR:-.}
         target: ${REPO_DIR:-/repo}

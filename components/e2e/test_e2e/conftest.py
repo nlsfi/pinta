@@ -140,7 +140,7 @@ def _processing_db_pointing_at_test_db(
     finally:
         airflow_client.patch_connection(
             PROCESSING_WORKER_DB_CONN_ID,
-            fields={"schema": original.get("schema")},
+            fields={"schema": original.schema},
         )
 
 
@@ -149,20 +149,18 @@ def processed_production_areas(
     airflow_client: AirflowClient,
     _processing_db_pointing_at_test_db: None,
 ) -> None:
-    """Run the ``process_production_areas`` DAG against the per-test database.
-
-    Other tests can list this as a precondition to assert on the data the DAG
-    populated. The fixture fails the test if the DAG run does not succeed.
-    """
+    """Run the process_production_areas DAG."""
     # The sensor only flags a folder as changed when its stored hash differs,
     # so clear any leftover hash to guarantee a fresh run.
     airflow_client.delete_variable(PRODUCTION_AREA_VARIABLE)
 
     run = airflow_client.trigger_dag_run(PROCESS_PRODUCTION_AREAS_DAG_ID)
     state = airflow_client.wait_for_dag_run(
-        PROCESS_PRODUCTION_AREAS_DAG_ID,
-        run["dag_run_id"],
+        run,
         timeout=DAG_RUN_TIMEOUT_S,
     )
     if state != "success":
-        pytest.fail(f"DAG run finished with state={state}")
+        pytest.fail(
+            f"DAG run finished with state={state}\n"
+            + airflow_client.describe_failed_run(run)
+        )
