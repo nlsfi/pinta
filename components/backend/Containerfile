@@ -24,7 +24,7 @@ COPY components/ ./components/
 
 WORKDIR /app/components/backend
 RUN uv venv /opt/venv && \
-    uv sync --frozen --active --no-default-groups && \
+    uv sync --frozen --active --no-default-groups --no-editable && \
     mkdir -p /opt/python && \
     cp -a /opt/venv/lib/python*/site-packages/. /opt/python/
 
