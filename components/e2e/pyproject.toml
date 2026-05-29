@@ -4,6 +4,9 @@ version = "0.0.0"
 description = "End to end tests for elevation production system"
 readme = "README.md"
 requires-python = ">=3.12"
+dependencies = [
+  "requests",
+]
 [project.optional-dependencies]
 # QGIS requirements are marked here to allow starting QGIS from venv without conflicting dependencies
 
@@ -36,6 +39,7 @@ dev = [
   "pytest-xdist>=3.8.0",
   "psycopg",
   "pytest-mock>=3.0.0",
+  "pytest-timeout",
 ]
 lint = [
   "prek",
@@ -57,4 +61,5 @@ airflow = [
 testpaths = [
   "test_e2e",
 ]
-addopts = "-n auto --import-mode=importlib"
+addopts = "-n auto --dist loadgroup --maxprocesses=4 --import-mode=importlib"
+timeout = 180

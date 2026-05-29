@@ -8,7 +8,7 @@ requires-python = ">=3.12"
 dependencies = [
   "laspy",
   "lazrs",
-  "pinta-db[shapely]",
+  "pinta-db[shapely,psycopg]",
   "affine",
   "geopandas",
   "rasterio",
@@ -35,6 +35,7 @@ development = [
   "pytest-mock",
   "pytest-dotenv",
   "pytest-xdist",
+  "pytest-timeout",
   "pinta-lib",
   "psycopg[binary]",
 ]
@@ -62,6 +63,7 @@ extend = "../../pyproject.toml"
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib -p no:pytest-qgis"
+timeout = 60
 
 [tool.semantic_release]
 commit_parser = "conventional-monorepo"

@@ -70,6 +70,17 @@ def test_pipeline_stops_on_error(mocker: pytest_mock.MockerFixture):
     assert not spy_stage3.called
 
 
+def test_raster_dataset_converts_array_to_float32():
+    dataset = core.RasterDataset(
+        array=np.array([[1, 2], [3, 4]], dtype=np.int16),
+        transform=constants.DEFAULT_TRANSFORM,
+        crs=constants.DEFAULT_CRS,
+        nodata=constants.DEFAULT_NODATA,
+    )
+
+    assert dataset.array.dtype == np.float32
+
+
 def test_pipeline_executes_all_stages(mocker: pytest_mock.MockerFixture):
     pipeline = DummyStage() | DummyStage() | DummyStage()
 

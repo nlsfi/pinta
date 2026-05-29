@@ -2278,6 +2278,7 @@ ci = [
     { name = "import-linter" },
 ]
 dev = [
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2293,7 +2294,10 @@ lint = [
 
 [package.metadata.requires-dev]
 ci = [{ name = "import-linter" }]
-dev = [{ name = "pytest-xdist", specifier = ">=3.8.0" }]
+dev = [
+    { name = "pytest-timeout" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+]
 lint = [
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "flake8-pyproject", specifier = ">=1.2.4" },
@@ -2322,6 +2326,7 @@ dev = [
     { name = "httpx" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2346,6 +2351,7 @@ dev = [
     { name = "httpx" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
@@ -2365,6 +2371,7 @@ dependencies = [
 [package.optional-dependencies]
 airflow = [
     { name = "apache-airflow", extra = ["docker", "postgres", "standard"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
+    { name = "pinta-db", extra = ["psycopg"], marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
 ]
 
 [package.dev-dependencies]
@@ -2387,6 +2394,7 @@ lint = [
 [package.metadata]
 requires-dist = [
     { name = "apache-airflow", extras = ["docker", "postgres", "standard"], marker = "extra == 'airflow'", specifier = "==3.1.8" },
+    { name = "pinta-db", extras = ["psycopg"], marker = "extra == 'airflow'", editable = "components/db" },
     { name = "pinta-processing", editable = "components/processing" },
 ]
 provides-extras = ["airflow"]
@@ -2426,6 +2434,9 @@ migrations = [
     { name = "dotenv" },
     { name = "psycopg", extra = ["binary"] },
 ]
+psycopg = [
+    { name = "psycopg", extra = ["binary"] },
+]
 shapely = [
     { name = "geoalchemy2", extra = ["shapely"], marker = "(extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra != 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely') or (extra != 'extra-10-pinta-dags-airflow' and extra == 'extra-8-pinta-db-shapely')" },
     { name = "numpy", version = "2.4.2", source = { registry = "https://pypi.org/simple" } },
@@ -2438,6 +2449,7 @@ dev = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2454,10 +2466,11 @@ requires-dist = [
     { name = "geoalchemy2", extras = ["shapely"], marker = "extra == 'shapely'" },
     { name = "numpy", marker = "extra == 'shapely'", specifier = ">=2" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'migrations'", specifier = ">=3.3.3" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'psycopg'", specifier = ">=3.3.3" },
     { name = "sqlmodel", specifier = ">=0.0.37" },
     { name = "uv", marker = "extra == 'build'" },
 ]
-provides-extras = ["migrations", "shapely", "build"]
+provides-extras = ["migrations", "psycopg", "shapely", "build"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2466,6 +2479,7 @@ dev = [
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
@@ -2478,6 +2492,9 @@ lint = [
 name = "pinta-e2e"
 version = "0.0.0"
 source = { editable = "components/e2e" }
+dependencies = [
+    { name = "requests" },
+]
 
 [package.dev-dependencies]
 airflow = [
@@ -2490,6 +2507,7 @@ dev = [
     { name = "psycopg" },
     { name = "pytest" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 lint = [
@@ -2504,6 +2522,7 @@ qgis = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "requests" }]
 
 [package.metadata.requires-dev]
 airflow = [{ name = "pinta-dags", extras = ["airflow"], editable = "components/dags" }]
@@ -2513,6 +2532,7 @@ dev = [
     { name = "psycopg" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-mock", specifier = ">=3.0.0" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 lint = [
@@ -2560,7 +2580,7 @@ dependencies = [
     { name = "geopandas" },
     { name = "laspy" },
     { name = "lazrs" },
-    { name = "pinta-db" },
+    { name = "pinta-db", extra = ["psycopg"] },
     { name = "pinta-db", extra = ["shapely"], marker = "(extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra != 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely') or (extra != 'extra-10-pinta-dags-airflow' and extra == 'extra-8-pinta-db-shapely')" },
     { name = "rasterio" },
     { name = "scipy" },
@@ -2581,6 +2601,7 @@ development = [
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 linting = [
@@ -2595,7 +2616,7 @@ requires-dist = [
     { name = "geopandas" },
     { name = "laspy" },
     { name = "lazrs" },
-    { name = "pinta-db", extras = ["shapely"], editable = "components/db" },
+    { name = "pinta-db", extras = ["shapely", "psycopg"], editable = "components/db" },
     { name = "psycopg", marker = "extra == 'load-test-data'" },
     { name = "rasterio" },
     { name = "scipy" },
@@ -2610,6 +2631,7 @@ development = [
     { name = "pytest" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 linting = [

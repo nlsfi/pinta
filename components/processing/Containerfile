@@ -1,8 +1,17 @@
 ARG PROCESSING_BUILD_DEPS_IMAGE=ghcr.io/nlsfi/pinta/processing-build-deps:latest
 
+# Lastools source: lastools-online or lastools-local
+# With local put lastools to external/LAStools/LAStools.tar.gz
+ARG LASTOOLS_SOURCE=lastools-online
 FROM ${PROCESSING_BUILD_DEPS_IMAGE} AS processing-build-deps
 
-FROM redhat/ubi10:10.1
+FROM redhat/ubi10:10.1 AS base
+
+ARG LASTOOLS_SOURCE
+RUN case "${LASTOOLS_SOURCE}" in \
+      lastools-online|lastools-local) ;; \
+      *) echo "Invalid LASTOOLS_SOURCE: ${LASTOOLS_SOURCE}. Expected one of: lastools-online, lastools-local"; exit 1 ;; \
+    esac
 
 # Proxy args
 ARG HTTP_PROXY
@@ -50,14 +59,45 @@ COPY --from=processing-build-deps /usr/local/include/nlohmann/json.hpp /usr/loca
 RUN echo "/usr/local/lib64" > /etc/ld.so.conf.d/proj.conf && \
   echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf && ldconfig
 
-# Verify that all LASTools dependencies are installed
-# hadolint ignore=DL3003
-RUN mkdir -p /lastools && cd /lastools && curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz -o lastools.tar.gz \
-  && tar -xzf lastools.tar.gz \
-  && cd bin \
-  && ldd blast2dem64 | grep "not found" && echo "Missing dependencies for LASTools!" && exit 1 || echo "All LASTools dependencies are installed." \
-  && cd .. \
-  && rm -rf lastools.tar.gz LAStools
+# Use separate stages to verify LASTools dependecies using
+# downloaded binaries or local copied files
+
+FROM base AS lastools-online
+
+# hadolint ignore=DL4006
+RUN tmp_dir="$(mktemp -d)" \
+  && curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz -o "${tmp_dir}/lastools.tar.gz" \
+  && tar -xzf "${tmp_dir}/lastools.tar.gz" -C "${tmp_dir}" \
+  && blast2dem="$(find "${tmp_dir}" -path "*/bin/blast2dem64" -type f | head -n 1)" \
+  && test -n "${blast2dem}" \
+  && if ldd "${blast2dem}" | grep "not found"; then \
+      echo "Missing dependencies for LASTools!"; \
+      exit 1; \
+    fi \
+  && echo "All LASTools dependencies are installed." \
+  && rm -rf "${tmp_dir}"
+
+
+FROM base AS lastools-local
+
+COPY external/LAStools/LAStools.tar.gz /tmp/local-LAStools.tar.gz
+
+# hadolint ignore=DL4006
+RUN tmp_dir="$(mktemp -d)" \
+  && test -s /tmp/local-LAStools.tar.gz || { echo "Missing local LAStools tarball at external/LAStools/LAStools.tar.gz"; exit 1; } \
+  && tar -xzf /tmp/local-LAStools.tar.gz -C "${tmp_dir}" \
+  && blast2dem="$(find "${tmp_dir}" -path "*/bin/blast2dem64" -type f | head -n 1)" \
+  && test -n "${blast2dem}" \
+  && if ldd "${blast2dem}" | grep "not found"; then \
+      echo "Missing dependencies for LASTools!"; \
+      exit 1; \
+    fi \
+  && echo "All LASTools dependencies are installed." \
+  && rm -rf "${tmp_dir}" /tmp/local-LAStools.tar.gz
+
+
+# Run LASTools dependecy check based on LASTOOLS_SOURCE build arg
+FROM ${LASTOOLS_SOURCE} AS final
 
 # hadolint ignore=DL3013
 RUN python -m pip install --upgrade pip --no-cache-dir \

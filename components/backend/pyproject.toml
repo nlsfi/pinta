@@ -24,6 +24,7 @@ dev = [
   "pytest-dotenv>=0.5.2",
   "pytest-xdist>=3.8.0",
   "pytest-mock>=3.15.1",
+  "pytest-timeout",
 ]
 lint = [
   "prek",
@@ -48,6 +49,7 @@ extend = "../../pyproject.toml"
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib -n auto -p no:pytest-qgis"
+timeout = 30
 
 [tool.mypy]
 python_version = "3.12"

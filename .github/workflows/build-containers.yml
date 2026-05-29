@@ -55,23 +55,35 @@ jobs:
           docker buildx build --load \
             -f components/db/containers/postgis/Containerfile \
             -t pinta/db:latest \
+            --cache-from type=gha,scope=db \
+            --cache-to type=gha,scope=db,mode=max \
             components/db/containers/postgis
 
 
           docker buildx build --load \
             -f components/processing/Containerfile \
             -t pinta/processing:latest \
+            --cache-from type=gha,scope=processing \
+            --cache-to type=gha,scope=processing,mode=max \
             .
 
           docker buildx build --load \
             -f components/e2e/Containerfile \
             -t pinta/e2e:latest \
+            --cache-from type=gha,scope=e2e \
+            --cache-to type=gha,scope=e2e,mode=max \
+            .
+
+          docker buildx build --load \
+            -f components/dags/Containerfile \
+            -t pinta/airflow:latest \
             .
 
           # Compose uses GHCR image names, so map local builds to those names.
           docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
+          docker tag pinta/airflow:latest "$GHCR_PREFIX/airflow:latest"
 
       - name: Copy .env.example to .env
         run: cp .env.example .env
@@ -80,7 +92,7 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
 
       - name: Start database
-        run: make up
+        run: make up-db
 
       - name: Run migrations
         run: make db-migrate-all
@@ -117,6 +129,7 @@ jobs:
           set -euo pipefail
 
           # Stop postgres cleanly so the data directory is consistent.
+          docker compose exec -T db psql -U postgres -c "CHECKPOINT;"
           docker compose stop db
 
           # The data lives in a named volume, not the container layer, so we
@@ -130,7 +143,7 @@ jobs:
             --entrypoint sh pinta/db:latest -c "sleep infinity"
 
           docker exec pinta-db-committer sh -c \
-            "cp -a /pgdata-src/. /pgdata/ && rm -f /pgdata/postmaster.pid /pgdata/.s.PGSQL.*"
+            "cp -a /pgdata-src/. /pgdata/ && rm -f /pgdata/postmaster.pid /pgdata/.s.PGSQL.* && gosu postgres pg_resetwal -f /pgdata"
 
           docker commit \
             --change 'ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]' \
@@ -165,6 +178,7 @@ jobs:
           docker tag pinta/db:latest "$GHCR_PREFIX/db:$TAG"
           docker tag pinta/processing:latest "$GHCR_PREFIX/processing:$TAG"
           docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:$TAG"
+          docker tag pinta/airflow:latest "$GHCR_PREFIX/airflow:$TAG"
 
       - name: Push images to GHCR
         if: github.event_name == 'push' || github.event_name == 'release'
@@ -176,6 +190,7 @@ jobs:
           docker push "$GHCR_PREFIX/db:$TAG"
           docker push "$GHCR_PREFIX/processing:$TAG"
           docker push "$GHCR_PREFIX/e2e:$TAG"
+          docker push "$GHCR_PREFIX/airflow:$TAG"
 
       - name: Show built images
         run: |

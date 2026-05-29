@@ -1,0 +1,60 @@
+# syntax=docker/dockerfile:1.7
+
+ARG PYTHON_VERSION=3.12
+
+FROM python:${PYTHON_VERSION}-slim AS builder
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY \
+    HTTPS_PROXY=$HTTPS_PROXY \
+    NO_PROXY=$NO_PROXY
+
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir uv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+COPY components/ ./components/
+
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN uv venv /opt/venv && \
+    uv sync --frozen --active --package pinta-dags --extra airflow --no-default-groups --no-editable
+
+# ---------- runtime ----------
+FROM python:${PYTHON_VERSION}-slim AS runtime
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY \
+    HTTPS_PROXY=$HTTPS_PROXY \
+    NO_PROXY=$NO_PROXY \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    AIRFLOW_HOME=/opt/airflow \
+    VIRTUAL_ENV=/opt/venv \
+    PATH=/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# hadolint ignore=DL3008
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl tini && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+COPY components/dags/docker-entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh && mkdir -p /opt/airflow
+
+WORKDIR /opt/airflow
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
+CMD ["standalone"]

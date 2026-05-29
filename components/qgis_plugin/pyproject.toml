@@ -93,6 +93,7 @@ testpaths = [
   "test",
 ]
 addopts = "--import-mode=importlib -n auto"
+timeout = 30
 
 [tool.coverage.paths]
 source = ["src", "**/site-packages"]

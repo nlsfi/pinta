@@ -22,9 +22,11 @@ export AIRFLOW__API__EXPOSE_CONFIG := true
 export QGIS_GLOBAL_SETTINGS_FILE := $(QGIS_DIR)/settings.ini
 
 # Backend SimpleAuthManager user that pinta_backend authenticates as.
-# Changing the user requires re-running 'make airflow-clean airflow-start' so
-# standalone re-generates the password file.
+# Changing the user or its password requires re-running 'make airflow-clean
+# airflow-start' so the password file is rewritten.
 PINTA_BACKEND_USERNAME ?= pinta-backend
+PINTA_BACKEND_AIRFLOW_PASSWORD ?= pinta-backend
+AIRFLOW_ADMIN_PASSWORD ?= admin
 export AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS := admin:admin,$(PINTA_BACKEND_USERNAME):op
 
 
@@ -50,12 +52,20 @@ pull:
 	docker compose pull
 
 up:
-	docker compose up -d
-	@echo -n "Waiting for containers to be healthy"
-	@t=60; while [ $$t -gt 0 ] && [ "$$(docker inspect -f '{{.State.Health.Status}}' $$(docker compose ps -q db) 2>/dev/null)" != "healthy" ]; do \
-		sleep 1; t=$$((t-1)); echo -n "."; \
-	done; [ $$t -gt 0 ] || (echo " Timeout!" && exit 0)
-	@echo ""
+	# `processing` is an image-only service (no daemon), so we wait on the
+	# long-running services explicitly. `up` (no service arg) would still
+	# create the processing container, but `--wait` would then fail because
+	# it exits immediately.
+	docker compose up -d --wait db airflow backend
+
+up-db:
+	docker compose up -d --wait db
+
+up-airflow:
+	docker compose up -d --wait airflow
+
+up-backend:
+	docker compose up -d --wait backend
 
 build:
 	docker compose build
@@ -114,53 +124,50 @@ qgis-start-no-extras:
 # Airflow targets
 # ===============
 
+AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
+
 airflow-clean:
 	rm -r $(AIRFLOW_HOME)
+
+# Pre-write deterministic passwords
+airflow-write-passwords:
+	@mkdir -p "$(AIRFLOW_HOME)"
+	@if [ ! -s "$(AIRFLOW_PASSWORD_FILE)" ]; then \
+	  printf '{"admin":"%s","%s":"%s"}\n' \
+	    '$(AIRFLOW_ADMIN_PASSWORD)' \
+	    '$(PINTA_BACKEND_USERNAME)' \
+	    '$(PINTA_BACKEND_AIRFLOW_PASSWORD)' \
+	    > "$(AIRFLOW_PASSWORD_FILE)"; \
+	fi
 
 airflow-migrate:
 	uv run --directory $(DAGS_DIR) --extra airflow airflow db migrate
 
-airflow-set-variables:
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_task_log_level DEBUG
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_code_mount_dir $(REPO_DIR)
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_processing_image "ghcr.io/nlsfi/pinta/processing:latest"
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_docker_socket_url unix:///var/run/docker.sock
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_point_cloud_base_path $(ROOT_DIR)/test_data/point_clouds
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_container_source_base_path $(REPO_DIR)/test_data/point_clouds
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_container_target_base_path /data
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_data_base_path $(REPO_DIR)/test_data
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_srid 3067
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_pixel_size 2
-	uv run --directory $(DAGS_DIR) --extra airflow airflow variables set pinta_db_dem_nodata -9999
+# Local airflow loads the static vars shared with the container from
+# .env.airflow, then sets the host-path variables.
+AIRFLOW_LOCAL_ENV = set -a && . $(ROOT_DIR)/.env.airflow && set +a && \
+	AIRFLOW_VAR_PINTA_PROCESSING_CODE_MOUNT_DIR=$(REPO_DIR) \
+	AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH=$(ROOT_DIR)/test_data/point_clouds \
+	AIRFLOW_VAR_PINTA_CONTAINER_SOURCE_BASE_PATH=$(REPO_DIR)/test_data/point_clouds \
+	AIRFLOW_VAR_PINTA_DATA_BASE_PATH=$(REPO_DIR)/test_data
 
-airflow-start: airflow-migrate airflow-set-variables
+airflow-start: airflow-write-passwords airflow-migrate
+	$(AIRFLOW_LOCAL_ENV) \
 	uv run --directory $(DAGS_DIR) --extra airflow airflow standalone
 
-airflow-reserialize: airflow-set-variables
+airflow-reserialize:
+	$(AIRFLOW_LOCAL_ENV) \
 	uv run --directory $(DAGS_DIR) --extra airflow airflow dags reserialize
 
 # Backend targets
 # =================
-AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
-
-backend-setup-password:
-	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
-	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
-	  exit 1; \
-	}
-	@python3 "$(BACKEND_DIR)/scripts/parse_airflow_password.py" "$(AIRFLOW_PASSWORD_FILE)" "$(PINTA_BACKEND_AIRFLOW_USERNAME)" "$(ROOT_DIR)/.env"
 
 backend-start:
-	@test -f $(AIRFLOW_PASSWORD_FILE) || { \
-	  echo "$(AIRFLOW_PASSWORD_FILE) not found — run 'make airflow-start' first."; \
-	  exit 1; \
-	}
-	@airflow_password="$$(python3 "$(BACKEND_DIR)/scripts/parse_airflow_password.py" "$(AIRFLOW_PASSWORD_FILE)" "$(PINTA_BACKEND_AIRFLOW_USERNAME)" "$(ROOT_DIR)/.env")"; \
-	 docker compose stop backend || true; \
-	 PINTA_BACKEND_AIRFLOW_BASE_URL=$(PINTA_BACKEND_AIRFLOW_BASE_URL) \
-	 PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_AIRFLOW_USERNAME) \
-	 PINTA_BACKEND_AIRFLOW_PASSWORD="$$airflow_password" \
-	 uv run --directory $(BACKEND_DIR) python -m pinta_backend
+	@docker compose stop backend || true
+	PINTA_BACKEND_AIRFLOW_BASE_URL=$(PINTA_BACKEND_AIRFLOW_BASE_URL) \
+	PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_AIRFLOW_USERNAME) \
+	PINTA_BACKEND_AIRFLOW_PASSWORD=$(PINTA_BACKEND_AIRFLOW_PASSWORD) \
+	uv run --directory $(BACKEND_DIR) python -m pinta_backend
 
 backend-ts:
 	uv run --directory $(BACKEND_DIR) bash ./src/pinta_backend/scripts/update-translations.sh
@@ -180,10 +187,10 @@ test-integration: sync-all-but-qgis-and-airflow
 test-qgis: sync
 	uv run --directory $(QGIS_DIR) pytest -v
 
-test-e2e: sync
+test-e2e: sync up db-migrate-all
 	uv run --directory $(E2E_DIR) pytest
 
-test-e2e-in-container:
+test-e2e-in-container: up db-migrate-all
 	docker compose run --rm qgis uv run --active pytest
 
 test-all: test test-integration test-e2e

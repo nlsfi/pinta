@@ -194,44 +194,11 @@ def test_raster_diff_preserves_metadata(
             ),
             "transform",
         ),
-        (
-            core.RasterDataset(
-                array=np.array([[5, 3], [8, 1]], dtype=np.uint16),
-                transform=constants.DEFAULT_TRANSFORM,
-                crs=constants.DEFAULT_CRS,
-                nodata=None,
-            ),
-            _SECOND_DATASET,
-            "floating-point",
-        ),
-        (
-            _DATASET,
-            core.RasterDataset(
-                array=np.array([[2, 1], [3, 4]], dtype=np.uint16),
-                transform=constants.DEFAULT_TRANSFORM,
-                crs=constants.DEFAULT_CRS,
-                nodata=None,
-            ),
-            "floating-point",
-        ),
-        (
-            _DATASET,
-            core.RasterDataset(
-                array=np.array([[2.0, 1.0], [3.0, 4.0]], dtype=np.float64),
-                transform=constants.DEFAULT_TRANSFORM,
-                crs=constants.DEFAULT_CRS,
-                nodata=None,
-            ),
-            "identical",
-        ),
     ],
     ids=[
         "shape-mismatch",
         "crs-mismatch",
         "transform-mismatch",
-        "non-float-first",
-        "non-float-second",
-        "dtype-mismatch",
     ],
 )
 def test_raster_diff_raises_value_error(
