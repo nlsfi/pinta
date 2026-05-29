@@ -34,5 +34,7 @@ seed_connection() {
 seed_connection "pinta_processing_db" "${AIRFLOW_SEED_CONN_PINTA_PROCESSING_DB:-}"
 seed_connection "pinta_processing_db_container" \
     "${AIRFLOW_SEED_CONN_PINTA_PROCESSING_DB_CONTAINER:-}"
+seed_connection "pinta_job_db_admin_container" "${AIRFLOW_SEED_CONN_PINTA_JOB_DB_ADMIN_CONTAINER:-}"
+seed_connection "pinta_job_db_container" "${AIRFLOW_SEED_CONN_PINTA_JOB_DB_CONTAINER:-}"
 
 exec airflow "$@"

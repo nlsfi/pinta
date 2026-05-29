@@ -69,8 +69,11 @@ services:
       AIRFLOW_VAR_PINTA_CONTAINER_SOURCE_BASE_PATH: "${REPO_DIR}/test_data/point_clouds"
       AIRFLOW_VAR_PINTA_DATA_BASE_PATH: "${REPO_DIR}/test_data"
       AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH: "${REPO_DIR}/test_data/point_clouds"
+      AIRFLOW_VAR_PINTA_LASTOOLS_PATH: "${REPO_DIR}/external/LAStools"
       AIRFLOW_SEED_CONN_PINTA_PROCESSING_DB: "postgres://${DB_PRIMARY_EDITOR_USER}:${DB_PRIMARY_EDITOR_PASSWORD}@db:5432/${DB_PRIMARY_NAME}"
       AIRFLOW_SEED_CONN_PINTA_PROCESSING_DB_CONTAINER: "postgres://${DB_PRIMARY_PROCESSING_WORKER_USER}:${DB_PRIMARY_PROCESSING_WORKER_PASSWORD}@host.docker.internal:${COMPOSE_DB_PORT:-5400}/${DB_PRIMARY_NAME}"
+      AIRFLOW_SEED_CONN_PINTA_JOB_DB_ADMIN_CONTAINER: "postgres://${DB_JOB_ADMIN_USER}:${DB_JOB_ADMIN_PASSWORD}@host.docker.internal:${COMPOSE_DB_PORT:-5400}/${DB_JOB_TEMPLATE_NAME}"
+      AIRFLOW_SEED_CONN_PINTA_JOB_DB_CONTAINER: "postgres://${DB_JOB_PROCESSING_WORKER_USER}:${DB_JOB_PROCESSING_WORKER_PASSWORD}@host.docker.internal:${COMPOSE_DB_PORT:-5400}/${DB_JOB_TEMPLATE_NAME}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -86,6 +89,10 @@ services:
       - type: bind
         source: ${REPO_DIR:-.}
         target: ${REPO_DIR:-/repo}
+        read_only: true
+      - type: bind
+        source: ${REPO_DIR:-.}/external/LAStools
+        target: /lastools
         read_only: true
       - type: bind
         source: /var/run/docker.sock

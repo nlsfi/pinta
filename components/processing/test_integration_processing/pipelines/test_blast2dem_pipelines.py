@@ -14,6 +14,7 @@ from pinta_db_utils.postgis import raster
 from pinta_test_utils import pinta_utils
 
 from pinta_processing import pipelines
+from pinta_processing.reader.lastools import Blast2DemReader
 
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
@@ -26,6 +27,11 @@ _KEEP_CLASS = [2]
 @pytest.fixture(autouse=True)
 def _ensure_lastools_is_available(lastools_in_path: None) -> None:
     pass
+
+
+@pytest.fixture(autouse=True)
+def set_blast2dem_executable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(Blast2DemReader, "executable", "blast2dem64")
 
 
 def test_blast2dem_to_geotiff(
