@@ -27,6 +27,7 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
         "DB_SRID": "{{ var.value.pinta_db_srid }}",
         "DB_DEM_PIXEL_SIZE": "{{ var.value.pinta_db_dem_pixel_size }}",
         "DB_DEM_NODATA": "{{ var.value.pinta_db_dem_nodata }}",
+        "LAStoolsLicenseFile": "/lastools/lastoolslicense.txt",
     },
     "tty": True,  # To be able to see the logs
     # When using remote engine or docker-in-docker,
@@ -61,6 +62,15 @@ if data_base_path := Variable.get("pinta_data_base_path", "/test_data"):
         Mount(
             target="/input",
             source=data_base_path,
+            type="bind",
+            read_only=True,
+        )
+    )
+if lastools_path := Variable.get("pinta_lastools_path", "/external/LAStools"):
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target="/lastools",
+            source=lastools_path,
             type="bind",
             read_only=True,
         )

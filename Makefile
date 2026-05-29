@@ -16,6 +16,8 @@ E2E_DIR := $(COMPONENTS_DIR)/e2e
 export AIRFLOW_HOME := $(DAGS_DIR)/.airflow/
 export AIRFLOW_CONN_PINTA_PROCESSING_DB :=postgres://$(DB_PRIMARY_EDITOR_USER):$(DB_PRIMARY_EDITOR_PASSWORD)@$(DB_PRIMARY_HOST):$(DB_PRIMARY_PORT)/$(DB_PRIMARY_NAME)
 export AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER :=postgres://$(DB_PRIMARY_PROCESSING_WORKER_USER):$(DB_PRIMARY_PROCESSING_WORKER_PASSWORD)@host.docker.internal:$(DB_PRIMARY_PORT)/$(DB_PRIMARY_NAME)
+export AIRFLOW_CONN_PINTA_JOB_DB_ADMIN_CONTAINER :=postgres://$(DB_JOB_ADMIN_USER):$(DB_JOB_ADMIN_PASSWORD)@host.docker.internal:$(DB_JOB_PORT)/$(DB_JOB_TEMPLATE_NAME)
+export AIRFLOW_CONN_PINTA_JOB_DB_CONTAINER :=postgres://$(DB_JOB_PROCESSING_WORKER_USER):$(DB_JOB_PROCESSING_WORKER_PASSWORD)@host.docker.internal:$(DB_JOB_PORT)/$(DB_JOB_TEMPLATE_NAME)
 export AIRFLOW__CORE__DAGS_FOLDER := $(DAGS_DIR)/src/pinta_dags/dags
 export AIRFLOW__CORE__LOAD_EXAMPLES := false
 export AIRFLOW__API__EXPOSE_CONFIG := true
@@ -75,6 +77,9 @@ build-qgis:
 
 build-db:
 	docker compose build db
+
+build-airflow:
+	docker compose build airflow
 
 restart-fully: down pull up
 
@@ -149,7 +154,8 @@ AIRFLOW_LOCAL_ENV = set -a && . $(ROOT_DIR)/.env.airflow && set +a && \
 	AIRFLOW_VAR_PINTA_PROCESSING_CODE_MOUNT_DIR=$(REPO_DIR) \
 	AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH=$(ROOT_DIR)/test_data/point_clouds \
 	AIRFLOW_VAR_PINTA_CONTAINER_SOURCE_BASE_PATH=$(REPO_DIR)/test_data/point_clouds \
-	AIRFLOW_VAR_PINTA_DATA_BASE_PATH=$(REPO_DIR)/test_data
+	AIRFLOW_VAR_PINTA_DATA_BASE_PATH=$(REPO_DIR)/test_data \
+	AIRFLOW_VAR_PINTA_LASTOOLS_PATH=$(REPO_DIR)/external/LAStools
 
 airflow-start: airflow-write-passwords airflow-migrate
 	$(AIRFLOW_LOCAL_ENV) \

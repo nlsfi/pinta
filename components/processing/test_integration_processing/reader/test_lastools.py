@@ -29,6 +29,11 @@ def _ensure_lastools_is_available(lastools_in_path: None) -> None:
     pass
 
 
+@pytest.fixture(autouse=True)
+def set_blast2dem_executable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(lastools.Blast2DemReader, "executable", "blast2dem64")
+
+
 @pytest.fixture
 def add_tiles_to_db(session: "Session") -> None:
     laz_dir = pinta_utils.get_test_data_path(LAZ_DIR)

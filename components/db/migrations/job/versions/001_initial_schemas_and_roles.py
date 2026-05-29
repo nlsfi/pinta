@@ -71,13 +71,19 @@ def upgrade() -> None:
     )
 
     schema_op.grant_privileges_on_schema(
-        schema=REFERENCE_SCHEMA, role=PROCESSING_WORKER, privileges=("USAGE",)
+        schema=REFERENCE_SCHEMA, role=PROCESSING_WORKER, privileges=("USAGE", "CREATE")
     )
     schema_op.grant_default_privileges_on_tables_in_schema(
         schema=REFERENCE_SCHEMA,
         schema_owner=OWNER,
         role=PROCESSING_WORKER,
         privileges=("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"),
+    )
+    schema_op.grant_default_privileges_on_sequences_in_schema(
+        schema=REFERENCE_SCHEMA,
+        schema_owner=OWNER,
+        role=PROCESSING_WORKER,
+        privileges=("SELECT", "USAGE"),
     )
 
     # User schema
