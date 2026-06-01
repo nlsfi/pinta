@@ -67,7 +67,7 @@ def test_start_reference_dem_workflow_posts_workflow_payload(
 
     mock_post.assert_called_once_with(
         "http://example.test/workflows/hello_world",
-        json={"parameters": {"name": "area-1"}},
+        json={"parameters": {"name": "area-1"}, "production_area_id": "area-1"},
         timeout=10,
     )
     mock_post.return_value.raise_for_status.assert_called_once_with()

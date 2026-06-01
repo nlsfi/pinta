@@ -88,15 +88,26 @@ class PintaAPIClient:
     def start_reference_dem_workflow(self, production_area_id: str) -> None:
         """Starts a DEM update workflow for the given production area."""
         # TODO: correct signature and params
-        self._start_workflow("hello_world", {"name": production_area_id})
+        self._start_workflow(
+            "hello_world",
+            {"name": production_area_id},
+            production_area_id=production_area_id,
+        )
         MsgBar.info(
             tr("Reference DEM workflow task created successfully"), success=True
         )
 
-    def _start_workflow(self, dag_tag: str, parameters: dict[str, Any]) -> None:
+    def _start_workflow(
+        self,
+        dag_tag: str,
+        parameters: dict[str, Any],
+        production_area_id: str | None = None,
+    ) -> None:
         LOGGER.info("Starting workflow %s", dag_tag)
         LOGGER.debug("Workflow %s parameters: %s", dag_tag, parameters)
-        payload = {"parameters": parameters}
+        payload: dict[str, Any] = {"parameters": parameters}
+        if production_area_id is not None:
+            payload["production_area_id"] = production_area_id
         response = self.session.post(
             f"{self.base_url}{ApiEndpoint.workflows.value}/{dag_tag}",
             json=payload,
