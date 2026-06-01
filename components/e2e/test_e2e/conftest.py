@@ -13,13 +13,16 @@ from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
 from pinta_e2e_utils import constants
 from pinta_e2e_utils.airflow_client import AirflowClient
+from pinta_qgis_plugin.utils import messages
 from pinta_test_utils import xdist_utils
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
+    from unittest.mock import MagicMock
 
     from pinta_qgis_plugin.plugin import Plugin
+    from pytest_mock import MockerFixture
     from qgis.gui import QgisInterface
     from sqlmodel import Session
 
@@ -71,6 +74,12 @@ def created_db(worker_id: str) -> str:
 
 
 @pytest.fixture
+def backend_db_override_headers(created_db: str) -> dict[str, str]:
+    """Headers pointing the backend at this test's per-worker db clone."""
+    return {"X-Pinta-Db-Name": created_db}
+
+
+@pytest.fixture
 def db(created_db: str) -> Iterator["Session"]:
     with engine_utils.get_session(
         db_utils.get_primary_writer_credentials(created_db)
@@ -96,6 +105,11 @@ def qgis_plugin(
     plugin.initGui()
     yield plugin
     plugin.unload()
+
+
+@pytest.fixture
+def m_error_dialog(mocker: "MockerFixture") -> "MagicMock":
+    return mocker.patch.object(messages, "show_error_dialog")
 
 
 @pytest.fixture(scope="session")
