@@ -3,11 +3,26 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import geopandas
 import numpy as np
+import pytest
+from pytest_mock import MockerFixture
 from rasterio.transform import Affine
+from shapely.geometry import Point
 
-from pinta_processing import core
-from pinta_processing.writer import RasterPostgisWriter
+from pinta_processing import core, exceptions
+from pinta_processing.writer import RasterPostgisWriter, VectorPostgisWriter
+
+
+@pytest.fixture
+def vector_dataset() -> core.VectorDataset:
+    """VectorDataset with a small GeoDataFrame."""
+    gdf = geopandas.GeoDataFrame(
+        {"value": [1.0, 2.0]},
+        geometry=[Point(0, 0), Point(1, 1)],
+        crs="EPSG:3067",
+    )
+    return core.VectorDataset(geodataframe=gdf)
 
 
 def test_postgis_writer_generate_tiles(dataset: core.RasterDataset):
@@ -139,3 +154,39 @@ def test_resolve_partition_different_locations(dataset: core.RasterDataset):
         assert partition == expected_partitions[i], (
             f"Dataset {i}: expected partition {expected_partitions[i]}, got {partition}"
         )
+
+
+def test_vector_postgis_writer_writes_to_postgis(
+    vector_dataset: core.VectorDataset, mocker: MockerFixture
+):
+    """Test that VectorPostgisWriter calls to_postgis with correct arguments."""
+    mock_session = mocker.MagicMock()
+    mock_inspector = mocker.MagicMock()
+    mock_inspector.has_table.return_value = True
+    mocker.patch("sqlalchemy.inspect", return_value=mock_inspector)
+
+    mock_to_postgis = mocker.patch.object(
+        geopandas.GeoDataFrame, "to_postgis", return_value=None
+    )
+
+    stage = VectorPostgisWriter("myschema", "mytable", mock_session)
+    stage.process(vector_dataset)
+
+    mock_to_postgis.assert_called_once_with(
+        "mytable",
+        mock_session.connection(),
+        schema="myschema",
+        if_exists="append",
+        index=False,
+    )
+
+
+def test_vector_postgis_writer_invalid_input_raises_error(
+    dataset: core.RasterDataset, mocker: MockerFixture
+):
+    """Test that passing a non-VectorDataset raises InvalidStageInputError."""
+    mock_session = mocker.MagicMock()
+    stage = VectorPostgisWriter("myschema", "mytable", mock_session)
+
+    with pytest.raises(exceptions.InvalidStageInputError):
+        stage.process(dataset)  # type: ignore[arg-type]

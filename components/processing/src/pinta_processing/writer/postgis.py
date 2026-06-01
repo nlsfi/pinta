@@ -268,3 +268,39 @@ class RasterPostgisWriter(core.Stage):
 def _bits_to_int(*bits: tuple[int, int]) -> int:
     """Convert bits to integer."""
     return int("".join(f"{value:0{size}b}" for value, size in bits), 2)
+
+
+class VectorPostgisWriter(core.Stage):
+    """Write vector data to PostGIS table."""
+
+    def __init__(
+        self,
+        schema: str,
+        table_name: str,
+        session: sqlmodel.Session,
+    ) -> None:
+        super().__init__()
+        self.schema = schema
+        self.table_name = table_name
+        self.session = session
+
+    def process(self, data: core.StageReturnType) -> None:
+        """Write vector data to PostGIS table."""
+        if not isinstance(data, core.VectorDataset):
+            raise exceptions.InvalidStageInputError(
+                stage_name=VectorPostgisWriter.__name__,
+                expected_type=core.VectorDataset.__name__,
+                received_type=type(data).__name__,
+            )
+        self._write_to_postgis(data)
+
+    def _write_to_postgis(self, data: core.VectorDataset) -> None:
+        con = self.session.connection()
+        LOGGER.info("Writing vector data to table %s.%s", self.schema, self.table_name)
+        data.geodataframe.to_postgis(
+            self.table_name,
+            con,
+            schema=self.schema,
+            if_exists="append",
+            index=False,
+        )
