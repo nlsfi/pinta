@@ -7,13 +7,13 @@ import numpy as np
 from rasterio.transform import Affine
 
 from pinta_processing import core
-from pinta_processing.writer import PostgisWriter
+from pinta_processing.writer import RasterPostgisWriter
 
 
 def test_postgis_writer_generate_tiles(dataset: core.RasterDataset):
     """Test that _generate_tiles creates tiles correctly from a RasterDataset."""
     # Create writer with small tile size for testing (4x4 tiles)
-    stage = PostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[call-arg]
+    stage = RasterPostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[call-arg]
 
     # Generate tiles from the 2x2 dataset
     tiles = stage._generate_tiles(dataset)
@@ -49,7 +49,7 @@ def test_postgis_writer_generates_multiple_tiles(dataset: core.RasterDataset):
     )
 
     # Create writer with 4x4 tile size
-    stage = PostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[call-arg]
+    stage = RasterPostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[call-arg]
 
     # Generate tiles
     tiles = stage._generate_tiles(large_dataset)
@@ -88,7 +88,7 @@ def test_postgis_writer_generates_multiple_tiles(dataset: core.RasterDataset):
 def test_resolve_partition(dataset: core.RasterDataset):
     """Test that _resolve_partition returns valid partition index."""
     staging_tables = 3
-    stage = PostgisWriter("foo", "bar", None, staging_tables=staging_tables)  # type: ignore[call-arg]
+    stage = RasterPostgisWriter("foo", "bar", None, staging_tables=staging_tables)  # type: ignore[call-arg]
 
     partition = stage._resolve_partition(dataset)
 
@@ -102,7 +102,7 @@ def test_resolve_partition(dataset: core.RasterDataset):
 def test_resolve_partition_different_locations(dataset: core.RasterDataset):
     """Test that different spatial locations get correct partitions with deterministic seed."""
     staging_tables = 3
-    stage = PostgisWriter("foo", "bar", None, staging_tables=staging_tables)  # type: ignore[call-arg]
+    stage = RasterPostgisWriter("foo", "bar", None, staging_tables=staging_tables)  # type: ignore[call-arg]
 
     # Create random number generator with fixed seed for reproducibility
     rng = np.random.default_rng(1337)

@@ -110,7 +110,7 @@ def _write_dem_to_postgis(processing_worker_session: "Session") -> str:
     raster.initialize_raster_table(processing_worker_session, "processing", "dem")
     file_path = pinta_utils.get_test_data_path("processing/dem.tif")
 
-    pipeline = reader.RasterioReader(str(file_path)) | writer.PostgisWriter(
+    pipeline = reader.RasterioReader(str(file_path)) | writer.RasterPostgisWriter(
         "processing", "dem", processing_worker_session
     )
     pipeline.execute()

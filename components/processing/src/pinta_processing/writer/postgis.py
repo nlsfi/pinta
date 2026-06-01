@@ -48,7 +48,7 @@ class DataTypeConfig:
             ) from None
 
 
-class PostgisWriter(core.Stage):
+class RasterPostgisWriter(core.Stage):
     """Write raster data to PostGIS table using COPY FROM stdin."""
 
     def __init__(
@@ -70,7 +70,7 @@ class PostgisWriter(core.Stage):
         """Write raster data to PostGIS table."""
         if not isinstance(data, core.RasterDataset):
             raise exceptions.InvalidStageInputError(
-                stage_name=PostgisWriter.__name__,
+                stage_name=RasterPostgisWriter.__name__,
                 expected_type=core.RasterDataset.__name__,
                 received_type=type(data).__name__,
             )
