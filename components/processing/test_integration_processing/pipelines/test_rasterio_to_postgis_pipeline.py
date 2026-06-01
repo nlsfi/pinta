@@ -29,7 +29,7 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
         input_crs = src.crs
 
     # Execute pipeline to tile and write to PostGIS
-    pipeline = reader.RasterioReader(str(file_path)) | writer.PostgisWriter(
+    pipeline = reader.RasterioReader(str(file_path)) | writer.RasterPostgisWriter(
         "processing", "dem", processing_worker_session
     )
     pipeline.execute()
@@ -98,12 +98,12 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
 def test_postgis_writer_with_staging_tables(
     processing_worker_session: "Session",
 ) -> None:
-    """Test PostgisWriter with staging tables and verify data distribution and counts.
+    """Test RasterPostgisWriter with staging tables and verify data distribution and counts.
 
     Generate 10 random rasters, write to db using 3 staging tables."""
 
     def get_pipeline(file_path: Path) -> core.Pipeline:
-        return reader.RasterioReader(str(file_path)) | writer.PostgisWriter(
+        return reader.RasterioReader(str(file_path)) | writer.RasterPostgisWriter(
             "processing", "dem", processing_worker_session, staging_tables=3
         )
 

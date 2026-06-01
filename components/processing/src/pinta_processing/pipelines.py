@@ -36,7 +36,7 @@ def rasterio_to_postgis(  # noqa: PLR0913
             # Calculate and write overviews
             *_generate_overview_stages(schema, table_name, session, staging_tables),
             # Write original data
-            writer.PostgisWriter(schema, table_name, session, staging_tables),
+            writer.RasterPostgisWriter(schema, table_name, session, staging_tables),
         ]
     )
 
@@ -103,7 +103,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
             # Calculate and write overviews
             *_generate_overview_stages(schema, table_name, session, staging_tables),
             # Write original data
-            writer.PostgisWriter(schema, table_name, session, staging_tables),
+            writer.RasterPostgisWriter(schema, table_name, session, staging_tables),
         ]
     )
 
@@ -115,6 +115,6 @@ def _overview_to_postgis(
     session: Session,
     staging_tables: int,
 ) -> core.Pipeline:
-    return filters.DownsampleOverview(factor) | writer.PostgisWriter(
+    return filters.DownsampleOverview(factor) | writer.RasterPostgisWriter(
         schema, table_name, session, staging_tables
     )
