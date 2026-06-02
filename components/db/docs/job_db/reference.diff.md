@@ -6,19 +6,18 @@
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
 | rid | bigint | nextval('reference.diff_rid_seq'::regclass) | false |  |  |  |
 | rast | raster |  | false |  |  |  |
-| id | uuid |  | false |  |  |  |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| diff_pkey | PRIMARY KEY | PRIMARY KEY (rid, id) |
+| diff_pkey | PRIMARY KEY | PRIMARY KEY (rid) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| diff_pkey | CREATE UNIQUE INDEX diff_pkey ON reference.diff USING btree (rid, id) |
+| diff_pkey | CREATE UNIQUE INDEX diff_pkey ON reference.diff USING btree (rid) |
 | idx_diff_rast | CREATE INDEX idx_diff_rast ON reference.diff USING gist (st_convexhull(rast)) |
 
 ## Relations
@@ -30,7 +29,6 @@ erDiagram
 "reference.diff" {
   bigint rid
   raster rast
-  uuid id
 }
 ```
 

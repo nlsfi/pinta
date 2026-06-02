@@ -6,19 +6,18 @@
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
 | rid | bigint | nextval('reference.dem_rid_seq'::regclass) | false |  |  |  |
 | rast | raster |  | false |  |  |  |
-| id | uuid |  | false |  |  |  |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| dem_pkey | PRIMARY KEY | PRIMARY KEY (rid, id) |
+| dem_pkey | PRIMARY KEY | PRIMARY KEY (rid) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| dem_pkey | CREATE UNIQUE INDEX dem_pkey ON reference.dem USING btree (rid, id) |
+| dem_pkey | CREATE UNIQUE INDEX dem_pkey ON reference.dem USING btree (rid) |
 | idx_dem_rast | CREATE INDEX idx_dem_rast ON reference.dem USING gist (st_convexhull(rast)) |
 
 ## Relations
@@ -30,7 +29,6 @@ erDiagram
 "reference.dem" {
   bigint rid
   raster rast
-  uuid id
 }
 ```
 
