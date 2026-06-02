@@ -39,6 +39,7 @@ class WorkflowTriggerRequest(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(extra="forbid")
 
     parameters: dict[str, Any] | None = None
+    production_area_id: str | None = None
 
 
 class WorkflowRunStarted(pydantic.BaseModel):

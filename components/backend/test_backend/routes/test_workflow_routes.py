@@ -3,24 +3,43 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import contextlib
 import types
+import uuid
 from typing import Any
 from unittest import mock
 
 import pytest
 from fastapi import testclient
+from pytest_mock import MockerFixture
 
-from pinta_backend import exceptions
+from pinta_backend import db_context, exceptions, routes
 
 
 def _dag_run(dag_id: str = "print_hello_world", run_id: str = "manual__1") -> Any:
     return types.SimpleNamespace(dag_id=dag_id, dag_run_id=run_id)
 
 
+@pytest.fixture
+def mock_mark_as_queued(mocker: MockerFixture) -> mock.MagicMock:
+    """Patch the production-area service used by the route."""
+    return mocker.patch.object(routes.production_area, "mark_as_queued", autospec=True)
+
+
+def _yields(value: Any | None = None) -> Any:
+    @contextlib.contextmanager
+    def _cm(*_args: Any, **_kwargs: Any) -> Any:
+        yield value
+
+    return _cm
+
+
 def test_trigger_workflow_returns_dag_run_on_success(
     client_with_mock_airflow: testclient.TestClient,
     mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
 ) -> None:
+    mock_mark_as_queued.side_effect = _yields()
     mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
 
     response = client_with_mock_airflow.post("/workflows/hello")
@@ -36,7 +55,9 @@ def test_trigger_workflow_returns_dag_run_on_success(
 def test_trigger_workflow_forwards_parameters_payload(
     client_with_mock_airflow: testclient.TestClient,
     mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
 ) -> None:
+    mock_mark_as_queued.side_effect = _yields()
     mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
 
     response = client_with_mock_airflow.post(
@@ -53,7 +74,9 @@ def test_trigger_workflow_forwards_parameters_payload(
 def test_trigger_workflow_accepts_empty_body(
     client_with_mock_airflow: testclient.TestClient,
     mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
 ) -> None:
+    mock_mark_as_queued.side_effect = _yields()
     mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
 
     response = client_with_mock_airflow.post("/workflows/hello", json={})
@@ -76,12 +99,174 @@ def test_trigger_workflow_accepts_empty_body(
 def test_trigger_workflow_maps_client_errors_to_http_errors(
     client_with_mock_airflow: testclient.TestClient,
     mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
     exc: Exception,
     expected_status: int,
 ) -> None:
+    mock_mark_as_queued.side_effect = _yields()
     mock_airflow_client.trigger_dag_by_tag.side_effect = exc
 
     response = client_with_mock_airflow.post("/workflows/some-tag")
 
     assert response.status_code == expected_status
     assert response.json()["detail"]
+
+
+def test_trigger_workflow_passes_production_area_id_to_service(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+) -> None:
+    mock_mark_as_queued.side_effect = _yields()
+    mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
+    area_id = str(uuid.uuid4())
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello", json={"production_area_id": area_id}
+    )
+
+    assert response.status_code == 202
+    mock_mark_as_queued.assert_called_once_with(area_id)
+
+
+def test_trigger_workflow_passes_none_to_service_when_id_absent(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+) -> None:
+    mock_mark_as_queued.side_effect = _yields()
+    mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
+
+    response = client_with_mock_airflow.post("/workflows/hello", json={})
+
+    assert response.status_code == 202
+    mock_mark_as_queued.assert_called_once_with(None)
+
+
+@pytest.mark.parametrize("dev_mode", [True, False])
+def test_trigger_workflow_applies_db_override_header_via_context(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+    mocker: MockerFixture,
+    dev_mode: bool,
+) -> None:
+    mocker.patch.object(
+        db_context.settings,
+        "get_settings",
+        return_value=types.SimpleNamespace(development_mode=dev_mode),
+    )
+    captured: dict[str, str | None] = {}
+
+    @contextlib.contextmanager
+    def _capture(*_args: Any, **_kwargs: Any) -> Any:
+        captured["db_name"] = db_context.get_db_name_override()
+        yield None
+
+    mock_mark_as_queued.side_effect = _capture
+    mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
+    area_id = str(uuid.uuid4())
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello",
+        json={"production_area_id": area_id},
+        headers={"X-Pinta-Db-Name": "pinta_test_gw0"},
+    )
+
+    assert response.status_code == 202
+    assert captured["db_name"] == ("pinta_test_gw0" if dev_mode else None)
+
+
+def test_trigger_workflow_uses_no_db_override_without_header(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(
+        db_context.settings,
+        "get_settings",
+        return_value=types.SimpleNamespace(development_mode=True),
+    )
+    captured: dict[str, str | None] = {}
+
+    @contextlib.contextmanager
+    def _capture(*_args: Any, **_kwargs: Any) -> Any:
+        captured["db_name"] = db_context.get_db_name_override()
+        yield None
+
+    mock_mark_as_queued.side_effect = _capture
+    mock_airflow_client.trigger_dag_by_tag.return_value = _dag_run()
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello", json={"production_area_id": str(uuid.uuid4())}
+    )
+
+    assert response.status_code == 202
+    assert captured["db_name"] is None
+
+
+def test_trigger_workflow_returns_503_when_database_unreachable(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+) -> None:
+    mock_mark_as_queued.side_effect = exceptions.DatabaseUnreachableError(
+        "conn refused"
+    )
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello", json={"production_area_id": str(uuid.uuid4())}
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"]
+    mock_airflow_client.trigger_dag_by_tag.assert_not_called()
+
+
+def test_trigger_workflow_returns_404_when_production_area_missing(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+) -> None:
+    area_id = str(uuid.uuid4())
+    mock_mark_as_queued.side_effect = exceptions.ProductionAreaNotFoundError(area_id)
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello", json={"production_area_id": area_id}
+    )
+
+    assert response.status_code == 404
+    assert area_id in response.json()["detail"]
+    mock_airflow_client.trigger_dag_by_tag.assert_not_called()
+
+
+def test_trigger_workflow_propagates_trigger_error_through_service_block(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_airflow_client: mock.AsyncMock,
+    mock_mark_as_queued: mock.MagicMock,
+) -> None:
+    """A failing Airflow trigger must propagate out through ``mark_as_queued`` so
+    the service's restore-on-exception branch runs."""
+    saw_exception = False
+
+    @contextlib.contextmanager
+    def _capturing_cm(*_args: Any, **_kwargs: Any) -> Any:
+        nonlocal saw_exception
+        try:
+            yield None
+        except BaseException:
+            saw_exception = True
+            raise
+
+    mock_mark_as_queued.side_effect = _capturing_cm
+    mock_airflow_client.trigger_dag_by_tag.side_effect = (
+        exceptions.AirflowUnreachableError("dns")
+    )
+
+    response = client_with_mock_airflow.post(
+        "/workflows/hello", json={"production_area_id": str(uuid.uuid4())}
+    )
+
+    assert response.status_code == 502
+    assert saw_exception

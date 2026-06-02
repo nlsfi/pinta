@@ -22,6 +22,7 @@ class Settings(pydantic_settings.BaseSettings):
     the bare ``AIRFLOW_*`` form (matches the production Ansible contract).
     """
 
+    # Airflow settings
     airflow_base_url: pydantic.AnyHttpUrl = pydantic.Field(
         validation_alias=_aliases("PINTA_BACKEND_AIRFLOW_BASE_URL", "AIRFLOW_BASE_URL"),
     )
@@ -45,8 +46,33 @@ class Settings(pydantic_settings.BaseSettings):
         default=3011,
         validation_alias="PINTA_BACKEND_PORT",
     )
+    development_mode: bool = pydantic.Field(
+        default=False,
+        validation_alias="PINTA_DEVELOPMENT_MODE",
+    )
+
+    # Database settings
+    primary_db_host: str = pydantic.Field(validation_alias="DB_PRIMARY_HOST")
+    primary_db_port: str = pydantic.Field(validation_alias="DB_PRIMARY_PORT")
+    primary_db_name: str = pydantic.Field(validation_alias="DB_PRIMARY_NAME")
+    primary_db_user: str = pydantic.Field(validation_alias="DB_PRIMARY_BACKEND_USER")
+    primary_db_password: pydantic.SecretStr = pydantic.Field(
+        validation_alias="DB_PRIMARY_BACKEND_PASSWORD"
+    )
 
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore")
+
+    @property
+    def primary_db_uri(self) -> str:
+        """Primary database connection URI."""
+        return self.primary_db_uri_for(self.primary_db_name)
+
+    def primary_db_uri_for(self, db_name: str) -> str:
+        """Primary database connection URI targeting `db_name`."""
+        return (
+            f"postgresql+psycopg://{self.primary_db_user}:{self.primary_db_password.get_secret_value()}"
+            f"@{self.primary_db_host}:{self.primary_db_port}/{db_name}"
+        )
 
 
 @functools.lru_cache(maxsize=1)

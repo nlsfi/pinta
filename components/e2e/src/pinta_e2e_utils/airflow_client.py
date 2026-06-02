@@ -208,7 +208,7 @@ class AirflowClient:
         response.raise_for_status()
         return _render_log_content(response.json().get("content", []))
 
-    def describe_failed_run(self, dag: DagRun, *, max_log_chars: int = 6000) -> str:
+    def describe_failed_run(self, dag: DagRun, *, max_log_chars: int = 20000) -> str:
         """Summarize a DAG run's task states and dump the failed tasks' logs."""
         try:
             task_instances = self.get_task_instances(dag)

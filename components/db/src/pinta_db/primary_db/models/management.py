@@ -15,11 +15,11 @@ from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlmodel import Field, Relationship
 
+from pinta_db import utils
 from pinta_db.common.base import BasePrimaryDb
 from pinta_db.constants import MULTIPOLYGON, POLYGON
 from pinta_db.env import SRID
 from pinta_db.primary_db.models.base import ManagementBase
-from pinta_db_utils import model_utils
 
 
 class ProcessingStatus(enum.StrEnum):
@@ -64,9 +64,7 @@ class PointCloudTile(BasePrimaryDb, ManagementBase, table=True):  # type: ignore
     geom: Any = Field(sa_column=Column(Geometry(POLYGON, srid=SRID, nullable=False)))
     file_path: str
 
-    production_area_id: uuid.UUID = Field(
-        foreign_key=model_utils.foreign_key(ProductionArea)
-    )
+    production_area_id: uuid.UUID = Field(foreign_key=utils.foreign_key(ProductionArea))
     production_area: "ProductionArea" = Relationship(back_populates="tiles")
 
     @property
