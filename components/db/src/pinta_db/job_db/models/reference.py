@@ -3,6 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import uuid
 from typing import Any
 
 from geoalchemy2 import Geometry
@@ -30,6 +31,7 @@ class DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
 class DiffPolygon(ReferenceBase, table=True):  # type: ignore[call-arg]
     """Difference polygon."""
 
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     relevance_score: float | None = Field(sa_column=Column(Float, nullable=True))
     geom: Any = Field(sa_column=Column(Geometry(POLYGON, srid=SRID, nullable=False)))
 
@@ -37,6 +39,7 @@ class DiffPolygon(ReferenceBase, table=True):  # type: ignore[call-arg]
 class DiffPolygonCluster(ReferenceBase, table=True):  # type: ignore[call-arg]
     """Cluster of Difference polygons."""
 
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     energy_sum: float | None = Field(sa_column=Column(Float, nullable=True))
     energy_distribution: float | None = Field(sa_column=Column(Float, nullable=True))
     cluster_area: float | None = Field(sa_column=Column(Float, nullable=True))
