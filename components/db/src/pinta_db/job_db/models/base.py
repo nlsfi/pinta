@@ -16,8 +16,6 @@ class ReferenceBase(BaseJobDb):
 
     __table_args__ = {"schema": Schema.REFERENCE.value}  # noqa: RUF012
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-
 
 class UserBase(BaseJobDb):
     """Base model for tables in user schema."""
