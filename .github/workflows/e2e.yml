@@ -1,23 +1,43 @@
 name: E2E tests
 
+# Reusable workflow for running E2E tests against candidate images built and
+# pushed by build-containers.yml.
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'components/**'
-      - '.github/workflows/e2e.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'components/**'
-      - '.github/workflows/e2e.yml'
+  workflow_call:
+    inputs:
+      candidate_tag:
+        description: Candidate container image tag to test
+        required: true
+        type: string
+      candidate_sha:
+        description: Git SHA matching the candidate images
+        required: true
+        type: string
+      source_event:
+        description: Event that produced the candidate images
+        required: true
+        type: string
+      head_branch:
+        description: Source branch for notification routing
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  e2e:
+  candidate-e2e:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROFILES: "*"
+      PINTA_IMAGE_TAG: ${{ inputs.candidate_tag }}
+      AIRFLOW_VAR_PINTA_PROCESSING_IMAGE: ghcr.io/nlsfi/pinta/processing:${{ inputs.candidate_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.candidate_sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -25,20 +45,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
+      - name: Login to GitHub Container Registry
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
       - name: Copy .env.example to .env
         run: |
           cp .env.example .env
           sed -i "s|^REPO_DIR=.*|REPO_DIR=$GITHUB_WORKSPACE|" .env
 
-      - name: Build all compose images
-        env:
-          COMPOSE_PROFILES: "*"
-        run: |
-          docker buildx bake \
-            --file docker-compose.yml \
-            --load \
-            --set "*.cache-from=type=gha" \
-            --set "*.cache-to=type=gha,mode=max"
+      - name: Pull candidate images
+        run: docker compose pull processing airflow backend qgis
+
+      - name: Build empty database image
+        run: docker compose build db
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
@@ -49,14 +68,16 @@ jobs:
       - name: Run migrations
         run: make db-migrate-all
 
-      # Brings up airflow + backend via the target's `up` prerequisite, so the
-      # slow airflow container only starts for the step that needs it.
       - name: Run e2e tests in QGIS container
         run: make test-e2e-in-container
 
+      - name: Cleanup containers
+        if: always()
+        run: docker compose down -v --remove-orphans
+
   notify-teams:
-    needs: e2e
-    if: ${{ always() && needs.e2e.result == 'failure' && github.ref == 'refs/heads/main' }}
+    needs: candidate-e2e
+    if: ${{ always() && needs.candidate-e2e.result == 'failure' && inputs.head_branch == 'main' }}
     uses: ./.github/workflows/notify-teams.yml
     with:
       job_name: E2E

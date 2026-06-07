@@ -3,26 +3,22 @@ name: Build Containers
 on:
   push:
     branches: [ main ]
-    paths:
+    paths: &container_paths
       - 'docker-compose.yml'
+      - 'pyproject.toml'
+      - 'uv.lock'
       - 'infra/containers/**'
       - 'infra/ansible/**'
-      - 'components/**/Containerfile'
-      - 'components/**/*.sh'
+      - 'components/**'
       - '.github/workflows/build-containers.yml'
-      - 'components/db/migrations/**'
+      - '.github/workflows/build-container.yml'
+      - '.github/workflows/e2e.yml'
+      - '.github/workflows/integration-tests.yml'
+      - '.github/workflows/publish.yml'
       - 'test_data/**'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'docker-compose.yml'
-      - 'infra/containers/**'
-      - 'infra/ansible/**'
-      - 'components/**/Containerfile'
-      - 'components/**/*.sh'
-      - '.github/workflows/build-containers.yml'
-      - 'components/db/migrations/**'
-      - 'test_data/**'
+    paths: *container_paths
   workflow_dispatch:
   release:
     types: [ created ]
@@ -32,7 +28,64 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      candidate-tag: ${{ steps.image_tag.outputs.candidate-tag }}
+      branch-name: ${{ steps.image_tag.outputs.branch-name }}
+    steps:
+      - name: Resolve image tag
+        id: image_tag
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          CANDIDATE_TAG="ci-${{ github.sha }}"
+          BRANCH_NAME="${HEAD_REF:-$REF_NAME}"
+
+          echo "candidate-tag=$CANDIDATE_TAG" >> "$GITHUB_OUTPUT"
+          echo "branch-name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+  build-containers:
+    needs: resolve-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image-name: processing
+            registry-image: ghcr.io/nlsfi/pinta/processing
+            containerfile: components/processing/Containerfile
+            context: .
+            target: ''
+          - image-name: e2e
+            registry-image: ghcr.io/nlsfi/pinta/e2e
+            containerfile: components/e2e/Containerfile
+            context: .
+            target: ''
+          - image-name: airflow
+            registry-image: ghcr.io/nlsfi/pinta/airflow
+            containerfile: components/dags/Containerfile
+            context: .
+            target: ''
+          - image-name: backend
+            registry-image: ghcr.io/nlsfi/pinta/backend
+            containerfile: components/backend/Containerfile
+            context: .
+            target: dev
+    uses: ./.github/workflows/build-container.yml
+    with:
+      image-name: ${{ matrix.image-name }}
+      registry-image: ${{ matrix.registry-image }}
+      containerfile: ${{ matrix.containerfile }}
+      context: ${{ matrix.context }}
+      target: ${{ matrix.target }}
+      tag: ${{ needs.resolve-tag.outputs.candidate-tag }}
+      push: true
+
+  build-db:
+    needs: resolve-tag
     runs-on: ubuntu-latest
     env:
       COMPOSE_PROJECT_NAME: pinta-ci
@@ -48,7 +101,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: Build all images
+      - name: Build DB base image
         run: |
           set -euo pipefail
 
@@ -59,31 +112,8 @@ jobs:
             --cache-to type=gha,scope=db,mode=max \
             components/db/containers/postgis
 
-
-          docker buildx build --load \
-            -f components/processing/Containerfile \
-            -t pinta/processing:latest \
-            --cache-from type=gha,scope=processing \
-            --cache-to type=gha,scope=processing,mode=max \
-            .
-
-          docker buildx build --load \
-            -f components/e2e/Containerfile \
-            -t pinta/e2e:latest \
-            --cache-from type=gha,scope=e2e \
-            --cache-to type=gha,scope=e2e,mode=max \
-            .
-
-          docker buildx build --load \
-            -f components/dags/Containerfile \
-            -t pinta/airflow:latest \
-            .
-
           # Compose uses GHCR image names, so map local builds to those names.
           docker tag pinta/db:latest "$GHCR_PREFIX/db:latest"
-          docker tag pinta/processing:latest "$GHCR_PREFIX/processing:latest"
-          docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:latest"
-          docker tag pinta/airflow:latest "$GHCR_PREFIX/airflow:latest"
 
       - name: Copy .env.example to .env
         run: cp .env.example .env
@@ -152,50 +182,24 @@ jobs:
 
           docker image inspect pinta/db:latest > /dev/null
 
-      - name: Resolve image tag
-        id: image_tag
-        run: |
-          set -euo pipefail
-
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
-          else
-            TAG="latest"
-          fi
-
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
       - name: Login to GitHub Container Registry
-        if: github.event_name == 'push' || github.event_name == 'release'
         run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Tag images for GHCR
+      - name: Tag DB image for GHCR
         run: |
           set -euo pipefail
 
-          TAG="${{ steps.image_tag.outputs.tag }}"
+          TAG="${{ needs.resolve-tag.outputs.candidate-tag }}"
 
           docker tag pinta/db:latest "$GHCR_PREFIX/db:$TAG"
-          docker tag pinta/processing:latest "$GHCR_PREFIX/processing:$TAG"
-          docker tag pinta/e2e:latest "$GHCR_PREFIX/e2e:$TAG"
-          docker tag pinta/airflow:latest "$GHCR_PREFIX/airflow:$TAG"
 
-      - name: Push images to GHCR
-        if: github.event_name == 'push' || github.event_name == 'release'
+      - name: Push DB image to GHCR
         run: |
           set -euo pipefail
 
-          TAG="${{ steps.image_tag.outputs.tag }}"
+          TAG="${{ needs.resolve-tag.outputs.candidate-tag }}"
 
           docker push "$GHCR_PREFIX/db:$TAG"
-          docker push "$GHCR_PREFIX/processing:$TAG"
-          docker push "$GHCR_PREFIX/e2e:$TAG"
-          docker push "$GHCR_PREFIX/airflow:$TAG"
-
-      - name: Show built images
-        run: |
-          docker image ls --filter reference='pinta/*'
-          docker image ls --filter reference="$GHCR_PREFIX/*"
 
       - name: Cleanup containers
         if: always()
@@ -203,9 +207,39 @@ jobs:
           docker rm -f pinta-db-committer >/dev/null 2>&1 || true
           docker compose down -v --remove-orphans
 
+  e2e:
+    needs: [ resolve-tag, build-containers, build-db ]
+    uses: ./.github/workflows/e2e.yml
+    with:
+      candidate_tag: ${{ needs.resolve-tag.outputs.candidate-tag }}
+      candidate_sha: ${{ github.sha }}
+      source_event: ${{ github.event_name }}
+      head_branch: ${{ needs.resolve-tag.outputs.branch-name }}
+    secrets: inherit
+
+  integration-tests:
+    needs: [ resolve-tag, build-containers ]
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      candidate_tag: ${{ needs.resolve-tag.outputs.candidate-tag }}
+      candidate_sha: ${{ github.sha }}
+      head_branch: ${{ needs.resolve-tag.outputs.branch-name }}
+    secrets: inherit
+
+  publish:
+    needs: [ resolve-tag, e2e, integration-tests ]
+    if: ${{ needs.e2e.result == 'success' && needs.integration-tests.result == 'success' && (needs.resolve-tag.outputs.branch-name == 'main' || github.event_name == 'release') }}
+    uses: ./.github/workflows/publish.yml
+    with:
+      candidate_tag: ${{ needs.resolve-tag.outputs.candidate-tag }}
+      candidate_sha: ${{ github.sha }}
+      source_event: ${{ github.event_name }}
+      head_branch: ${{ needs.resolve-tag.outputs.branch-name }}
+    secrets: inherit
+
   notify-teams:
-    needs: build
-    if: ${{ always() && needs.build.result == 'failure' && github.ref == 'refs/heads/main' }}
+    needs: [ resolve-tag, build-containers, build-db ]
+    if: ${{ always() && (needs.resolve-tag.result == 'failure' || needs.build-containers.result == 'failure' || needs.build-db.result == 'failure') && needs.resolve-tag.outputs.branch-name == 'main' }}
     uses: ./.github/workflows/notify-teams.yml
     with:
       job_name: Build containers

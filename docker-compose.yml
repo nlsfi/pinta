@@ -7,7 +7,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: ghcr.io/nlsfi/pinta/db:latest
+    image: ghcr.io/nlsfi/pinta/db:${PINTA_IMAGE_TAG:-latest}
     healthcheck:
       test: pg_isready -U postgres || exit 1
       interval: 5s
@@ -34,7 +34,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: ghcr.io/nlsfi/pinta/processing:latest
+    image: ghcr.io/nlsfi/pinta/processing:${PINTA_IMAGE_TAG:-latest}
     environment:
       PATH: "/lastools/bin:/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
       LAStoolsLicenseFile: /lastools/lastoolslicense.txt
@@ -56,13 +56,14 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: ghcr.io/nlsfi/pinta/airflow:latest
+    image: ghcr.io/nlsfi/pinta/airflow:${PINTA_IMAGE_TAG:-latest}
     env_file:
       - ".env.airflow"
       - ".env.e2e"
       - ".env"
     environment:
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "admin:admin,${PINTA_BACKEND_AIRFLOW_USERNAME:-pinta-backend}:op"
+      AIRFLOW_VAR_PINTA_PROCESSING_IMAGE: "${AIRFLOW_VAR_PINTA_PROCESSING_IMAGE:-ghcr.io/nlsfi/pinta/processing:${PINTA_IMAGE_TAG:-latest}}"
       # Pre-populated by docker-entrypoint.sh so the backend can authenticate
       AIRFLOW_SIMPLE_AUTH_MANAGER_PASSWORDS: '{"admin":"${AIRFLOW_ADMIN_PASSWORD:-admin}","${PINTA_BACKEND_AIRFLOW_USERNAME:-pinta-backend}":"${PINTA_BACKEND_AIRFLOW_PASSWORD:-pinta-backend}"}'
       AIRFLOW_VAR_PINTA_PROCESSING_CODE_MOUNT_DIR: "${REPO_DIR}"
@@ -119,7 +120,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: ghcr.io/nlsfi/pinta/backend:latest
+    image: ghcr.io/nlsfi/pinta/backend:${PINTA_IMAGE_TAG:-latest}
     env_file:
       - ".env"
       - ".env.e2e"
@@ -171,7 +172,7 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    image: ghcr.io/nlsfi/pinta/e2e:latest
+    image: ghcr.io/nlsfi/pinta/e2e:${PINTA_IMAGE_TAG:-latest}
     env_file:
       - ".env.example"
       - ".env.e2e"
