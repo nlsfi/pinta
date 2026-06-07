@@ -3,7 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-"""Materialize the canonical `processing` schema raster tables.
+"""Materialize the canonical `processing` schema staging raster tables.
 
 Meant to be run by CI for maintaining documentation.
 """
@@ -27,12 +27,8 @@ _SCHEMA = Schema.PROCESSING.value
 _TABLE = "dem"
 
 
-def _exists(inspector: sa.Inspector, table_name: str) -> bool:
-    return inspector.has_table(table_name, schema=_SCHEMA)
-
-
 def main() -> None:
-    """Create the canonical processing-schema raster tables if missing."""
+    """Create canonical processing-schema raster staging tables if missing."""
     credentials = db_utils.get_primary_processing_worker_credentials(
         os.environ["DB_PRIMARY_NAME"]
     )
@@ -41,32 +37,35 @@ def main() -> None:
         with sqlmodel.Session(engine) as session:
             inspector = sa.inspect(engine)
 
-            if _exists(inspector, _TABLE):
-                logger.info("%s.%s already exists, skipping", _SCHEMA, _TABLE)
-            else:
-                raster.initialize_raster_table(session, _SCHEMA, _TABLE)
-                logger.info("created %s.%s", _SCHEMA, _TABLE)
+            if not inspector.has_table(_TABLE, schema=_SCHEMA):
+                msg = (
+                    f"{_SCHEMA}.{_TABLE} is missing; main raster tables must "
+                    "come from the template database"
+                )
+                raise SystemExit(msg)
 
-            inspector = sa.inspect(engine)
             overview_names = [
                 raster.OVERVIEW_TABLE_NAME.format(level=level, table_name=_TABLE)
                 for level in raster.DEFAULT_OVERVIEW_LEVELS
             ]
-            existing = [name for name in overview_names if _exists(inspector, name)]
-            if len(existing) == len(overview_names):
-                logger.info(
-                    "all overview tables in %s already exist, skipping", _SCHEMA
-                )
-            elif existing:
+            missing = [
+                name
+                for name in overview_names
+                if not inspector.has_table(name, schema=_SCHEMA)
+            ]
+            if missing:
                 msg = (
-                    f"partial overview tables present in {_SCHEMA} ({existing}); "
-                    "drop them manually before re-running"
+                    f"overview tables missing in {_SCHEMA} ({missing}); main "
+                    "overview tables must come from the template database"
                 )
                 raise SystemExit(msg)
-            else:
-                raster.initialize_overview_tables(session, _SCHEMA, _TABLE)
-                session.commit()
-                logger.info("created overview tables in %s", _SCHEMA)
+
+            raster.initialize_raster_table(session, _SCHEMA, _TABLE)
+            logger.info("initialized staging tables for %s.%s", _SCHEMA, _TABLE)
+
+            raster.initialize_overview_tables(session, _SCHEMA, _TABLE)
+            session.commit()
+            logger.info("initialized overview staging tables in %s", _SCHEMA)
     finally:
         engine.dispose()
 
