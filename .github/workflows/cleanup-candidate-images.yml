@@ -1,0 +1,108 @@
+name: Cleanup candidate images
+
+on:
+  schedule:
+    - cron: "00 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      GHCR_PREFIX: ghcr.io/nlsfi/pinta
+      GHCR_OWNER: nlsfi
+      GHCR_REPOSITORY_PREFIX: pinta
+    steps:
+      - name: Install regctl
+        run: |
+          set -euo pipefail
+
+          curl -fsSL \
+            https://github.com/regclient/regclient/releases/download/v0.8.3/regctl-linux-amd64 \
+            -o regctl
+          chmod +x regctl
+          sudo mv regctl /usr/local/bin/regctl
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ github.token }}" | regctl registry login ghcr.io -u "${{ github.actor }}" --pass-stdin
+
+      - name: Remove stale candidate tags
+        run: |
+          set -euo pipefail
+
+          cutoff_epoch="$(date -u -d '7 days ago' +%s)"
+
+          registry_token() {
+            local image="$1"
+            curl -fsSL \
+              -u "${{ github.actor }}:${{ github.token }}" \
+              "https://ghcr.io/token?service=ghcr.io&scope=repository:${GHCR_OWNER}/${GHCR_REPOSITORY_PREFIX}/${image}:pull,delete" \
+              | jq -r '.token'
+          }
+
+          registry_get() {
+            local token="$1"
+            local path="$2"
+            curl -fsSL \
+              -H "Authorization: Bearer ${token}" \
+              -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" \
+              "https://ghcr.io/v2/${GHCR_OWNER}/${GHCR_REPOSITORY_PREFIX}/${path}"
+          }
+
+          image_created_at() {
+            local token="$1"
+            local image="$2"
+            local tag="$3"
+            local manifest child_digest config_digest
+
+            manifest="$(registry_get "$token" "${image}/manifests/${tag}")"
+            config_digest="$(jq -r '.config.digest // empty' <<< "$manifest")"
+
+            if [ -z "$config_digest" ]; then
+              child_digest="$(jq -r '.manifests[0].digest // empty' <<< "$manifest")"
+              if [ -z "$child_digest" ]; then
+                return 1
+              fi
+
+              manifest="$(registry_get "$token" "${image}/manifests/${child_digest}")"
+              config_digest="$(jq -r '.config.digest // empty' <<< "$manifest")"
+            fi
+
+            if [ -z "$config_digest" ]; then
+              return 1
+            fi
+
+            registry_get "$token" "${image}/blobs/${config_digest}" | jq -r '.created // empty'
+          }
+
+          for image in db processing e2e airflow backend; do
+            token="$(registry_token "$image")"
+            tags="$(
+              registry_get "$token" "${image}/tags/list" \
+                | jq -r '.tags[]? | select(startswith("ci-"))'
+            )"
+
+            while IFS= read -r tag; do
+              if [ -z "$tag" ]; then
+                continue
+              fi
+
+              created_at="$(image_created_at "$token" "$image" "$tag" || true)"
+              if [ -z "$created_at" ]; then
+                echo "Skipping ${image}:${tag}; could not resolve image creation time"
+                continue
+              fi
+
+              created_epoch="$(date -u -d "$created_at" +%s)"
+              if [ "$created_epoch" -lt "$cutoff_epoch" ]; then
+                echo "Removing ${image}:${tag}, created at ${created_at}"
+                regctl tag rm --ignore-missing "$GHCR_PREFIX/$image:$tag"
+              else
+                echo "Keeping ${image}:${tag}, created at ${created_at}"
+              fi
+            done <<< "$tags"
+          done
