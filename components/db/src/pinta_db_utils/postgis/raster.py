@@ -44,9 +44,10 @@ def initialize_raster_table(
     staging_tables: int = 1,
     extra_columns: abc.Callable[[], list[sa.Column]] | None = None,
 ) -> None:
-    """Initialize a raster table with optional staging tables.
+    """Initialize staging tables for an existing raster table.
 
-    Creates a main table and staging tables (when specified) with:
+    The main raster table is expected to already exist in the database, usually
+    from the template database. Creates staging tables (when specified) with:
     - rid: serial primary key
     - rast: raster column
     - Additional custom columns (optional)
@@ -60,16 +61,7 @@ def initialize_raster_table(
     TOAST tuple target optimized TOAST chunk size. Staging tables are created as
     UNLOGGED with autovacuum disabled for better performance.
     """
-    table_created = _create_raster_table(
-        session,
-        schema,
-        table_name,
-        extra_columns=extra_columns() if extra_columns else None,
-    )
-    if table_created:
-        constraints.add_raster_constraints(
-            session, schema, table_name, pixel_size=env.DEM_PIXEL_SIZE
-        )
+    _ensure_raster_table_exists(session, schema, table_name)
 
     for i in range(staging_tables):
         staging_name = f"{table_name}_p{i}"
@@ -94,27 +86,20 @@ def initialize_overview_tables(
     table_name: str,
     staging_tables: int = 1,
 ) -> None:
-    """Initialize, register and index overview tables with optional staging tables.
+    """Initialize staging tables for existing overview tables.
 
-    Creates a main table and staging tables with:
+    The main overview tables are expected to already exist in the database,
+    usually from the template database. Creates staging tables with:
     - rid: serial primary key
     - rast: raster column
-
-    The main overview tables are also registered against the reference raster
-    table with PostGIS overview constraints and receive raster envelope indexes.
     """
+    _ensure_raster_table_exists(session, schema, table_name)
     for level in DEFAULT_OVERVIEW_LEVELS:
         overview_name = OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
-        table_created = _create_raster_table(
-            session,
-            schema,
-            overview_name,
-        )
-        if table_created:
-            constraints.add_raster_constraints(
-                session, schema, overview_name, pixel_size=env.DEM_PIXEL_SIZE * level
-            )
+        _ensure_raster_table_exists(session, schema, overview_name)
 
+    for level in DEFAULT_OVERVIEW_LEVELS:
+        overview_name = OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
         for i in range(staging_tables):
             staging_name = f"{overview_name}_p{i}"
             _create_raster_table(
@@ -127,8 +112,6 @@ def initialize_overview_tables(
                 session, schema, staging_name, pixel_size=env.DEM_PIXEL_SIZE * level
             )
 
-        _register_overview_table(session, schema, table_name, overview_name, level)
-        _create_raster_index(session, schema, overview_name)
         session.commit()
 
 
@@ -332,6 +315,24 @@ def _create_raster_table(
         )
 
     return True
+
+
+def _ensure_raster_table_exists(
+    session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
+) -> None:
+    """Raise if a raster table expected from the template database is missing."""
+    inspector = sa.inspect(session.connection())
+    if inspector.has_table(table_name, schema=schema):
+        return
+
+    msg = (
+        f"Expected raster table {schema}.{table_name} to exist in the database. "
+        "Main raster tables must be created by the template database; "
+        "initialization only creates staging tables."
+    )
+    raise ValueError(msg)
 
 
 def _create_raster_index(

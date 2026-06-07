@@ -7,8 +7,56 @@ import pytest
 import sqlalchemy as sa
 import sqlmodel
 
+from pinta_common import env
 from pinta_db.primary_db.schema import Schema
-from pinta_db_utils.postgis import raster
+from pinta_db_utils.postgis import constraints, raster
+
+
+def _create_template_raster_table(
+    session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
+    extra_columns: list[sa.Column] | None = None,
+    pixel_size: int = env.DEM_PIXEL_SIZE,
+) -> None:
+    """Create a main raster table to simulate the template database."""
+    created = raster._create_raster_table(
+        session,
+        schema,
+        table_name,
+        extra_columns=extra_columns,
+    )
+    if created:
+        constraints.add_raster_constraints(session, schema, table_name, pixel_size)
+    session.commit()
+
+
+def _create_template_overview_tables(
+    session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
+) -> list[str]:
+    overview_table_names = [
+        raster.OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
+        for level in raster.DEFAULT_OVERVIEW_LEVELS
+    ]
+    for level, overview_table_name in zip(
+        raster.DEFAULT_OVERVIEW_LEVELS,
+        overview_table_names,
+        strict=True,
+    ):
+        _create_template_raster_table(
+            session,
+            schema,
+            overview_table_name,
+            pixel_size=env.DEM_PIXEL_SIZE * level,
+        )
+        raster._register_overview_table(
+            session, schema, table_name, overview_table_name, level
+        )
+        raster._create_raster_index(session, schema, overview_table_name)
+    session.commit()
+    return overview_table_names
 
 
 def _assert_table_exists(
@@ -152,6 +200,8 @@ def test_initialize_raster_table(
     """Test creating a raster table with varying numbers of staging tables."""
     table_name = "test_raster_table"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
+
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
@@ -189,6 +239,7 @@ def test_test_merge_staging_tables_with_no_staging_tables_creates_rast_index(
 ):
     table_name = "test_raster_merge_no_staging"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
 
     raster.initialize_raster_table(
         table_name=table_name,
@@ -215,6 +266,7 @@ def test_merge_staging_tables(processing_worker_db: sqlmodel.Session):
     schema = Schema.PROCESSING.value
     staging_tables = 3
     rows_per_staging = 1
+    _create_template_raster_table(processing_worker_db, schema, table_name)
 
     # Initialize table with staging tables
     raster.initialize_raster_table(
@@ -279,6 +331,7 @@ def test_merge_staging_tables_uses_main_table_rid_sequence(
     """Test merging staging tables assigns rids from the main table sequence."""
     table_name = "test_raster_merge_rid_sequence"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
 
     raster.initialize_raster_table(
         table_name=table_name,
@@ -343,6 +396,13 @@ def test_initialize_raster_table_with_extra_columns(
             sa.Column("is_private", sa.Boolean()),
         ]
 
+    _create_template_raster_table(
+        processing_worker_db,
+        schema,
+        table_name,
+        extra_columns=extra_columns(),
+    )
+
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
@@ -381,6 +441,7 @@ def test_initialize_raster_table_twice(
     """Test calling initialize_raster_table twice."""
     table_name = "test_initialize_table_twice"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
 
     # Initialize twice
     raster.initialize_raster_table(
@@ -401,9 +462,15 @@ def test_initialize_raster_table_twice(
 def test_initialize_overview_tables(
     processing_worker_db: sqlmodel.Session, staging_tables: int
 ):
-    """Test creating, registering and indexing overview tables."""
+    """Test creating overview staging tables for existing overview tables."""
     table_name = "test_raster_overview"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
+    overview_table_names = _create_template_overview_tables(
+        processing_worker_db,
+        schema,
+        table_name,
+    )
 
     raster.initialize_raster_table(
         table_name=table_name,
@@ -417,11 +484,6 @@ def test_initialize_overview_tables(
         session=processing_worker_db,
         staging_tables=staging_tables,
     )
-
-    overview_table_names = [
-        raster.OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name)
-        for level in raster.DEFAULT_OVERVIEW_LEVELS
-    ]
 
     for overview_table_name in overview_table_names:
         _assert_table_exists(processing_worker_db, schema, overview_table_name)
@@ -457,6 +519,7 @@ def test_initialize_overview_tables(
 def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
     table_name = "dem"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
@@ -484,9 +547,11 @@ def test_add_raster_constraints(processing_worker_db: sqlmodel.Session):
 
 
 def test_register_overview(processing_worker_db: sqlmodel.Session):
-    """Test overview tables are registered during initialization."""
+    """Test existing overview table registrations remain available."""
     table_name = "dem"
     schema = Schema.PROCESSING.value
+    _create_template_raster_table(processing_worker_db, schema, table_name)
+    _create_template_overview_tables(processing_worker_db, schema, table_name)
     raster.initialize_raster_table(
         table_name=table_name,
         schema=schema,
@@ -519,4 +584,70 @@ def test_register_overview(processing_worker_db: sqlmodel.Session):
         )
         _assert_table_index_count(
             processing_worker_db, schema, overview_name, expected_count=2
+        )
+
+
+def test_initialize_raster_table_does_not_create_staging_when_main_table_is_missing(
+    processing_worker_db: sqlmodel.Session,
+):
+    table_name = "test_missing_main_table"
+    schema = Schema.PROCESSING.value
+    staging_tables = 2
+
+    with pytest.raises(ValueError, match=rf"{schema}\.{table_name}"):
+        raster.initialize_raster_table(
+            table_name=table_name,
+            schema=schema,
+            session=processing_worker_db,
+            staging_tables=staging_tables,
+        )
+
+    _assert_staging_tables_does_not_exist(processing_worker_db, schema, table_name)
+
+
+def test_initialize_overview_tables_does_not_create_staging_when_overview_is_missing(
+    processing_worker_db: sqlmodel.Session,
+):
+    table_name = "test_missing_overview_table"
+    schema = Schema.PROCESSING.value
+    staging_tables = 2
+    _create_template_raster_table(processing_worker_db, schema, table_name)
+    missing_level = raster.DEFAULT_OVERVIEW_LEVELS[-1]
+
+    for level in raster.DEFAULT_OVERVIEW_LEVELS:
+        if level == missing_level:
+            continue
+        overview_name = raster.OVERVIEW_TABLE_NAME.format(
+            level=level,
+            table_name=table_name,
+        )
+        _create_template_raster_table(
+            processing_worker_db,
+            schema,
+            overview_name,
+            pixel_size=env.DEM_PIXEL_SIZE * level,
+        )
+
+    missing_overview_name = raster.OVERVIEW_TABLE_NAME.format(
+        level=missing_level,
+        table_name=table_name,
+    )
+
+    with pytest.raises(ValueError, match=rf"{schema}\.{missing_overview_name}"):
+        raster.initialize_overview_tables(
+            table_name=table_name,
+            schema=schema,
+            session=processing_worker_db,
+            staging_tables=staging_tables,
+        )
+
+    for level in raster.DEFAULT_OVERVIEW_LEVELS:
+        overview_name = raster.OVERVIEW_TABLE_NAME.format(
+            level=level,
+            table_name=table_name,
+        )
+        _assert_staging_tables_does_not_exist(
+            processing_worker_db,
+            schema,
+            overview_name,
         )

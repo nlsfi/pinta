@@ -185,7 +185,7 @@ def test_rasterio_to_postgis(
     processing_worker_session: "Session",
 ) -> None:
 
-    table_name = "test_raster_ol"
+    table_name = "dem"
     schema = "processing"
     staging_tables = 2
     ol_2_name = f"o_2_{table_name}"
