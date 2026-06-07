@@ -15,6 +15,33 @@ jobs:
         with:
           extra-args: --all-files --skip update-translations
 
+  gitlint:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - name: Fetch main
+        run: git fetch origin main
+      - name: Lint commit messages
+        run: uvx --from gitlint-core==0.19.1 gitlint --commits origin/main..HEAD
+
+  branch-up-to-date:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Fetch main
+        run: git fetch origin main
+      - name: Verify PR branch is up to date with main
+        run: git merge-base --is-ancestor origin/main HEAD
+
   notify-teams:
     needs: prek
     if: ${{ always() && needs.prek.result == 'failure' && github.ref == 'refs/heads/main' }}
