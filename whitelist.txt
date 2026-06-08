@@ -175,3 +175,5 @@ stds
 sqrt
 log1p
 urlunsplit
+ncols
+nrows

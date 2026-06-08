@@ -225,6 +225,7 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
             keep_class: list[int],
             crs: str,
             staging_tables: int,
+            extra_lastools_params: dict | None = None,
         ) -> None:
             from pathlib import Path
 
@@ -243,6 +244,7 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
                     keep_class=keep_class,
                     staging_tables=staging_tables,
                     crs=crs,
+                    extra_lastools_params=extra_lastools_params,
                 )
                 pipeline.execute()
 

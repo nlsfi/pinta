@@ -10,6 +10,16 @@ from pinta_db_utils.postgis import raster
 from sqlmodel import Session
 
 from pinta_processing import core, filters, reader, writer
+from pinta_processing.scripts import find_intersecting_tiles
+from pinta_processing.utils import tm35_map_sheet_utils
+
+DEFAULT_BUFFERED = 300
+DEFAULT_LASTOOLS_PARAMS = {
+    "buffered": DEFAULT_BUFFERED,
+    "kill": 300,
+    "ncols": 500,
+    "nrows": 500,
+}
 
 
 def rasterio_to_geotiff(
@@ -91,6 +101,21 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     extra_lastools_params: dict | None = None,
 ) -> core.Pipeline:
     """Read LAS/LAZ with blast2dem and write to PostGIS with overviews."""
+    bounds = tm35_map_sheet_utils.calculate_sheet_bounds_for_tile(input_path.stem)
+    neighbor_paths = find_intersecting_tiles.find_neighboring_tm35_laz_files(
+        input_path, DEFAULT_BUFFERED, session
+    )
+    neighbors_param = {}
+    if len(neighbor_paths) > 0:
+        neighbors_param = {"neighbors": [str(neighbor) for neighbor in neighbor_paths]}
+    bounds_param = {"ll": [bounds[0], bounds[1]]}
+    extra_lastools_params = {
+        **DEFAULT_LASTOOLS_PARAMS,
+        **neighbors_param,
+        **bounds_param,
+        **(extra_lastools_params or {}),
+    }
+
     return core.Pipeline(
         [
             reader.Blast2DemReader(
