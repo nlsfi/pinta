@@ -5,10 +5,10 @@
 
 import pytest
 import requests
+from pinta_common import constants
 from pinta_e2e_utils.airflow_client import AirflowClient, DagRun
 
-HELLO_WORLD_TAG = "hello_world"
-HELLO_WORLD_DAG_ID = "print_hello_world"
+HELLO_WORLD_TAG = constants.DAG_ID_HELLO_WORLD
 DAG_RUN_TIMEOUT_S = 300.0
 
 
@@ -25,7 +25,7 @@ def test_print_hello_world_runs_to_success(
     )
     assert response.status_code == 202, response.text
     dag = DagRun.from_api(response.json())
-    assert dag.id == HELLO_WORLD_DAG_ID
+    assert dag.id == HELLO_WORLD_TAG
     assert dag.run_id.startswith("manual__")
 
     state = airflow_client.wait_for_dag_run(dag, timeout=DAG_RUN_TIMEOUT_S)
