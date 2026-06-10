@@ -38,6 +38,10 @@ Airflow also automatically updates DAG file changes periodically.
 
 If you want to run the load dem DAG, you can place test data inside the repo root `test_data` folder, which is automatically mounted to the processing container.
 
+## DAG development practices
+
+* When accessing any database, use `@task.docker` since database urls work only inside containers
+
 ## Updating Airflow
 
 * Update the Airflow version with `uv add --optional airflow apache-airflow[postgres,standard]==3.1.8 --constraint https://raw.githubusercontent.com/apache/airflow/constraints-3.1.8/constraints-3.12.txt`

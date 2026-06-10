@@ -60,7 +60,7 @@ def create_process_production_areas_dag(
 
         changed = check_for_changes.output
         areas_result = process_areas(
-            "{{ conn.pinta_processing_db_container.get_hook().get_uri() }}",
+            "{{ conn.pinta_processing_db.get_hook().get_uri() }}",
             "{{ var.value.pinta_container_target_base_path }}",
             changed,
         )
