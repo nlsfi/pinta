@@ -22,6 +22,7 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
     "docker_url": Variable.get(
         "pinta_docker_socket_url", "unix:///var/run/docker.sock"
     ),
+    "network_mode": Variable.get("pinta_container_network_mode", None),
     "environment": {
         "TASK_LOG_LEVEL": "{{ var.value.pinta_processing_task_log_level }}",
         "DB_SRID": "{{ var.value.pinta_db_srid }}",
