@@ -2,7 +2,7 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
-
+import logging
 from pathlib import Path
 
 from pinta_common import env
@@ -20,6 +20,8 @@ DEFAULT_LASTOOLS_PARAMS = {
     "ncols": 500,
     "nrows": 500,
 }
+
+LOGGER = logging.getLogger(__name__)
 
 
 def rasterio_to_geotiff(
@@ -105,6 +107,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     neighbor_paths = find_intersecting_tiles.find_neighboring_tm35_laz_files(
         input_path, DEFAULT_BUFFERED, session
     )
+    LOGGER.debug("Found %d neighbor tiles", len(neighbor_paths))
     neighbors_param = {}
     if len(neighbor_paths) > 0:
         neighbors_param = {"neighbors": [str(neighbor) for neighbor in neighbor_paths]}
