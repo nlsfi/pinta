@@ -75,3 +75,15 @@ if lastools_path := Variable.get("pinta_lastools_path", "/external/LAStools"):
             read_only=True,
         )
     )
+if lastools_license_path := Variable.get("pinta_lastools_license_path", None):
+    PINTA_CONTAINER_TASK_ARGS["environment"]["LAStoolsLicenseFile"] = (
+        "/lastoolslicense.txt"
+    )
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target="/lastoolslicense.txt",
+            source=lastools_license_path,
+            type="bind",
+            read_only=True,
+        )
+    )
