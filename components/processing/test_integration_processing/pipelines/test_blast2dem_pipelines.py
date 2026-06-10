@@ -78,7 +78,8 @@ def test_blast2dem_to_postgis(
     input_path = pinta_utils.get_test_data_path(_LAZ_FILE)
 
     pipeline = pipelines.blast2dem_to_postgis(
-        session=processing_worker_session,
+        primary_session=processing_worker_session,
+        job_session=processing_worker_session,
         input_path=input_path,
         schema=schema,
         table_name=table_name,
