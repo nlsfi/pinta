@@ -2367,6 +2367,7 @@ name = "pinta-dags"
 version = "0.0.0"
 source = { editable = "components/dags" }
 dependencies = [
+    { name = "pinta-db" },
     { name = "pinta-processing" },
 ]
 
@@ -2396,6 +2397,7 @@ lint = [
 [package.metadata]
 requires-dist = [
     { name = "apache-airflow", extras = ["docker", "postgres", "standard"], marker = "extra == 'airflow'", specifier = "==3.1.8" },
+    { name = "pinta-db", editable = "components/db" },
     { name = "pinta-db", extras = ["psycopg"], marker = "extra == 'airflow'", editable = "components/db" },
     { name = "pinta-processing", editable = "components/processing" },
 ]
