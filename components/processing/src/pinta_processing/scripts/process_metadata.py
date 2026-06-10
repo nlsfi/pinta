@@ -2,8 +2,7 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
-
-
+import logging
 from pathlib import Path
 
 import laspy
@@ -13,6 +12,8 @@ from pinta_db.primary_db.models.management import PointCloudTile, ProductionArea
 from shapely import ops
 from shapely.geometry import MultiPolygon
 from sqlmodel import Session
+
+LOGGER = logging.getLogger(__name__)
 
 POINT_CLOUD_BBOX_BUFFER_M = 0.1
 
@@ -24,7 +25,9 @@ def process_metadata_in_folder(folder_path: Path, session: Session) -> None:
     If a production area already exists, the old tiles are overridden in the database
     and the production area is updated.
     """
+    LOGGER.debug("Processing metadata in folder %s", folder_path)
     tiles = create_point_cloud_tiles_from_folder(folder_path)
+    LOGGER.debug("Found %d tiles in folder %s", len(tiles), folder_path)
     production_area = find_production_area(folder_path, session)
     add_tiles_to_production_area(production_area, tiles, session)
     session.commit()
@@ -91,7 +94,9 @@ def find_production_area(folder_path: Path, session: Session) -> ProductionArea:
     )
     area_in_db = session.exec(statement).first()
     if area_in_db:
+        LOGGER.debug("Found production area %s in database", area_in_db.id)
         return area_in_db
     production_area = ProductionArea(name=folder_path.name)
+    LOGGER.debug("Creating new production area %s", production_area.id)
     session.add(production_area)
     return production_area
