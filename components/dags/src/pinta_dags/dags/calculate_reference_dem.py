@@ -61,6 +61,7 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
 ) -> DAG:
     @dag(
         dag_id=dag_id,
+        tags=[dag_id],
         dag_display_name="Calculate reference dem",
         schedule=None,
         params={
@@ -218,7 +219,8 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
         def blast2dem(  # noqa: PLR0913
-            connection_uri: str,
+            primary_connection_uri: str,
+            job_connection_uri: str,
             input_path: str,
             schema: str,
             table: str,
@@ -234,10 +236,17 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
             import sqlmodel
             from pinta_processing import pipelines
 
-            engine = sqlalchemy.create_engine(connection_uri)
-            with sqlmodel.Session(engine) as session:
+            with (
+                sqlmodel.Session(
+                    sqlalchemy.create_engine(primary_connection_uri)
+                ) as primary_session,
+                sqlmodel.Session(
+                    sqlalchemy.create_engine(job_connection_uri)
+                ) as job_session,
+            ):
                 pipeline = pipelines.blast2dem_to_postgis(
-                    session=session,
+                    primary_session=primary_session,
+                    job_session=job_session,
                     input_path=Path(input_path),
                     schema=schema,
                     table_name=table,
@@ -299,7 +308,8 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
 
         pixel_size = "{{ var.value.pinta_db_dem_pixel_size }}"
         blast2dem_task = blast2dem.partial(
-            connection_uri=job_db_uri,
+            primary_connection_uri=primary_connection_uri,
+            job_connection_uri=job_db_uri,
             schema=DB_SCHEMA,
             table=DB_TABLE,
             step=pixel_size,

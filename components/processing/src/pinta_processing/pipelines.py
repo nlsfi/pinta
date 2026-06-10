@@ -92,7 +92,8 @@ def blast2dem_to_geotiff(  # noqa: PLR0913
 
 
 def blast2dem_to_postgis(  # noqa: PLR0913
-    session: Session,
+    primary_session: Session,
+    job_session: Session,
     input_path: Path,
     schema: str,
     table_name: str,
@@ -105,7 +106,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     """Read LAS/LAZ with blast2dem and write to PostGIS with overviews."""
     bounds = tm35_map_sheet_utils.calculate_sheet_bounds_for_tile(input_path.stem)
     neighbor_paths = find_intersecting_tiles.find_neighboring_tm35_laz_files(
-        input_path, DEFAULT_BUFFERED, session
+        input_path, DEFAULT_BUFFERED, primary_session
     )
     LOGGER.debug("Found %d neighbor tiles", len(neighbor_paths))
     neighbors_param = {}
@@ -129,9 +130,9 @@ def blast2dem_to_postgis(  # noqa: PLR0913
                 extra_lastools_params=extra_lastools_params,
             ),
             # Calculate and write overviews
-            *_generate_overview_stages(schema, table_name, session, staging_tables),
+            *_generate_overview_stages(schema, table_name, job_session, staging_tables),
             # Write original data
-            writer.RasterPostgisWriter(schema, table_name, session, staging_tables),
+            writer.RasterPostgisWriter(schema, table_name, job_session, staging_tables),
         ]
     )
 
