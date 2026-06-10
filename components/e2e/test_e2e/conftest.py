@@ -40,7 +40,7 @@ DEFAULT_AIRFLOW_URL = "http://localhost:8080"
 DEFAULT_AIRFLOW_ADMIN_USERNAME = "admin"
 DEFAULT_AIRFLOW_ADMIN_PASSWORD = "admin"
 
-PROCESSING_WORKER_DB_CONN_ID = "pinta_processing_db_container"
+PROCESSING_WORKER_DB_CONN_ID = "pinta_processing_db"
 PROCESS_PRODUCTION_AREAS_DAG_ID = "process_production_areas"
 PRODUCTION_AREA_VARIABLE = "production_area_1"
 DAG_RUN_TIMEOUT_S = 60.0

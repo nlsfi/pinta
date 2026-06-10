@@ -34,9 +34,7 @@ def create_dag_to_test() -> "DAG":
 
 @pytest.fixture(autouse=True)
 def mock_airflow_settings(monkeypatch: "pytest.MonkeyPatch") -> None:
-    monkeypatch.setenv(
-        "AIRFLOW_CONN_PINTA_PROCESSING_DB_CONTAINER", "postgres://mockaddr:123/db"
-    )
+    monkeypatch.setenv("AIRFLOW_CONN_PINTA_PROCESSING_DB", "postgres://mockaddr:123/db")
     monkeypatch.setenv("AIRFLOW_VAR_PINTA_LOAD_DEM_MAX_PARALLEL_PIPELINES", "2")
     monkeypatch.setenv("AIRFLOW_VAR_PINTA_LOAD_DEM_STAGING_TABLES", "3")
 
