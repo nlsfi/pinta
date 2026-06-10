@@ -31,7 +31,7 @@ def test_print_hello_world_runs_to_success(
     state = airflow_client.wait_for_dag_run(dag, timeout=DAG_RUN_TIMEOUT_S)
     assert state == "success", (
         f"DAG run finished with state={state}\n"
-        f"{airflow_client.describe_failed_run(dag.id, dag.run_id)}"
+        f"{airflow_client.describe_failed_run(dag)}"
     )
 
 
