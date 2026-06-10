@@ -5,6 +5,7 @@ description = "DAG component of the elevation production system"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+  "pinta-db",
   "pinta-processing",
 ]
 [project.optional-dependencies]
@@ -22,8 +23,8 @@ module-name = "pinta_dags"
 include = ["py.typed"]
 
 [tool.uv.sources]
-pinta-db = { workspace = true }
 pinta-processing = { workspace = true }
+pinta-db = { workspace = true }
 
 [tool.uv]
 default-groups = ["dev", "lint"]
