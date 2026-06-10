@@ -43,11 +43,11 @@ def create_print_hello_world_dag(
 
         chain(
             hello_world_task(
-                "{{ conn.pinta_processing_db.get_hook().sqlalchemy_url }}",
+                config.connection_uri_template("pinta_processing_db"),
                 "{{ params.name }}",
             ),
             hello_world_task_docker(
-                "{{ conn.pinta_processing_db.get_hook().sqlalchemy_url }}",
+                config.connection_uri_template("pinta_processing_db"),
                 "{{ params.name }}",
             ),
         )
