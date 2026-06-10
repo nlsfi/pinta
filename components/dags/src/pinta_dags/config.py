@@ -11,6 +11,15 @@ from typing import Any
 from airflow.sdk import Variable
 from docker.types import Mount
 
+
+def connection_uri_template(conn_id: str) -> str:
+    """Jinja template for a connection's SQLAlchemy URI with the psycopg3 driver."""
+    return (
+        f"{{{{ conn.{conn_id}.get_hook().get_uri() "
+        f"| replace('postgresql://', 'postgresql+psycopg://') }}}}"
+    )
+
+
 PINTA_COMMON_TASK_ARGS: dict[str, Any] = {
     "retries": 0,  # TODO: Set to something larger in non-local environments
     "retry_delay": datetime.timedelta(seconds=10),

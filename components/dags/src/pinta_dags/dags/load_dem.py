@@ -148,7 +148,7 @@ def load_dem_dag(
                         session=session,
                     )
 
-        connection_uri = "{{ conn.pinta_processing_db.get_hook().get_uri() }}"
+        connection_uri = config.connection_uri_template("pinta_processing_db")
         staging_tables = _get_staging_tables()
         files = list_dem_files("{{ params.folder }}")
         files_to_process = require_dem_files(files)

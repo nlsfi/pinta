@@ -275,9 +275,9 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
                         session=session,
                     )
 
-        primary_connection_uri = "{{ conn.pinta_processing_db.get_hook().get_uri() }}"
-        job_admin_connection_uri = "{{ conn.pinta_job_db_admin.get_hook().get_uri() }}"
-        job_connection_uri = "{{ conn.pinta_job_db.get_hook().get_uri() }}"
+        primary_connection_uri = config.connection_uri_template("pinta_processing_db")
+        job_admin_connection_uri = config.connection_uri_template("pinta_job_db_admin")
+        job_connection_uri = config.connection_uri_template("pinta_job_db")
 
         prod_area_id = "{{ params.id }}"
         job_database_name = f"job_{prod_area_id}"
