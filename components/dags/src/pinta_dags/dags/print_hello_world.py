@@ -6,6 +6,7 @@
 """Example DAG with external venv task & connection URI variable."""
 
 from airflow.sdk import DAG, Param, chain, dag, task
+from pinta_common import constants
 
 from pinta_dags import config
 
@@ -18,7 +19,7 @@ def create_print_hello_world_dag(
         dag_id=dag_id,
         dag_display_name="Print hello world",
         schedule=None,
-        tags=["hello_world"],
+        tags=[dag_id],
         params={
             "name": Param(
                 "World",
@@ -55,6 +56,6 @@ def create_print_hello_world_dag(
     return hello_world_dag()
 
 
-DAG_ID = "print_hello_world"
+DAG_ID = constants.DAG_ID_HELLO_WORLD
 
 globals()[DAG_ID] = create_print_hello_world_dag(dag_id=DAG_ID)

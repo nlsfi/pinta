@@ -9,13 +9,14 @@ import uuid
 from typing import Annotated, Any, TypedDict
 
 import fastapi
+from pinta_common import constants
 
 STUB_BEARER_TOKEN = "stub-token"  # noqa: S105
 STUB_AIRFLOW_USERNAME = "pinta-backend"
 STUB_AIRFLOW_PASSWORD = "stub-password"  # noqa: S105
 
-HELLO_WORLD_DAG_ID = "print_hello_world"
-HELLO_WORLD_TAG = "hello_world"
+HELLO_WORLD_DAG_ID = constants.DAG_ID_HELLO_WORLD
+HELLO_WORLD_TAG = constants.DAG_ID_HELLO_WORLD
 
 
 class StubAirflowState(TypedDict):

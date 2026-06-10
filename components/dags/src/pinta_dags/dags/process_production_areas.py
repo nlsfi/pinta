@@ -8,6 +8,7 @@
 import datetime
 
 from airflow.sdk import DAG, chain, dag, task
+from pinta_common import constants
 
 from pinta_dags import config
 from pinta_dags.sensors.folder_hash_sensor import FolderHashSensor
@@ -70,6 +71,6 @@ def create_process_production_areas_dag(
     return process_production_areas_dag()
 
 
-DAG_ID = "process_production_areas"
+DAG_ID = constants.DAG_ID_PROCESS_PRODUCTION_AREAS
 
 globals()[DAG_ID] = create_process_production_areas_dag(dag_id=DAG_ID)

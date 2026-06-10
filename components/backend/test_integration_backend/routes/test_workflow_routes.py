@@ -4,12 +4,15 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import httpx
+from pinta_common import constants
 
 from pinta_backend_test_utils import (
     STUB_AIRFLOW_PASSWORD,
     STUB_AIRFLOW_USERNAME,
     StubAirflowState,
 )
+
+DAG_TAG = constants.DAG_ID_HELLO_WORLD
 
 
 def test_integration_trigger_workflow_against_stub_airflow(
@@ -21,14 +24,14 @@ def test_integration_trigger_workflow_against_stub_airflow(
     state["trigger_requests"].clear()
 
     response = httpx.post(
-        f"{backend_with_stub_airflow}/workflows/hello_world",
+        f"{backend_with_stub_airflow}/workflows/{DAG_TAG}",
         json={"parameters": {"name": "Pinta"}},
         timeout=10,
     )
 
     assert response.status_code == 202, response.text
     body = response.json()
-    assert body["dag_id"] == "print_hello_world"
+    assert body["dag_id"] == DAG_TAG
     assert body["dag_run_id"].startswith("manual__")
     assert body["message"]
 
@@ -37,7 +40,7 @@ def test_integration_trigger_workflow_against_stub_airflow(
     ]
     assert len(state["trigger_requests"]) == 1
     triggered = state["trigger_requests"][0]
-    assert triggered["dag_id"] == "print_hello_world"
+    assert triggered["dag_id"] == DAG_TAG
     assert triggered["payload"]["conf"] == {"name": "Pinta"}
 
 
@@ -49,7 +52,7 @@ def test_integration_rejects_wrong_param_type_before_trigger(
     state["trigger_requests"].clear()
 
     response = httpx.post(
-        f"{backend_with_stub_airflow}/workflows/hello_world",
+        f"{backend_with_stub_airflow}/workflows/{DAG_TAG}",
         json={"parameters": {"name": 42}},
         timeout=10,
     )

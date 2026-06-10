@@ -20,10 +20,15 @@ from unittest.mock import MagicMock
 
 import pytest
 import requests
+from pinta_common import constants
 from pytest_mock import MockerFixture
 
 from pinta_qgis_plugin import exceptions
 from pinta_qgis_plugin.api import api_client
+
+EXPECTED_URL = (
+    f"http://example.test/workflows/{constants.DAG_ID_CALCULATE_REFERENCE_DEM}"
+)
 
 
 @pytest.fixture
@@ -66,8 +71,8 @@ def test_start_reference_dem_workflow_posts_workflow_payload(
     client.start_reference_dem_workflow("area-1")
 
     mock_post.assert_called_once_with(
-        "http://example.test/workflows/hello_world",
-        json={"parameters": {"name": "area-1"}, "production_area_id": "area-1"},
+        EXPECTED_URL,
+        json={"parameters": {"id": "area-1"}, "production_area_id": "area-1"},
         timeout=10,
     )
     mock_post.return_value.raise_for_status.assert_called_once_with()
@@ -118,7 +123,7 @@ def test_start_reference_dem_workflow_http_error_without_json_detail_uses_fallba
     response = MagicMock(spec=requests.Response)
     response.json.side_effect = requests.exceptions.JSONDecodeError("err", "", 0)
     response.text = "500 internal"
-    response.url = "http://example.test/workflows/hello_world"
+    response.url = "http://example.test/workflows/"
     http_error = requests.exceptions.HTTPError(response=response)
     mock_post.return_value.raise_for_status.side_effect = http_error
 
@@ -135,7 +140,7 @@ def test_start_reference_dem_workflow_http_error_with_none_detail_uses_fallback(
     response = MagicMock(spec=requests.Response)
     response.json.return_value = {"detail": None}
     response.text = "boom"
-    response.url = "http://example.test/workflows/hello_world"
+    response.url = EXPECTED_URL
     http_error = requests.exceptions.HTTPError(response=response)
     mock_post.return_value.raise_for_status.side_effect = http_error
 

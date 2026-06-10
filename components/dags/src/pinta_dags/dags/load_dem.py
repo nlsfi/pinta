@@ -6,6 +6,7 @@
 from typing import Any
 
 from airflow.sdk import DAG, Param, Variable, dag, task
+from pinta_common import constants
 
 from pinta_dags import config
 
@@ -167,6 +168,6 @@ def load_dem_dag(
     return load_dem_from_files_dag()
 
 
-DAG_ID = "load_dem_from_files"
+DAG_ID = constants.DAG_ID_LOAD_DEM
 
 globals()[DAG_ID] = load_dem_dag(dag_id=DAG_ID)

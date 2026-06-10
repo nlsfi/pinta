@@ -6,6 +6,7 @@
 from typing import cast
 
 from airflow.sdk import DAG, Param, TriggerRule, Variable, dag, task
+from pinta_common import constants
 
 from pinta_dags import config
 
@@ -329,6 +330,6 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
     return calculate_reference_dem_dag()
 
 
-DAG_ID = "calculate_reference_dem"
+DAG_ID = constants.DAG_ID_CALCULATE_REFERENCE_DEM
 
 globals()[DAG_ID] = create_calculate_reference_dem_dag(dag_id=DAG_ID)

@@ -23,6 +23,7 @@ from collections.abc import Callable
 from typing import Any, NoReturn, ParamSpec, TypeVar
 
 import requests
+from pinta_common import constants
 from qgis.core import QgsSettings
 from qgis.PyQt.QtCore import QLocale
 from qgis_plugin_tools.tools.i18n import tr
@@ -89,8 +90,8 @@ class PintaAPIClient:
         """Starts a DEM update workflow for the given production area."""
         # TODO: correct signature and params
         self._start_workflow(
-            "hello_world",
-            {"name": production_area_id},
+            constants.DAG_ID_CALCULATE_REFERENCE_DEM,
+            {"id": production_area_id},
             production_area_id=production_area_id,
         )
         MsgBar.info(
