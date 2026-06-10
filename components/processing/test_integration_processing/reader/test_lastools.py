@@ -46,7 +46,7 @@ def add_tiles_to_db(session: "Session") -> None:
 
 
 def test_blast2dem_reader_produces_raster_from_laz():
-    laz_path = pinta_utils.get_test_data_path(f"{LAZ_DIR}/T5124H1_1.laz")
+    laz_path = pinta_utils.get_test_data_path(f"{LAZ_DIR}/N5122B4_1.laz")
 
     stage = lastools.Blast2DemReader(
         input_path=laz_path,
@@ -80,7 +80,7 @@ def test_blast2dem_reader_raises_on_invalid_input():
 
 
 def test_blast2dem_reader_output_overlaps_input_bounds():
-    laz_path = pinta_utils.get_test_data_path(f"{LAZ_DIR}/T5124H1_1.laz")
+    laz_path = pinta_utils.get_test_data_path(f"{LAZ_DIR}/N5122B4_1.laz")
 
     stage = lastools.Blast2DemReader(
         input_path=laz_path,
@@ -104,7 +104,7 @@ def test_blast2dem_reader_output_overlaps_input_bounds():
 def test_blast2dem_reader_with_sensible_parameters(session: "Session"):
     laz_dir = pinta_utils.get_test_data_path(LAZ_DIR)
 
-    target_code = "T5124H1_5"
+    target_code = "N5122B4_5"
     target_path = laz_dir / f"{target_code}.laz"
 
     bounds = tm35_map_sheet_utils.calculate_sheet_bounds_for_tile(target_code)
@@ -112,7 +112,7 @@ def test_blast2dem_reader_with_sensible_parameters(session: "Session"):
         target_path, BUFFER_M, session
     )
 
-    # T5124H1_5 is interior to the H1 sub-sheet, so all 8 neighbors exist
+    # N5122B4_5 is interior to the H1 sub-sheet, so all 8 neighbors exist
     assert len(neighbor_paths) == 8
 
     stage = lastools.Blast2DemReader(

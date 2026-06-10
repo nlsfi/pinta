@@ -18,7 +18,7 @@ from pinta_processing.scripts import process_metadata
 
 def test_create_point_cloud_tile():
     file_path = pinta_utils.get_test_data_path(
-        "point_clouds/2025/production_area_1/T5124H1_1.laz"
+        "point_clouds/2025/production_area_1/N5122B4_1.laz"
     )
 
     tile = process_metadata.create_point_cloud_tile(file_path)
@@ -26,7 +26,7 @@ def test_create_point_cloud_tile():
     assert tile.file_path == str(file_path)
     assert (
         tile.geom
-        == "POLYGON ((543000 7380000.02, 543000 7381000, 542000.01 7381000, 542000.01 7380000.02, 543000 7380000.02))"
+        == "POLYGON ((503999.417 6903025.1280000005, 503999.417 6903999.924000001, 503008.804 6903999.924000001, 503008.804 6903025.1280000005, 503999.417 6903025.1280000005))"
     )
 
 
@@ -37,24 +37,24 @@ def test_create_point_cloud_tiles_from_folder():
     assert len(tiles) == 18
     assert all(t.geom is not None for t in tiles)
     tiles.sort(key=lambda tile: tile.file_path)
-    assert tiles[0].file_path == str(folder_path) + "/T5124H1_1.laz"
-    assert tiles[1].file_path == str(folder_path) + "/T5124H1_2.laz"
-    assert tiles[2].file_path == str(folder_path) + "/T5124H1_3.laz"
-    assert tiles[3].file_path == str(folder_path) + "/T5124H1_4.laz"
-    assert tiles[4].file_path == str(folder_path) + "/T5124H1_5.laz"
-    assert tiles[5].file_path == str(folder_path) + "/T5124H1_6.laz"
-    assert tiles[6].file_path == str(folder_path) + "/T5124H1_7.laz"
-    assert tiles[7].file_path == str(folder_path) + "/T5124H1_8.laz"
-    assert tiles[8].file_path == str(folder_path) + "/T5124H1_9.laz"
-    assert tiles[9].file_path == str(folder_path) + "/T5124H3_1.laz"
-    assert tiles[10].file_path == str(folder_path) + "/T5124H3_2.laz"
-    assert tiles[11].file_path == str(folder_path) + "/T5124H3_3.laz"
-    assert tiles[12].file_path == str(folder_path) + "/T5124H3_4.laz"
-    assert tiles[13].file_path == str(folder_path) + "/T5124H3_5.laz"
-    assert tiles[14].file_path == str(folder_path) + "/T5124H3_6.laz"
-    assert tiles[15].file_path == str(folder_path) + "/T5124H3_7.laz"
-    assert tiles[16].file_path == str(folder_path) + "/T5124H3_8.laz"
-    assert tiles[17].file_path == str(folder_path) + "/T5124H3_9.laz"
+    assert tiles[0].file_path == str(folder_path) + "/N5122B4_1.laz"
+    assert tiles[1].file_path == str(folder_path) + "/N5122B4_2.laz"
+    assert tiles[2].file_path == str(folder_path) + "/N5122B4_3.laz"
+    assert tiles[3].file_path == str(folder_path) + "/N5122B4_4.laz"
+    assert tiles[4].file_path == str(folder_path) + "/N5122B4_5.laz"
+    assert tiles[5].file_path == str(folder_path) + "/N5122B4_6.laz"
+    assert tiles[6].file_path == str(folder_path) + "/N5122B4_7.laz"
+    assert tiles[7].file_path == str(folder_path) + "/N5122B4_8.laz"
+    assert tiles[8].file_path == str(folder_path) + "/N5122B4_9.laz"
+    assert tiles[9].file_path == str(folder_path) + "/N5122D2_1.laz"
+    assert tiles[10].file_path == str(folder_path) + "/N5122D2_2.laz"
+    assert tiles[11].file_path == str(folder_path) + "/N5122D2_3.laz"
+    assert tiles[12].file_path == str(folder_path) + "/N5122D2_4.laz"
+    assert tiles[13].file_path == str(folder_path) + "/N5122D2_5.laz"
+    assert tiles[14].file_path == str(folder_path) + "/N5122D2_6.laz"
+    assert tiles[15].file_path == str(folder_path) + "/N5122D2_7.laz"
+    assert tiles[16].file_path == str(folder_path) + "/N5122D2_8.laz"
+    assert tiles[17].file_path == str(folder_path) + "/N5122D2_9.laz"
 
 
 def test_create_point_cloud_tiles_from_folder_when_folder_not_found():
