@@ -20,7 +20,7 @@ def test_blast2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -
 
     pipelines.blast2dem_to_postgis(
         session=MagicMock(),
-        input_path=Path("/tmp/dir/T5124H1_1.laz"),
+        input_path=Path("/tmp/dir/N5122B4_1.laz"),
         schema="test",
         table_name="test",
         step=1,
@@ -32,7 +32,7 @@ def test_blast2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -
         "kill": 300,
         "ncols": 500,
         "nrows": 500,
-        "ll": [542000, 7380000],
+        "ll": [503000, 6903000],
     }
 
 
@@ -47,7 +47,7 @@ def test_blast2dem_to_postgis_override_extra_param_defaults(
 
     pipelines.blast2dem_to_postgis(
         session=MagicMock(),
-        input_path=Path("/tmp/dir/T5124H1_1.laz"),
+        input_path=Path("/tmp/dir/N5122B4_1.laz"),
         schema="test",
         table_name="test",
         step=1,

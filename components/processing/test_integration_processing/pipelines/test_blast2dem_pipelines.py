@@ -19,7 +19,7 @@ from pinta_processing.reader.lastools import Blast2DemReader
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
 
-_LAZ_FILE = Path("point_clouds/2025/production_area_1/T5124H1_1.laz")
+_LAZ_FILE = Path("point_clouds/2025/production_area_1/N5122B4_1.laz")
 _STEP = 2
 _KEEP_CLASS = [2]
 
