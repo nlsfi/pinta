@@ -72,6 +72,7 @@ def create_calculate_reference_dem_dag(  # noqa: C901, PLR0915
                 description=("Production area id as UUID"),
             )
         },
+        is_paused_upon_creation=False,
     )
     def calculate_reference_dem_dag() -> None:  # noqa: C901, PLR0915
 
