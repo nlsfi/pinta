@@ -9,6 +9,8 @@ from collections.abc import Iterator
 
 import pytest
 import qgis.utils
+import sqlmodel
+from pinta_db.primary_db.models.management import ProductionArea
 from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
 from pinta_e2e_utils import constants
@@ -178,3 +180,19 @@ def processed_production_areas(
             f"DAG run finished with state={state}\n"
             + airflow_client.describe_failed_run(run)
         )
+
+
+@pytest.fixture
+def reduce_point_cloud_tiles(
+    processed_production_areas: None,
+    db: "Session",
+) -> None:
+    """Delete most point cloud tiles in the test database."""
+    production_area = db.exec(sqlmodel.select(ProductionArea)).first()
+    assert production_area is not None
+
+    for tile in sorted(production_area.tiles, key=lambda tile: tile.file_path)[2:]:
+        db.delete(tile)
+    db.commit()
+
+    assert len(db.exec(sqlmodel.select(ProductionArea)).first().tiles) == 2
