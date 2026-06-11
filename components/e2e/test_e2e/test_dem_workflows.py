@@ -3,6 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import functools
 import typing
 
 import pytest
@@ -17,7 +18,7 @@ if typing.TYPE_CHECKING:
 
 
 @pytest.mark.xdist_group("airflow")
-@pytest.mark.usefixtures("processed_production_areas")
+@pytest.mark.usefixtures("processed_production_areas", "reduce_point_cloud_tiles")
 def test_reference_dem_workflow(
     qgis_plugin: "Plugin", qtbot: "QtBot", m_error_dialog: "MagicMock"
 ) -> None:
@@ -31,12 +32,11 @@ def test_reference_dem_workflow(
     feature = next(production_area_layer.getFeatures())
     layers.run_layer_action(production_area_layer, action, feature)
 
-    def check_state() -> None:
+    def check_state(statuses: list[str]) -> None:
         production_area_layer.reload()
         updated_feature = next(production_area_layer.getFeatures())
-        assert updated_feature["processing_status"] == "queued"
+        assert updated_feature["processing_status"] in statuses
 
     m_error_dialog.assert_not_called()
-    qtbot.waitUntil(check_state, timeout=30000)
-
-    # TODO: check for success when using the correct DAG
+    qtbot.waitUntil(functools.partial(check_state, ["queued", "started"]), timeout=5000)
+    qtbot.waitUntil(functools.partial(check_state, ["completed"]), timeout=40000)
