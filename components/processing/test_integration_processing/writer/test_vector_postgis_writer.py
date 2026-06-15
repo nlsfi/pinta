@@ -18,7 +18,7 @@ from pinta_processing.writer import VectorPostgisWriter
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
 
-_SCHEMA = "processing"
+_SCHEMA = "user_data"
 _TABLE = "test_vector_output"
 
 

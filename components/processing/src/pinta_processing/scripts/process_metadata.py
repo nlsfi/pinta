@@ -51,7 +51,7 @@ def create_point_cloud_tiles_from_folder(folder_path: Path) -> list[PointCloudTi
 
     tiles = []
 
-    for file_path in folder.glob("*"):
+    for file_path in sorted(folder.glob("*")):
         # Skip non-LAS/LAZ files or "copc.laz" files
         if (
             file_path.suffix.lower() in [".las", ".laz"]

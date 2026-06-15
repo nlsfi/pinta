@@ -20,12 +20,48 @@ class Dem(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Reference raster."""
 
 
+class O2Dem(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 2."""
+
+
+class O8Dem(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 8."""
+
+
+class O128Dem(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 128."""
+
+
 class Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Difference raster."""
 
 
+class O2Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 2."""
+
+
+class O8Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 8."""
+
+
+class O128Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 128."""
+
+
 class DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Difference raster from changes below limit value."""
+
+
+class O2DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 2."""
+
+
+class O8DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 8."""
+
+
+class O128DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 128."""
 
 
 class DiffPolygon(ReferenceBase, table=True):  # type: ignore[call-arg]

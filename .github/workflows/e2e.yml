@@ -65,6 +65,9 @@ jobs:
       - name: Start database
         run: make up-db
 
+      - name: Disable autovacuum
+        run: docker compose exec -T db psql -U postgres -c "ALTER SYSTEM SET autovacuum = off" -c "SELECT pg_reload_conf();"
+
       - name: Run migrations
         run: make db-migrate-all
 

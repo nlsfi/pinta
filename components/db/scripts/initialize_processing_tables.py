@@ -17,13 +17,12 @@ import sqlmodel
 
 dotenv.load_dotenv()
 
-from pinta_db.primary_db.schema import Schema  # noqa: E402
 from pinta_db_test_utils import db_utils  # noqa: E402
 from pinta_db_utils.postgis import raster  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-_SCHEMA = Schema.PROCESSING.value
+_SCHEMA = "processing"
 _TABLE = "dem"
 
 
@@ -64,6 +63,14 @@ def main() -> None:
             logger.info("initialized staging tables for %s.%s", _SCHEMA, _TABLE)
 
             raster.initialize_overview_tables(session, _SCHEMA, _TABLE)
+            for level in raster.DEFAULT_OVERVIEW_LEVELS:
+                overview_name = raster.OVERVIEW_TABLE_NAME.format(
+                    level=level, table_name=_TABLE
+                )
+                raster.register_overview_table(
+                    session, _SCHEMA, _TABLE, overview_name, level
+                )
+                raster.create_raster_index(session, _SCHEMA, overview_name)
             session.commit()
             logger.info("initialized overview staging tables in %s", _SCHEMA)
     finally:

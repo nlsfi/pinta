@@ -10,5 +10,4 @@ class Schema(enum.Enum):
 
     MIGRATION = "alembic"
     MANAGEMENT = "management"
-    PROCESSING = "processing"
     DEM = "dem"
