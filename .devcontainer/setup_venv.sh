@@ -3,7 +3,7 @@ set -e
 
 COMPONENTS_DIR="components"
 LASTOOLS_DIR="external/LAStools"
-LASTOOLS_TARBALL_URL="https://downloads.rapidlasso.de/LAStools.tar.gz"
+LASTOOLS_TARBALL_URL="https://raw.githubusercontent.com/LAStools/LAStools.github.io/5bfd81f57975b312b893135f613417acbc698cbe/download/LAStools.tar.gz"
 
 
 if [ ! -d .venv ]; then
