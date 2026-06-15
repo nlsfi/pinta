@@ -127,7 +127,17 @@ changelog_file_path = "../../CHANGELOG.md"
 env_file_path = "../../.env"
 runtime_requires = [
   "qgis_plugin_tools",
+  "pinta-db",
+  "geoalchemy2",
+  "sqlalchemy",
+  "typing_extensions",
+  "sqlmodel",
+  "pydantic",
+  "pydantic_core",
+  "typing_inspection",
+  "annotated_types",
 ]
+use_dangerous_vendor_sys_path_append = true
 auto_add_recursive_runtime_dependencies = false
 translation_language_codes = [
   "fi",

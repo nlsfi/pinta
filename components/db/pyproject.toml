@@ -57,7 +57,7 @@ requires = ["uv_build>=0.10.9,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["pinta_db", "pinta_common"]
+module-name = ["pinta_db", "pinta_common", "pinta_db_utils"]
 include = ["py.typed"]
 
 [tool.ruff]
