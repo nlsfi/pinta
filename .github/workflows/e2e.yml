@@ -68,6 +68,14 @@ jobs:
       - name: Run migrations
         run: make db-migrate-all
 
+      - name: Download LASTools binaries
+        run: |
+          mkdir -p external/LAStools
+          curl -fsSL https://raw.githubusercontent.com/LAStools/LAStools.github.io/5bfd81f57975b312b893135f613417acbc698cbe/download/LAStools.tar.gz \
+            -o /tmp/lastools.tar.gz
+          tar -xzf /tmp/lastools.tar.gz -C external/LAStools
+          rm /tmp/lastools.tar.gz
+
       - name: Run e2e tests in QGIS container
         run: make test-e2e-in-container
 
