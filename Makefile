@@ -200,6 +200,9 @@ test-integration: sync-all-but-qgis-and-airflow
 test-qgis: sync
 	uv run --directory $(QGIS_DIR) pytest -v
 
+# e2e tests run LASTools in demo mode
+test-e2e test-e2e-in-container: export AIRFLOW_VAR_PINTA_LASTOOLS_DEMO_MODE := true
+
 test-e2e: sync up db-migrate-all
 	uv run --directory $(E2E_DIR) pytest
 
