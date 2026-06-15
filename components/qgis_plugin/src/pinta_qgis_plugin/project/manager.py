@@ -23,6 +23,8 @@ from pinta_common import env as env_common
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsRectangle
 from qgis.utils import iface as utils_iface
 from qgis_plugin_tools.tools.decorations import log_if_fails
+from qgis_plugin_tools.tools.i18n import tr
+from qgis_plugin_tools.tools.messages import MsgBar
 
 from pinta_qgis_plugin import env as plugin_env
 from pinta_qgis_plugin.project.groups.basemap_layer_collection import (
@@ -69,8 +71,11 @@ def clean_project() -> None:
     JobLayerCollection.remove_all_from_project()
 
 
-def open_production_area(database_name: str, group_name: str) -> None:
+def open_production_area(database_name: str | None, group_name: str) -> None:
     """Open production area layer."""
+    if not database_name:
+        MsgBar.info(tr("Production area does not have database name set."))
+        return
     collection = typing.cast("JobLayerCollection", JobLayerCollection.get())
     collection.set_database_name(database_name)
     collection.set_group_name(group_name)
