@@ -73,7 +73,7 @@ jobs:
       - name: Download LASTools binaries
         run: |
           mkdir -p external/LAStools
-          curl -fsSL https://downloads.rapidlasso.de/LAStools.tar.gz \
+          curl -fsSL --retry 5 --retry-delay 15 --retry-all-errors https://downloads.rapidlasso.de/LAStools.tar.gz \
             -o /tmp/lastools.tar.gz
           tar -xzf /tmp/lastools.tar.gz -C external/LAStools
           rm /tmp/lastools.tar.gz
