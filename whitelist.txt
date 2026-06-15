@@ -177,3 +177,4 @@ log1p
 urlunsplit
 ncols
 nrows
+pyqt

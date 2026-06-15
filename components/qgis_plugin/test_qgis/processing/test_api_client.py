@@ -38,7 +38,13 @@ def client() -> api_client.PintaAPIClient:
 
 @pytest.fixture
 def mock_post(mocker: MockerFixture, client: api_client.PintaAPIClient) -> MagicMock:
-    return mocker.patch.object(client.session, "post", autospec=True)
+    mock = mocker.patch.object(client.session, "post", autospec=True)
+    mock.return_value.json.return_value = {
+        "message": "Reference DEM workflow task created successfully",
+        "dag_id": constants.DAG_ID_CALCULATE_REFERENCE_DEM,
+        "dag_run_id": "manual__2026-01-01T00:00:00+00:00",
+    }
+    return mock
 
 
 def test_init_sets_accept_language_header() -> None:
@@ -89,6 +95,27 @@ def test_start_reference_dem_workflow_shows_success_message(
 
     mock_msg_bar.info.assert_called_once()
     assert mock_msg_bar.info.call_args.kwargs == {"success": True}
+
+
+def test_start_reference_dem_workflow_emits_workflow_started(
+    client: api_client.PintaAPIClient,
+    mock_post: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(api_client, "MsgBar", autospec=True)
+    received: list[tuple[str, str]] = []
+    client.workflow_started.connect(
+        lambda dag_id, dag_run_id: received.append((dag_id, dag_run_id))
+    )
+
+    client.start_reference_dem_workflow("area-1")
+
+    assert received == [
+        (
+            constants.DAG_ID_CALCULATE_REFERENCE_DEM,
+            "manual__2026-01-01T00:00:00+00:00",
+        )
+    ]
 
 
 def test_start_reference_dem_workflow_connection_error_raises_api_connection_error(
