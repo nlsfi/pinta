@@ -25,7 +25,7 @@ from typing import Any, NoReturn, ParamSpec, TypeVar
 import requests
 from pinta_common import constants
 from qgis.core import QgsSettings
-from qgis.PyQt.QtCore import QLocale
+from qgis.PyQt.QtCore import QLocale, QObject, pyqtSignal
 from qgis_plugin_tools.tools.i18n import tr
 from qgis_plugin_tools.tools.messages import MsgBar
 from requests.exceptions import JSONDecodeError
@@ -67,10 +67,13 @@ def handle_api_errors(
     return decorator
 
 
-class PintaAPIClient:
+class PintaAPIClient(QObject):
     """API client for Pinta Backend."""
 
+    workflow_started = pyqtSignal(str, str)  # (dag_id, dag_run_id)
+
     def __init__(self, base_url: str, timeout: int = 10) -> None:
+        super().__init__()
         self.base_url = base_url.rstrip("/")
 
         self.session = requests.Session()
@@ -115,6 +118,8 @@ class PintaAPIClient:
             timeout=self._timeout,
         )
         response.raise_for_status()
+        run = response.json()
+        self.workflow_started.emit(run["dag_id"], run["dag_run_id"])
 
 
 @functools.lru_cache(maxsize=1)
