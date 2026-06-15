@@ -17,7 +17,8 @@
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
 import typing
-from importlib import metadata
+from configparser import ConfigParser
+from pathlib import Path
 
 from qgis.PyQt import QtCore
 from qgis.utils import plugins
@@ -27,7 +28,9 @@ from pinta_qgis_plugin.utils import i18n_utils
 if typing.TYPE_CHECKING:
     from pinta_qgis_plugin.plugin import Plugin
 
-__version__ = metadata.version(__package__)
+_metadata = ConfigParser()
+_metadata.read(Path(__file__).parent / "metadata.txt")
+__version__ = _metadata.get("general", "version")
 TRANSLATORS: list[QtCore.QTranslator] = []
 
 
