@@ -34,6 +34,9 @@ LOGGER = logging.getLogger(__name__)
 
 PROVIDER_LIB = "postgres"
 
+ACTION_TITLE_OPEN_PRODUCTION_AREA_LAYERS = tr("Open production area")
+ACTION_TITLE_START_REFERENCE_DEM_WORKFLOW = tr("Start reference DEM workflow")
+
 
 class ManagementLayerCollection(BaseLayerCollection):
     """Collection of management layers."""
@@ -63,7 +66,7 @@ def _add_open_production_area_layers_action(layer: QgsVectorLayer) -> None:
     layer_utils.add_action_to_vector_layer(
         layer,
         description=tr("Add production area related layers to map"),
-        short_title=tr("Open production area"),
+        short_title=ACTION_TITLE_OPEN_PRODUCTION_AREA_LAYERS,
         command=command,
     )
 
@@ -78,6 +81,6 @@ def _add_start_reference_dem_workflow_action(layer: QgsVectorLayer) -> None:
     layer_utils.add_action_to_vector_layer(
         layer,
         description=tr("Start reference DEM workflow for production area"),
-        short_title=tr("Start reference DEM workflow"),
+        short_title=ACTION_TITLE_START_REFERENCE_DEM_WORKFLOW,
         command=command,
     )

@@ -14,12 +14,12 @@
         <translation>Tunniste</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="63"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="66"/>
         <source>Add production area related layers to map</source>
         <translation>Lisää tuotantoalueen tasot karttalle</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="63"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="37"/>
         <source>Open production area</source>
         <translation>Avaa tuotantoalue</translation>
     </message>
@@ -144,29 +144,34 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="115"/>
+        <location filename="../../api/api_client.py" line="135"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="131"/>
+        <location filename="../../api/api_client.py" line="151"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="78"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="81"/>
         <source>Start reference DEM workflow for production area</source>
         <translation>Käynnistä vertausmallin työnkulku tuotantoalueelle</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="78"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="38"/>
         <source>Start reference DEM workflow</source>
         <translation>Käynnistä vertausmallin työnkulku</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="90"/>
+        <location filename="../../api/api_client.py" line="101"/>
         <source>Reference DEM workflow task created successfully</source>
         <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
+    </message>
+    <message>
+        <location filename="../../project/manager.py" line="78"/>
+        <source>Production area does not have database name set.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

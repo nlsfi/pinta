@@ -6,35 +6,54 @@
 from pinta_db.common.base import BaseModel
 from qgis._core import (
     QgsAction,
+    QgsDataSourceUri,
     QgsExpression,
     QgsExpressionContext,
     QgsExpressionContextUtils,
     QgsFeature,
     QgsProject,
+    QgsRasterLayer,
     QgsVectorLayer,
 )
+
+
+def _uri_matches_model(uri: QgsDataSourceUri, model: type[BaseModel]) -> bool:
+    return (
+        uri.table() == model.__tablename__
+        and uri.schema() == model.__table_args__["schema"]
+    )
 
 
 def get_vector_layer_by_model(model: type[BaseModel]) -> QgsVectorLayer:
     """Get the vector layer for a given model."""
     for layer in QgsProject.instance().mapLayers().values():
-        if not isinstance(layer, QgsVectorLayer):
-            continue
-        if layer.dataProvider().uri().table() == model.__tablename__:
+        if isinstance(layer, QgsVectorLayer) and _uri_matches_model(
+            layer.dataProvider().uri(), model
+        ):
             return layer
 
     message = f"Could not find vector layer for model {model}"
     raise AssertionError(message)
 
 
-def find_layer_action(
-    layer: QgsVectorLayer, short_titles: tuple[str, ...]
-) -> QgsAction:
+def get_raster_layer_by_model(model: type[BaseModel]) -> QgsRasterLayer:
+    """Get the raster layer for a given model."""
+    for layer in QgsProject.instance().mapLayers().values():
+        if isinstance(layer, QgsRasterLayer) and _uri_matches_model(
+            QgsDataSourceUri(layer.source()), model
+        ):
+            return layer
+
+    message = f"Could not find raster layer for model {model}"
+    raise AssertionError(message)
+
+
+def find_layer_action(layer: QgsVectorLayer, short_title: str) -> QgsAction:
     """Find an action on a layer by its short title."""
     for action in layer.actions().actions():
-        if action.shortTitle() in short_titles:
+        if action.shortTitle() == short_title:
             return action
-    msg = f"Action with shortTitle={short_titles} not registered on layer"
+    msg = f"Action with shortTitle={short_title} not registered on layer"
     raise AssertionError(msg)
 
 
