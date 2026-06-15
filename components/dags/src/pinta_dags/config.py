@@ -38,6 +38,8 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
         "DB_DEM_PIXEL_SIZE": "{{ var.value.pinta_db_dem_pixel_size }}",
         "DB_DEM_NODATA": "{{ var.value.pinta_db_dem_nodata }}",
         "LAStoolsLicenseFile": "/lastools/lastoolslicense.txt",
+        # Resolved per run (empty = off); dev/e2e set it so unlicensed binaries run.
+        "LASTOOLS_DEMO_MODE": "{{ var.value.get('pinta_lastools_demo_mode', '') }}",
     },
     "tty": True,  # To be able to see the logs
     # When using remote engine or docker-in-docker,
