@@ -27,7 +27,9 @@ class O128Dem(BasePrimaryDb, DemBase, table=True):  # type: ignore[call-arg]
     """Overview factor 128."""
 
 
-def constraint_enforce_spatially_unique_dem_rast(table: str, name: str) -> sa.DDL:
+def constraint_enforce_spatially_unique_dem_rast(
+    table: str, name: str, schema: str = "dem"
+) -> sa.DDL:
     """Enforce DEM tiles are spatially unique."""
     from alembic import op  # noqa: PLC0415
 
@@ -37,14 +39,14 @@ def constraint_enforce_spatially_unique_dem_rast(table: str, name: str) -> sa.DD
     quoted_name = preparer.quote(name)
 
     return sa.DDL(f"""
-        ALTER TABLE "dem".{quoted_table}
+        ALTER TABLE "{schema}".{quoted_table}
         ADD CONSTRAINT {quoted_name}
         EXCLUDE USING btree ((rast::geometry) WITH =);
         """)
 
 
 def constraint_enforce_coverage_tile_dem_rast(
-    table: str, name: str, tile_size: int
+    table: str, name: str, tile_size: int, schema: str = "dem"
 ) -> sa.DDL:
     """Enforce DEM tiles are located on a grid of tile map unit size."""
     from alembic import op  # noqa: PLC0415
@@ -55,7 +57,7 @@ def constraint_enforce_coverage_tile_dem_rast(
     quoted_name = preparer.quote(name)
 
     return sa.DDL(f"""
-        ALTER TABLE "dem".{quoted_table}
+        ALTER TABLE "{schema}".{quoted_table}
         ADD CONSTRAINT {quoted_name} CHECK (
             COALESCE(
                 st_iscoveragetile(null, null, 0, 0),

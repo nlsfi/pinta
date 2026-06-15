@@ -32,7 +32,7 @@ class TableType(enum.Enum):
 def get_default_columns() -> list[sa.Column]:
     """Get the default columns for raster tables."""
     return [
-        sa.Column("rid", sa.Integer(), primary_key=True, autoincrement=True),
+        sa.Column("rid", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column("rast", geoalchemy2.Raster(spatial_index=False)),
     ]
 
@@ -75,7 +75,7 @@ def initialize_raster_table(
         constraints.add_raster_constraints(
             session, schema, staging_name, pixel_size=env.DEM_PIXEL_SIZE
         )
-        _create_raster_index(session, schema, staging_name)
+        create_raster_index(session, schema, staging_name)
 
     session.commit()
 
@@ -134,7 +134,7 @@ def merge_staging_tables(
         return
     if staging_tables == 0:
         # No staging tables to merge, just create raster index on main table
-        _create_raster_index(session, schema, table_name)
+        create_raster_index(session, schema, table_name)
         return
 
     # Build UNION ALL of all staging tables using SQLAlchemy
@@ -211,7 +211,7 @@ def merge_staging_tables(
     session.exec(insert_statement)  # type: ignore[call-overload]
     session.commit()
 
-    _create_raster_index(session, schema, table_name)
+    create_raster_index(session, schema, table_name)
     constraints.add_constraint_extent(session, schema, table_name)
     constraints.add_constraint_regular_blocking(
         session,
@@ -228,13 +228,17 @@ def merge_staging_tables(
     session.commit()
 
 
-def _register_overview_table(
+def register_overview_table(
     session: sqlmodel.Session,
     schema: str,
     reference_table_name: str,
     overview_name: str,
     level: int,
 ) -> None:
+    """Register an overview table with PostGIS AddOverviewConstraints.
+
+    Skipped silently if the session user does not own the overview table.
+    """
     if not utils.session_user_owns_table(session, schema, overview_name):
         LOGGER.info(
             "Skipping overview registration for %s.%s because session user is "
@@ -335,7 +339,7 @@ def _ensure_raster_table_exists(
     raise ValueError(msg)
 
 
-def _create_raster_index(
+def create_raster_index(
     session: sqlmodel.Session,
     schema: str,
     table_name: str,

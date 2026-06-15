@@ -16,6 +16,9 @@ from pinta_processing import core, reader, writer
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
 
+_RASTER_SCHEMA = "reference"
+_RASTER_TABLE = "dem"
+
 
 def test_postgis_reader_clips_raster_from_database(
     processing_worker_session: "Session",
@@ -36,7 +39,7 @@ def test_postgis_reader_clips_raster_from_database(
         expected_bounds.top,
     )
     result = reader.PostgisReader(
-        "processing", "dem", processing_worker_session, wkt
+        _RASTER_SCHEMA, _RASTER_TABLE, processing_worker_session, wkt
     ).process(None)
 
     assert isinstance(result, core.RasterDataset)
@@ -61,7 +64,7 @@ def test_postgis_reader_clip_partly_nodata_wkt(
 
     wkt = _bounds_to_wkt(left, bottom, right, top)
     result = reader.PostgisReader(
-        "processing", "dem", processing_worker_session, wkt
+        _RASTER_SCHEMA, _RASTER_TABLE, processing_worker_session, wkt
     ).process(None)
 
     assert result.array.shape == expected_array.shape
@@ -85,7 +88,7 @@ def test_postgis_reader_clip_all_nodata_wkt(
 
     wkt = _bounds_to_wkt(left, bottom, right, top)
     result = reader.PostgisReader(
-        "processing", "dem", processing_worker_session, wkt
+        _RASTER_SCHEMA, _RASTER_TABLE, processing_worker_session, wkt
     ).process(None)
 
     assert result.array.shape == expected_array.shape
@@ -100,18 +103,22 @@ def test_postgis_reader_raises_when_wkt_has_no_raster_data(
     _write_dem_to_postgis(processing_worker_session)
 
     wkt = _bounds_to_wkt(0.0, 0.0, 10.0, 10.0)
-    stage = reader.PostgisReader("processing", "dem", processing_worker_session, wkt)
+    stage = reader.PostgisReader(
+        _RASTER_SCHEMA, _RASTER_TABLE, processing_worker_session, wkt
+    )
 
-    with pytest.raises(ValueError, match=r"No raster data found in processing\.dem"):
+    with pytest.raises(ValueError, match=r"No raster data found in reference\.dem"):
         stage.process(None)
 
 
 def _write_dem_to_postgis(processing_worker_session: "Session") -> str:
-    raster.initialize_raster_table(processing_worker_session, "processing", "dem")
+    raster.initialize_raster_table(
+        processing_worker_session, _RASTER_SCHEMA, _RASTER_TABLE
+    )
     file_path = pinta_utils.get_test_data_path("processing/dem.tif")
 
     pipeline = reader.RasterioReader(str(file_path)) | writer.RasterPostgisWriter(
-        "processing", "dem", processing_worker_session
+        _RASTER_SCHEMA, _RASTER_TABLE, processing_worker_session
     )
     pipeline.execute()
 

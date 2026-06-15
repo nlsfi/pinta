@@ -59,3 +59,9 @@ echo "Set ${JOB_DB_NAME} to be a template database"
 psql <<EOSQL
   ALTER DATABASE "${JOB_DB_NAME}" IS_TEMPLATE true;
 EOSQL
+
+echo "Disabling autovacuum (development/test container only)"
+psql <<EOSQL
+  ALTER SYSTEM SET autovacuum = off;
+  SELECT pg_reload_conf();
+EOSQL

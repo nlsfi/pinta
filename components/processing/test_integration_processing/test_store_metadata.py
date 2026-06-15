@@ -30,7 +30,7 @@ def test_create_and_update_production_area(session: "Session"):
     assert len(all_areas) == 1
     assert all_areas[0].name == "production_area_1"
     area_polygon = geoalchemy2.shape.to_shape(all_areas[0].geom)
-    assert pytest.approx(area_polygon.area, rel=1e-3) == 4965832.63
+    assert pytest.approx(area_polygon.area, rel=1e-3) == 4965616
 
     all_tiles = session.exec(sqlmodel.select(PointCloudTile)).all()
     assert len(all_tiles) == 5

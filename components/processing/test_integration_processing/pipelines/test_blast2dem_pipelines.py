@@ -59,14 +59,11 @@ def test_blast2dem_to_geotiff(
 
 
 def test_blast2dem_to_postgis(
-    processing_worker_session: "Session",
+    processing_worker_session: "Session", session: "Session"
 ) -> None:
     table_name = "dem"
-    schema = "processing"
+    schema = "reference"
     staging_tables = 2
-    ol_2_name = f"o_2_{table_name}"
-    ol_8_name = f"o_8_{table_name}"
-    ol_128_name = f"o_128_{table_name}"
 
     raster.initialize_raster_table(
         processing_worker_session, schema, table_name, staging_tables
@@ -78,37 +75,21 @@ def test_blast2dem_to_postgis(
     input_path = pinta_utils.get_test_data_path(_LAZ_FILE)
 
     pipeline = pipelines.blast2dem_to_postgis(
-        primary_session=processing_worker_session,
+        primary_session=session,
         job_session=processing_worker_session,
         input_path=input_path,
         schema=schema,
         table_name=table_name,
         step=_STEP,
         keep_class=_KEEP_CLASS,
-        staging_tables=staging_tables,
     )
     pipeline.execute()
 
     raster.merge_staging_tables(
         schema, table_name, staging_tables, processing_worker_session
     )
-    raster.merge_staging_tables(
-        schema, ol_2_name, staging_tables, processing_worker_session
-    )
-    raster.merge_staging_tables(
-        schema, ol_8_name, staging_tables, processing_worker_session
-    )
-    raster.merge_staging_tables(
-        schema, ol_128_name, staging_tables, processing_worker_session
-    )
 
     main_count = processing_worker_session.exec(  # type: ignore[call-overload]
         sa.text(f"SELECT COUNT(*) FROM {schema}.{table_name}")
     ).first()[0]
     assert main_count > 0, f"Expected rows in {schema}.{table_name}, got 0"
-
-    for ol_name in (ol_2_name, ol_8_name, ol_128_name):
-        ol_count = processing_worker_session.exec(  # type: ignore[call-overload]
-            sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_name}")
-        ).first()[0]
-        assert ol_count > 0, f"Expected rows in {schema}.{ol_name}, got 0"

@@ -14,14 +14,19 @@ from pinta_db_utils.postgis import raster
 from pinta_test_utils import pinta_utils
 from rasterio.transform import Affine
 
-from pinta_processing import core, pipelines, reader, writer
+from pinta_processing import core, reader, writer
 
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
 
+_RASTER_SCHEMA = "reference"
+_RASTER_TABLE = "dem"
+
 
 def test_postgis_writer(processing_worker_session: "Session") -> None:
-    raster.initialize_raster_table(processing_worker_session, "processing", "dem")
+    raster.initialize_raster_table(
+        processing_worker_session, _RASTER_SCHEMA, _RASTER_TABLE
+    )
     file_path = pinta_utils.get_test_data_path("processing/dem.tif")
 
     # Read input raster
@@ -30,13 +35,13 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
 
     # Execute pipeline to tile and write to PostGIS
     pipeline = reader.RasterioReader(str(file_path)) | writer.RasterPostgisWriter(
-        "processing", "dem", processing_worker_session
+        _RASTER_SCHEMA, _RASTER_TABLE, processing_worker_session
     )
     pipeline.execute()
 
     # Verify 4 tiles were written to database
     tile_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
-        sa.text("SELECT COUNT(*) FROM processing.dem")
+        sa.text(f"SELECT COUNT(*) FROM {_RASTER_SCHEMA}.{_RASTER_TABLE}")
     ).first()
     assert tile_count_result == (9,), f"Expected 9 tiles, got {tile_count_result[0]}"
 
@@ -47,7 +52,7 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
             SELECT
                 ST_Width(rast) as width,
                 ST_Height(rast) as height
-            FROM processing.dem
+            FROM reference.dem
             ORDER BY ST_XMin(ST_Envelope(rast)), ST_YMin(ST_Envelope(rast))
             """
         )
@@ -73,7 +78,7 @@ def test_postgis_writer(processing_worker_session: "Session") -> None:
                     ST_Union(rast),
                     'GTiff'
                 ) as geotiff_data
-                FROM processing.dem
+                FROM reference.dem
                 """
             )
         ).first()[0]
@@ -104,11 +109,17 @@ def test_postgis_writer_with_staging_tables(
 
     def get_pipeline(file_path: Path) -> core.Pipeline:
         return reader.RasterioReader(str(file_path)) | writer.RasterPostgisWriter(
-            "processing", "dem", processing_worker_session, staging_tables=3
+            _RASTER_SCHEMA,
+            _RASTER_TABLE,
+            processing_worker_session,
+            staging_tables=3,
         )
 
     raster.initialize_raster_table(
-        processing_worker_session, "processing", "dem", staging_tables=3
+        processing_worker_session,
+        _RASTER_SCHEMA,
+        _RASTER_TABLE,
+        staging_tables=3,
     )
 
     # Generate 10 512x512 random rasters inside finland extents (use epsg:3067) to tmp geotiffs
@@ -161,9 +172,9 @@ def test_postgis_writer_with_staging_tables(
             pipeline = get_pipeline(file_path)
             pipeline.execute()
 
-    # Assert that "processing"."dem" has 0 rows and each staging table has rows
+    # Assert that the main table has 0 rows and each staging table has rows
     main_table_count = processing_worker_session.exec(  # type: ignore[call-overload]
-        sa.text("SELECT COUNT(*) FROM processing.dem")
+        sa.text(f"SELECT COUNT(*) FROM {_RASTER_SCHEMA}.{_RASTER_TABLE}")
     ).first()[0]
     assert main_table_count == 0, (
         f"Expected main table to have 0 rows, got {main_table_count}"
@@ -174,7 +185,7 @@ def test_postgis_writer_with_staging_tables(
     for i in range(3):
         staging_table = f"dem_p{i}"
         count_result = processing_worker_session.exec(  # type: ignore[call-overload]
-            sa.text(f"SELECT COUNT(*) FROM processing.{staging_table}")
+            sa.text(f"SELECT COUNT(*) FROM {_RASTER_SCHEMA}.{staging_table}")
         ).first()[0]
         assert count_result == expected_counts[staging_table], (
             f"Expected {expected_counts[staging_table]} rows in {staging_table}, got {count_result}"
@@ -185,37 +196,24 @@ def test_rasterio_to_postgis(
     processing_worker_session: "Session",
 ) -> None:
 
-    table_name = "dem"
-    schema = "processing"
+    table_name = _RASTER_TABLE
+    schema = _RASTER_SCHEMA
     staging_tables = 2
-    ol_2_name = f"o_2_{table_name}"
-    ol_8_name = f"o_8_{table_name}"
-    ol_128_name = f"o_128_{table_name}"
 
     raster.initialize_raster_table(
         processing_worker_session, schema, table_name, staging_tables
     )
-    raster.initialize_overview_tables(
-        processing_worker_session, schema, table_name, staging_tables
-    )
 
     file_path = pinta_utils.get_test_data_path("processing/dem.asc.zip")
-    pipeline = pipelines.rasterio_to_postgis(
-        processing_worker_session, file_path, schema, table_name, staging_tables
+    pipeline = reader.RasterioReader(
+        str(file_path), crs="EPSG:3067"
+    ) | writer.RasterPostgisWriter(
+        schema, table_name, processing_worker_session, staging_tables
     )
     pipeline.execute()
 
     raster.merge_staging_tables(
         schema, table_name, staging_tables, processing_worker_session
-    )
-    raster.merge_staging_tables(
-        schema, ol_2_name, staging_tables, processing_worker_session
-    )
-    raster.merge_staging_tables(
-        schema, ol_8_name, staging_tables, processing_worker_session
-    )
-    raster.merge_staging_tables(
-        schema, ol_128_name, staging_tables, processing_worker_session
     )
 
     # Verify 4 tiles were written to database
@@ -223,21 +221,3 @@ def test_rasterio_to_postgis(
         sa.text(f"SELECT COUNT(*) FROM {schema}.{table_name}")
     ).first()
     assert tile_count_result == (9,), f"Expected 9 tiles, got {tile_count_result[0]}"
-
-    # Verify overlay 2 tiles were written to database
-    ol_2_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
-        sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_2_name}")
-    ).first()
-    assert ol_2_count_result == (4,), f"Expected 4 tiles, got {ol_2_count_result[0]}"
-
-    # Verify overlay 8 tiles were written to database
-    ol_8_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
-        sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_8_name}")
-    ).first()
-    assert ol_8_count_result == (1,), f"Expected 1 tile, got {ol_8_count_result[0]}"
-
-    # Verify overlay 128 tiles were written to database
-    ol_128_count_result = processing_worker_session.exec(  # type: ignore[call-overload]
-        sa.text(f"SELECT COUNT(*) FROM {schema}.{ol_128_name}")
-    ).first()
-    assert ol_128_count_result == (1,), f"Expected 1 tile, got {ol_128_count_result[0]}"

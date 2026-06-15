@@ -178,3 +178,4 @@ urlunsplit
 ncols
 nrows
 pyqt
+rasters
