@@ -31,7 +31,7 @@ def _ensure_lastools_is_available(lastools_in_path: None) -> None:
 
 @pytest.fixture(autouse=True)
 def set_blast2dem_executable(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(Blast2DemReader, "executable", "blast2dem64")
+    monkeypatch.setattr(Blast2DemReader, "executable", "las2dem_new64")
 
 
 def test_blast2dem_to_geotiff(

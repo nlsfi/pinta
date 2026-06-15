@@ -98,7 +98,9 @@ class LASToolsReader(core.Stage):
 class Blast2DemReader(LASToolsReader):
     """Convert LAS files into DEM raster."""
 
-    executable = "/lastools/bin/blast2dem64"
+    # TODO:  use blast2dem64 when bug mentioned in
+    #  https://groups.google.com/g/lastools/c/sdD57K4EJKw is fixed
+    executable = "/lastools/bin/las2dem_new64"
 
     def __init__(
         self,
