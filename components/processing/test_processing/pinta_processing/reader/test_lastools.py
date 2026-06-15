@@ -79,7 +79,7 @@ def test_blast2dem_reader_builds_command(
 
     run_mock.assert_called_once()
     command = run_mock.call_args.args[0]
-    assert command[0] == "/lastools/bin/blast2dem64"
+    assert command[0] == "/lastools/bin/las2dem_new64"
     assert command[command.index("-i") + 1] == str(stage.input_path)
     assert command[command.index("-epsg") + 1] == "3067"
     assert command[command.index("-step") + 1] == "2"
