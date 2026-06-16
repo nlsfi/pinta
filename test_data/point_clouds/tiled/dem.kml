@@ -1,0 +1,11 @@
+<GroundOverlay>
+  <name>E495.000k N6907.000k</name>
+  <Icon><href>dem.tif</href></Icon>
+  <LatLonBox>
+  <south>62.2945760620</south>
+  <west>26.9035921807</west>
+  <north>62.3035527413</north>
+  <east>26.9228741712</east>
+  <rotation>0.1003912641</rotation>
+  </LatLonBox>
+</GroundOverlay>
