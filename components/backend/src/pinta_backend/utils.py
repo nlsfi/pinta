@@ -7,8 +7,25 @@ import logging
 import logging.handlers
 import os
 import sys
+from collections.abc import Callable
 
 import pinta_backend
+from pinta_backend import models
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def check_db_health(check_fn: Callable[[], None]) -> models.ApiDependencyHealth:
+    """Return UP/DOWN health for a database, calling check_fn to probe it."""
+    try:
+        check_fn()
+        return models.ApiDependencyHealth(status=models.HealthStatus.UP)
+    except Exception as e:
+        detail = str(e)
+        _LOGGER.exception("DB health check failed: %s", detail)
+        return models.ApiDependencyHealth(
+            status=models.HealthStatus.DOWN, detail=detail
+        )
 
 
 def setup_default_logger_handlers() -> None:
