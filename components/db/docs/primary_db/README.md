@@ -10,14 +10,6 @@
 | [dem.o_2_dem](dem.o_2_dem.md) | 2 |  | BASE TABLE |
 | [dem.o_8_dem](dem.o_8_dem.md) | 2 |  | BASE TABLE |
 | [dem.o_128_dem](dem.o_128_dem.md) | 2 |  | BASE TABLE |
-| [processing.dem](processing.dem.md) | 2 |  | BASE TABLE |
-| [processing.dem_p0](processing.dem_p0.md) | 2 |  | BASE TABLE |
-| [processing.o_2_dem](processing.o_2_dem.md) | 2 |  | BASE TABLE |
-| [processing.o_2_dem_p0](processing.o_2_dem_p0.md) | 2 |  | BASE TABLE |
-| [processing.o_8_dem](processing.o_8_dem.md) | 2 |  | BASE TABLE |
-| [processing.o_8_dem_p0](processing.o_8_dem_p0.md) | 2 |  | BASE TABLE |
-| [processing.o_128_dem](processing.o_128_dem.md) | 2 |  | BASE TABLE |
-| [processing.o_128_dem_p0](processing.o_128_dem_p0.md) | 2 |  | BASE TABLE |
 
 ## Enums
 
@@ -59,38 +51,6 @@ erDiagram
 }
 "dem.o_128_dem" {
   bigint rid
-  raster rast
-}
-"processing.dem" {
-  integer rid
-  raster rast
-}
-"processing.dem_p0" {
-  integer rid
-  raster rast
-}
-"processing.o_2_dem" {
-  integer rid
-  raster rast
-}
-"processing.o_2_dem_p0" {
-  integer rid
-  raster rast
-}
-"processing.o_8_dem" {
-  integer rid
-  raster rast
-}
-"processing.o_8_dem_p0" {
-  integer rid
-  raster rast
-}
-"processing.o_128_dem" {
-  integer rid
-  raster rast
-}
-"processing.o_128_dem_p0" {
-  integer rid
   raster rast
 }
 ```

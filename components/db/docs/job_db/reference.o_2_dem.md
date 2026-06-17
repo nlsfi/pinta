@@ -1,33 +1,39 @@
-# processing.o_2_dem_p0
+# reference.o_2_dem
 
 ## Columns
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| rid | integer | nextval('processing.o_2_dem_p0_rid_seq'::regclass) | false |  |  |  |
-| rast | raster |  | true |  |  |  |
+| rid | bigint | nextval('reference.o_2_dem_rid_seq'::regclass) | false |  |  |  |
+| rast | raster |  | false |  |  |  |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| enforce_coverage_tile_o_2_dem_rast | CHECK | CHECK (COALESCE(st_iscoveragetile(NULL::raster, NULL::raster, 0, 0), ((mod(((st_upperleftx(rast))::numeric - (500000)::numeric), (1024)::numeric) = (0)::numeric) AND (mod(((st_upperlefty(rast))::numeric - (6570000)::numeric), (1024)::numeric) = (0)::numeric)))) |
 | enforce_height_rast | CHECK | CHECK ((st_height(rast) = 256)) |
+| enforce_max_extent_rast | CHECK | CHECK ((st_envelope(rast) @ '0103000020FB0B00000100000005000000000000000024E4400000000004105941000000000024E4400000000004105E4100000000404227410000000004105E4100000000404227410000000004105941000000000024E4400000000004105941'::geometry)) NOT VALID |
 | enforce_nodata_values_rast | CHECK | CHECK ((_raster_constraint_nodata_values(rast) = '{-9999.0000000000}'::numeric[])) |
 | enforce_num_bands_rast | CHECK | CHECK ((st_numbands(rast) = 1)) |
 | enforce_out_db_rast | CHECK | CHECK ((_raster_constraint_out_db(rast) = '{f}'::boolean[])) |
+| enforce_overview_rast | CHECK | CHECK (_overview_constraint(rast, 2, 'reference'::name, 'dem'::name, 'rast'::name)) |
 | enforce_pixel_types_rast | CHECK | CHECK ((_raster_constraint_pixel_types(rast) = '{32BF}'::text[])) |
 | enforce_same_alignment_rast | CHECK | CHECK (st_samealignment(rast, '0100000000000000000000104000000000000010C0000000000024E4400000000004105E4100000000000000000000000000000000FB0B000001000100'::raster)) |
 | enforce_scalex_rast | CHECK | CHECK ((round((st_scalex(rast))::numeric, 10) = round((4)::numeric, 10))) |
 | enforce_scaley_rast | CHECK | CHECK ((round((st_scaley(rast))::numeric, 10) = round((- (4)::numeric), 10))) |
 | enforce_srid_rast | CHECK | CHECK ((st_srid(rast) = 3067)) |
 | enforce_width_rast | CHECK | CHECK ((st_width(rast) = 256)) |
-| o_2_dem_p0_pkey | PRIMARY KEY | PRIMARY KEY (rid) |
+| pk_o_2_dem | PRIMARY KEY | PRIMARY KEY (rid) |
+| enforce_spatially_unique_o_2_dem_rast | x | EXCLUDE USING btree (((rast)::geometry) WITH =) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| o_2_dem_p0_pkey | CREATE UNIQUE INDEX o_2_dem_p0_pkey ON processing.o_2_dem_p0 USING btree (rid) |
+| pk_o_2_dem | CREATE UNIQUE INDEX pk_o_2_dem ON reference.o_2_dem USING btree (rid) |
+| idx_o_2_dem_rast | CREATE INDEX idx_o_2_dem_rast ON reference.o_2_dem USING gist (st_convexhull(rast)) |
+| enforce_spatially_unique_o_2_dem_rast | CREATE INDEX enforce_spatially_unique_o_2_dem_rast ON reference.o_2_dem USING btree (((rast)::geometry)) |
 
 ## Relations
 
@@ -35,8 +41,8 @@
 erDiagram
 
 
-"processing.o_2_dem_p0" {
-  integer rid
+"reference.o_2_dem" {
+  bigint rid
   raster rast
 }
 ```
