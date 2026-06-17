@@ -9,7 +9,7 @@ from typing import Annotated
 import fastapi
 from fastapi import responses
 
-from pinta_backend import airflow_client, exceptions, models
+from pinta_backend import airflow_client, db, exceptions, models, utils
 from pinta_backend.i18n import _, get_language
 from pinta_backend.services import production_area
 
@@ -29,8 +29,11 @@ async def get_health(
 ) -> models.ApiHealth | responses.JSONResponse:
     """Return app health status."""
     parsed_language = get_language()
+
+    airflow_health: models.ApiDependencyHealth
     try:
         await client.check_authentication()
+        airflow_health = models.ApiDependencyHealth(status=models.HealthStatus.UP)
     except (
         exceptions.AirflowAuthError,
         exceptions.AirflowUnreachableError,
@@ -38,24 +41,24 @@ async def get_health(
     ) as e:
         detail = str(e)
         LOGGER.exception("Airflow health check failed: %s", detail)
-        health = models.ApiHealth(
+        airflow_health = models.ApiDependencyHealth(
             status=models.HealthStatus.DOWN,
-            airflow=models.ApiDependencyHealth(
-                status=models.HealthStatus.DOWN,
-                detail=detail,
-            ),
-            parsed_language=parsed_language,
+            detail=detail,
         )
+
+    primary_db_health = utils.check_db_health(db.check_primary_db)
+
+    health = models.ApiHealth(
+        airflow=airflow_health,
+        primary_db=primary_db_health,
+        parsed_language=parsed_language,
+    )
+    if health.status == models.HealthStatus.DOWN:
         return responses.JSONResponse(
             status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=health.model_dump(mode="json"),
         )
-
-    return models.ApiHealth(
-        status=models.HealthStatus.UP,
-        airflow=models.ApiDependencyHealth(status=models.HealthStatus.UP),
-        parsed_language=parsed_language,
-    )
+    return health
 
 
 @router.get("/hello-world", tags=["default"])

@@ -7,9 +7,21 @@ import contextlib
 import typing
 
 import sqlalchemy
+import sqlalchemy.exc
 import sqlmodel
 
 from pinta_backend import settings
+
+
+def check_primary_db() -> None:
+    """Raise if the primary database is not reachable (executes SELECT 1)."""
+    current_settings = settings.get_settings()
+    engine = sqlalchemy.create_engine(current_settings.primary_db_uri)
+    try:
+        with engine.connect() as conn:
+            conn.execute(sqlalchemy.text("SELECT 1"))
+    finally:
+        engine.dispose()
 
 
 @contextlib.contextmanager

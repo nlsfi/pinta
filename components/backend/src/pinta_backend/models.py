@@ -28,9 +28,20 @@ class ApiHealth(pydantic.BaseModel):
     """Api health response."""
 
     backend_version: str = metadata.version("pinta_backend")
-    status: HealthStatus
     airflow: ApiDependencyHealth
+    primary_db: ApiDependencyHealth
     parsed_language: str
+
+    @pydantic.computed_field  # type: ignore[prop-decorator]
+    @property
+    def status(self) -> HealthStatus:
+        """Derive overall status from all dependency healths."""
+        dependencies = (self.airflow, self.primary_db)
+        return (
+            HealthStatus.UP
+            if all(d.status == HealthStatus.UP for d in dependencies)
+            else HealthStatus.DOWN
+        )
 
 
 class WorkflowTriggerRequest(pydantic.BaseModel):

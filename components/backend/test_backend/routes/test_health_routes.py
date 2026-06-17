@@ -6,6 +6,7 @@
 from unittest import mock
 
 import pytest
+import sqlalchemy.exc
 from fastapi import testclient
 
 from pinta_backend import exceptions
@@ -36,6 +37,7 @@ def test_health_returns_version_and_language_from_header(
     assert response_body["backend_version"]
     assert response_body["status"] == "UP"
     assert response_body["airflow"] == {"status": "UP", "detail": None}
+    assert response_body["primary_db"] == {"status": "UP", "detail": None}
     assert response_body["parsed_language"] == expected_language
     assert response.headers["Content-Language"] == expected_language
 
@@ -66,4 +68,23 @@ def test_health_returns_500_when_airflow_login_fails(
         "status": "DOWN",
         "detail": expected_detail,
     }
+    assert response_body["primary_db"] == {"status": "UP", "detail": None}
     assert response_body["parsed_language"] == "en"
+
+
+def test_health_returns_500_when_db_unreachable(
+    client_with_mock_airflow: testclient.TestClient,
+    mock_check_primary_db: mock.MagicMock,
+) -> None:
+    mock_check_primary_db.side_effect = sqlalchemy.exc.OperationalError(
+        "connect", {}, Exception("connection refused")
+    )
+
+    response = client_with_mock_airflow.get("/health")
+
+    assert response.status_code == 500
+    response_body = response.json()
+    assert response_body["status"] == "DOWN"
+    assert response_body["airflow"] == {"status": "UP", "detail": None}
+    assert response_body["primary_db"]["status"] == "DOWN"
+    assert response_body["primary_db"]["detail"] is not None

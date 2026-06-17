@@ -17,6 +17,12 @@ def mock_airflow_client() -> mock.AsyncMock:
     return mock.AsyncMock(spec=airflow_client.AirflowClient)
 
 
+@pytest.fixture(autouse=True)
+def mock_check_primary_db() -> Iterator[mock.MagicMock]:
+    with mock.patch("pinta_backend.routes.db.check_primary_db") as m:
+        yield m
+
+
 @pytest.fixture
 def client_with_mock_airflow(
     client: testclient.TestClient,
