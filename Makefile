@@ -108,7 +108,6 @@ db-restart-fully: down build-db up db-migrate-all
 
 db-build-documentation:
 	# Meant to be run by CI for maintaining documentation.
-	uv run --directory $(DB_DIR) scripts/initialize_processing_tables.py
 	docker compose run --rm --user $$(id -u):$$(id -g) tbls doc --rm-dist --config .tbls_primary.yml
 	docker compose run --rm --user $$(id -u):$$(id -g) tbls doc --rm-dist --config .tbls_job.yml
 	uv run --directory $(DB_DIR) scripts/build_diagrams.py
