@@ -17,20 +17,9 @@ jobs:
       GHCR_OWNER: nlsfi
       GHCR_REPOSITORY_PREFIX: pinta
     steps:
-      - name: Install regctl
-        run: |
-          set -euo pipefail
-
-          curl -fsSL \
-            https://github.com/regclient/regclient/releases/download/v0.8.3/regctl-linux-amd64 \
-            -o regctl
-          chmod +x regctl
-          sudo mv regctl /usr/local/bin/regctl
-
-      - name: Login to GitHub Container Registry
-        run: echo "${{ github.token }}" | regctl registry login ghcr.io -u "${{ github.actor }}" --pass-stdin
-
       - name: Remove stale candidate tags
+        env:
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_DELETE_TOKEN || github.token }}
         run: |
           set -euo pipefail
 
@@ -79,6 +68,56 @@ jobs:
             registry_get "$token" "${image}/blobs/${config_digest}" | jq -r '.created // empty'
           }
 
+          github_api() {
+            curl -fsSL \
+              -H "Authorization: Bearer ${PACKAGES_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "$@"
+          }
+
+          delete_tag() {
+            local image="$1"
+            local tag="$2"
+            local package_name="${GHCR_REPOSITORY_PREFIX}%2F${image}"
+            local version_id version_url page result count http_code
+
+            version_id=""
+            version_url=""
+            page=1
+            while [ -z "$version_id" ]; do
+              result="$(github_api "https://api.github.com/orgs/${GHCR_OWNER}/packages/container/${package_name}/versions?per_page=100&page=${page}")"
+              count="$(jq 'length' <<< "$result")"
+              [ "$count" -eq 0 ] && break
+              version_id="$(jq -r --arg tag "$tag" '[.[] | select(.metadata.container.tags[]? == $tag)] | first | .id // empty' <<< "$result")"
+              version_url="$(jq -r --arg tag "$tag" '[.[] | select(.metadata.container.tags[]? == $tag)] | first | .url // empty' <<< "$result")"
+              page=$((page + 1))
+            done
+
+            if [ -z "$version_id" ]; then
+              echo "Warning: could not find version ID for ${image}:${tag}, skipping"
+              return 0
+            fi
+
+            echo "  version_id=${version_id} url=${version_url}"
+            http_code="$(
+              curl -sSL -X DELETE \
+                -H "Authorization: Bearer ${PACKAGES_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                -o /dev/null \
+                -w "%{http_code}" \
+                "${version_url}"
+            )"
+
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+              echo "Deleted ${image}:${tag}"
+            else
+              echo "Error: DELETE ${version_url} returned HTTP ${http_code}"
+              return 1
+            fi
+          }
+
           for image in db processing e2e airflow backend; do
             token="$(registry_token "$image")"
             tags="$(
@@ -100,7 +139,7 @@ jobs:
               created_epoch="$(date -u -d "$created_at" +%s)"
               if [ "$created_epoch" -lt "$cutoff_epoch" ]; then
                 echo "Removing ${image}:${tag}, created at ${created_at}"
-                regctl tag rm --ignore-missing "$GHCR_PREFIX/$image:$tag"
+                delete_tag "$image" "$tag"
               else
                 echo "Keeping ${image}:${tag}, created at ${created_at}"
               fi
