@@ -10,6 +10,15 @@
 | [reference.diff_polygon](reference.diff_polygon.md) | 3 |  | BASE TABLE |
 | [reference.diff_polygon_cluster](reference.diff_polygon_cluster.md) | 5 |  | BASE TABLE |
 | [user_data.update_area](user_data.update_area.md) | 2 |  | BASE TABLE |
+| [reference.o_2_dem](reference.o_2_dem.md) | 2 |  | BASE TABLE |
+| [reference.o_8_dem](reference.o_8_dem.md) | 2 |  | BASE TABLE |
+| [reference.o_128_dem](reference.o_128_dem.md) | 2 |  | BASE TABLE |
+| [reference.o_2_diff](reference.o_2_diff.md) | 2 |  | BASE TABLE |
+| [reference.o_8_diff](reference.o_8_diff.md) | 2 |  | BASE TABLE |
+| [reference.o_128_diff](reference.o_128_diff.md) | 2 |  | BASE TABLE |
+| [reference.o_2_diff_dior](reference.o_2_diff_dior.md) | 2 |  | BASE TABLE |
+| [reference.o_8_diff_dior](reference.o_8_diff_dior.md) | 2 |  | BASE TABLE |
+| [reference.o_128_diff_dior](reference.o_128_diff_dior.md) | 2 |  | BASE TABLE |
 
 ## Relations
 
@@ -44,6 +53,42 @@ erDiagram
 "user_data.update_area" {
   uuid id
   geometry_Polygon_3067_ geom
+}
+"reference.o_2_dem" {
+  bigint rid
+  raster rast
+}
+"reference.o_8_dem" {
+  bigint rid
+  raster rast
+}
+"reference.o_128_dem" {
+  bigint rid
+  raster rast
+}
+"reference.o_2_diff" {
+  bigint rid
+  raster rast
+}
+"reference.o_8_diff" {
+  bigint rid
+  raster rast
+}
+"reference.o_128_diff" {
+  bigint rid
+  raster rast
+}
+"reference.o_2_diff_dior" {
+  bigint rid
+  raster rast
+}
+"reference.o_8_diff_dior" {
+  bigint rid
+  raster rast
+}
+"reference.o_128_diff_dior" {
+  bigint rid
+  raster rast
 }
 ```
 
