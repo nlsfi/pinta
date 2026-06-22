@@ -60,8 +60,8 @@ def load_dem_dag(
                 "",
                 type="string",
                 description=(
-                    "Absolute path inside the processing container. Data is mounted "
-                    "under /input, so use a path such as /input/dem."
+                    "Absolute path inside the processing container. "
+                    "Data is mounted under /dem"
                 ),
             )
         },

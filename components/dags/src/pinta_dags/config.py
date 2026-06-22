@@ -78,6 +78,15 @@ if data_base_path := Variable.get("pinta_data_base_path", "/test_data"):
             read_only=True,
         )
     )
+if dem_base_path := Variable.get("pinta_dem_base_path", "/test_data/dem"):
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target="/dem",
+            source=dem_base_path,
+            type="bind",
+            read_only=True,
+        )
+    )
 if lastools_path := Variable.get("pinta_lastools_path", "/external/LAStools"):
     PINTA_CONTAINER_TASK_ARGS["mounts"].append(
         Mount(
