@@ -168,7 +168,7 @@ def test_create_postgis_raster_layer_sets_value_maps(
     assert field_index == 2
     assert widget.type() == "ValueMap"
     assert widget.config() == {
-        "map": [{"Not started": "not_started"}, {"Completed": "completed"}]
+        "map": [{"not_started": "Not started"}, {"completed": "Completed"}]
     }
 
 
@@ -230,7 +230,7 @@ def test_create_raster_layer_sets_value_maps(
     field_index, widget = layer.setEditorWidgetSetup.call_args.args
     assert field_index == 3
     assert widget.type() == "ValueMap"
-    assert widget.config() == {"map": [{"Queued": "queued"}, {"Failure": "failure"}]}
+    assert widget.config() == {"map": [{"queued": "Queued"}, {"failure": "Failure"}]}
 
 
 def test_create_postgis_raster_layer_applies_style(
