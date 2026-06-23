@@ -105,6 +105,54 @@ def grant_default_privileges_on_sequences_in_schema(
     )
 
 
+def revoke_privileges_on_schema(
+    schema: str,
+    role: str,
+    privileges: tuple[str, ...],
+) -> None:
+    """Revoke specified privileges on the schema from the role."""
+    privileges_str = ", ".join(privileges)
+    op.execute(f"REVOKE {privileges_str} ON SCHEMA {schema} FROM {role}")
+
+
+def revoke_all_tables_privileges_in_schema(
+    schema: str,
+    role: str,
+    privileges: tuple[str, ...],
+) -> None:
+    """Revoke privileges on all existing tables in the schema from the role."""
+    privileges_str = ", ".join(privileges)
+    op.execute(f"REVOKE {privileges_str} ON ALL TABLES IN SCHEMA {schema} FROM {role}")
+
+
+def revoke_default_privileges_on_tables_in_schema(
+    schema: str,
+    schema_owner: str,
+    role: str,
+    privileges: tuple[str, ...],
+) -> None:
+    """Revoke specified default privileges on tables in the schema from the role."""
+    privileges_str = ", ".join(privileges)
+    op.execute(
+        f"ALTER DEFAULT PRIVILEGES FOR ROLE {schema_owner} IN SCHEMA {schema} "
+        f"REVOKE {privileges_str} ON TABLES FROM {role}"
+    )
+
+
+def revoke_default_privileges_on_sequences_in_schema(
+    schema: str,
+    schema_owner: str,
+    role: str,
+    privileges: tuple[str, ...],
+) -> None:
+    """Revoke specified default privileges on sequences in the schema from the role."""
+    privileges_str = ", ".join(privileges)
+    op.execute(
+        f"ALTER DEFAULT PRIVILEGES FOR ROLE {schema_owner} IN SCHEMA {schema} "
+        f"REVOKE {privileges_str} ON SEQUENCES FROM {role}"
+    )
+
+
 def grant_role_to_role(role: str, target: str) -> None:
     """Grant role membership to the target role."""
     op.execute(f"GRANT {role} TO {target}")
@@ -195,6 +243,74 @@ def _delete_all_rasters(schema: str, table: str) -> sa.TextClause:
     # TRUNCATE instead of DELETE: no dead tuples means autovacuum won't connect
     # to job_template during tests and block the DROP/CREATE DATABASE sequence.
     return sa.text(f'TRUNCATE "{schema}".{quoted_table}')
+
+
+def add_raster_constraints_to_existing_table(
+    table: str,
+    pixel_size: int,
+    nodata: int,
+    srid: int,
+    schema: str = "reference",
+) -> None:
+    """Add raster constraints and custom check constraints to a raster table."""
+    from pinta_db.primary_db.models import dem as dem_module  # noqa: PLC0415
+
+    tile_size = pixel_size * 256
+    op.execute(
+        dem_module.constraint_enforce_spatially_unique_dem_rast(
+            table, f"enforce_spatially_unique_{table}_rast", schema=schema
+        )
+    )
+    op.execute(
+        dem_module.constraint_enforce_coverage_tile_dem_rast(
+            table, f"enforce_coverage_tile_{table}_rast", tile_size, schema=schema
+        )
+    )
+    op.execute(
+        _make_empty_raster(schema, table, 41248, 7880720, nodata, pixel_size, srid)
+    )
+    op.execute(
+        _make_empty_raster(
+            schema,
+            table,
+            762144 - tile_size,
+            6570000 + tile_size,
+            nodata,
+            pixel_size,
+            srid,
+        )
+    )
+    op.execute(_add_raster_constraints(schema, table))
+    op.execute(_delete_all_rasters(schema, table))
+
+
+def drop_raster_constraints_from_existing_table(
+    table: str,
+    schema: str = "reference",
+) -> None:
+    """Drop raster constraints and custom check constraints from raster table."""
+    bind = op.get_bind()
+    quoted_table = bind.dialect.identifier_preparer.quote(table)
+    op.execute(
+        sa.text("""
+            SELECT DropRasterConstraints(
+                :schema, :table, 'rast', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
+                FALSE, TRUE, TRUE, TRUE, TRUE, TRUE
+            )
+            """).bindparams(schema=schema, table=table)
+    )
+    op.execute(
+        sa.text(
+            f'ALTER TABLE "{schema}".{quoted_table}'
+            f' DROP CONSTRAINT IF EXISTS "enforce_coverage_tile_{table}_rast"'
+        )
+    )
+    op.execute(
+        sa.text(
+            f'ALTER TABLE "{schema}".{quoted_table}'
+            f' DROP CONSTRAINT IF EXISTS "enforce_spatially_unique_{table}_rast"'
+        )
+    )
 
 
 def create_raster_table(
