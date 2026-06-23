@@ -66,7 +66,7 @@ if data_dir := Variable.get("pinta_container_source_base_path", None):
             target=Variable.get("pinta_container_target_base_path", None),
             source=data_dir,
             type="bind",
-            read_only=False,
+            read_only=True,
         )
     )
 if data_base_path := Variable.get("pinta_data_base_path", "/test_data"):
