@@ -50,6 +50,6 @@ def set_value_maps(layer: QgsMapLayer, config: BaseLayerConfig) -> None:
         if field_index < 0:
             continue
 
-        widget_config = [{key: value} for key, value in value_map.items()]
+        widget_config = [{value: key} for key, value in value_map.items()]
         widget = QgsEditorWidgetSetup("ValueMap", {"map": widget_config})
         layer.setEditorWidgetSetup(field_index, widget)

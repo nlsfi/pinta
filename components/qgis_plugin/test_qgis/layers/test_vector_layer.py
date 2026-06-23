@@ -171,7 +171,7 @@ def test_create_layer_sets_value_maps(mocker: MockerFixture, mock_uri: MagicMock
     widget = layer.editorWidgetSetup(layer.fields().lookupField("status"))
     assert widget.type() == "ValueMap"
     assert widget.config() == {
-        "map": [{"Not started": "not_started"}, {"Completed": "completed"}]
+        "map": [{"not_started": "Not started"}, {"completed": "Completed"}]
     }
 
 

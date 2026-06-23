@@ -37,7 +37,7 @@ PRODUCTION_AREA = ModelLayerConfig.create(
         config.ValueMapConfig(
             field_name="processing_status",
             value_map={
-                "pending": tr("Pending"),
+                "not_started": tr("Pending"),
                 "queued": tr("Queued"),
                 "started": tr("Started"),
                 "completed": tr("Completed"),
