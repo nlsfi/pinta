@@ -102,6 +102,8 @@ def _render_log_content(content: object) -> str:
             part for part in (entry.get("timestamp"), entry.get("level")) if part
         )
         lines.append(f"{prefix} {event}".strip())
+        if exc_info := entry.get("exc_info"):
+            lines.append(str(exc_info))
     return "\n".join(lines)
 
 
