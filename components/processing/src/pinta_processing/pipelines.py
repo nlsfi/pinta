@@ -2,7 +2,9 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
+import functools
 import logging
+import operator
 from pathlib import Path
 
 from pinta_common import env
@@ -42,35 +44,13 @@ def rasterio_to_postgis(  # noqa: PLR0913
     crs: str | None = f"EPSG:{env.SRID}",
 ) -> core.Pipeline:
     """Read rasterio input and write it to PostGIS with overviews."""
-    return core.Pipeline(
-        [
-            reader.RasterioReader(input_path, crs=crs),
-            # Calculate and write overviews
-            *_generate_overview_stages(schema, table_name, session, staging_tables),
-            # Write original data
-            writer.RasterPostgisWriter(schema, table_name, session, staging_tables),
-        ]
+    return (
+        reader.RasterioReader(input_path, crs=crs)
+        # Calculate and write overviews
+        | _generate_overview_stages(schema, table_name, session, staging_tables)
+        # Write original data
+        | writer.RasterPostgisWriter(schema, table_name, session, staging_tables)
     )
-
-
-def _generate_overview_stages(
-    schema: str,
-    table_name: str,
-    session: Session,
-    staging_tables: int,
-) -> list[core.Stage]:
-    return [
-        core.Tee(
-            _overview_to_postgis(
-                level,
-                schema,
-                raster.OVERVIEW_TABLE_NAME.format(level=level, table_name=table_name),
-                session,
-                staging_tables,
-            )
-        )
-        for level in raster.DEFAULT_OVERVIEW_LEVELS
-    ]
 
 
 def blast2dem_to_geotiff(  # noqa: PLR0913
@@ -120,20 +100,43 @@ def blast2dem_to_postgis(  # noqa: PLR0913
         **(extra_lastools_params or {}),
     }
 
-    return core.Pipeline(
+    return (
+        reader.Blast2DemReader(
+            input_path,
+            step=step,
+            crs=crs,
+            keep_class=keep_class,
+            extra_lastools_params=extra_lastools_params,
+        )
+        # Calculate and write overviews
+        | _generate_overview_stages(schema, table_name, job_session, staging_tables)
+        # Write original data
+        | writer.RasterPostgisWriter(schema, table_name, job_session, staging_tables)
+    )
+
+
+def _generate_overview_stages(
+    schema: str,
+    table_name: str,
+    session: Session,
+    staging_tables: int,
+) -> core.Stage:
+    return functools.reduce(
+        operator.or_,
         [
-            reader.Blast2DemReader(
-                input_path,
-                step=step,
-                crs=crs,
-                keep_class=keep_class,
-                extra_lastools_params=extra_lastools_params,
-            ),
-            # Calculate and write overviews
-            *_generate_overview_stages(schema, table_name, job_session, staging_tables),
-            # Write original data
-            writer.RasterPostgisWriter(schema, table_name, job_session, staging_tables),
-        ]
+            core.Tee(
+                _overview_to_postgis(
+                    level,
+                    schema,
+                    raster.OVERVIEW_TABLE_NAME.format(
+                        level=level, table_name=table_name
+                    ),
+                    session,
+                    staging_tables,
+                )
+            )
+            for level in raster.DEFAULT_OVERVIEW_LEVELS
+        ],
     )
 
 
