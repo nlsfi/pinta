@@ -9,25 +9,26 @@ from airflow.sdk import DAG, Param, Variable, dag, task
 from pinta_common import constants
 
 from pinta_dags import config
+from pinta_dags.config import AirflowVariable
 
-MAX_PARALLEL_PIPELINES_VARIABLE = "pinta_load_dem_max_parallel_pipelines"
-STAGING_TABLES_VARIABLE = "pinta_load_dem_staging_tables"
 DEM_SCHEMA = "dem"
 DEM_TABLE_NAME = "dem"
 
 
 def _get_max_parallel_pipelines() -> int:
-    max_parallel = int(Variable.get(MAX_PARALLEL_PIPELINES_VARIABLE, 4))
+    var = AirflowVariable.LOAD_DEM_MAX_PARALLEL_PIPELINES
+    max_parallel = int(Variable.get(var, 4))
     if max_parallel < 1:
-        msg = f"{MAX_PARALLEL_PIPELINES_VARIABLE} must be at least 1"
+        msg = f"{var} must be at least 1"
         raise ValueError(msg)
     return max_parallel
 
 
 def _get_staging_tables() -> int:
-    staging_tables = int(Variable.get(STAGING_TABLES_VARIABLE, 1))
+    var = AirflowVariable.LOAD_DEM_STAGING_TABLES
+    staging_tables = int(Variable.get(var, 1))
     if staging_tables < 0:
-        msg = f"{STAGING_TABLES_VARIABLE} must be at least 0"
+        msg = f"{var} must be at least 0"
         raise ValueError(msg)
     return staging_tables
 

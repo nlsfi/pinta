@@ -6,10 +6,28 @@
 """Airflow-related configurations."""
 
 import datetime
+import enum
 from typing import Any
 
 from airflow.sdk import Variable
 from docker.types import Mount
+
+
+class AirflowVariable(enum.StrEnum):
+    """Names of Airflow Variables used across Pinta DAGs."""
+
+    # Maximum number of DEM files processed concurrently in a single load_dem run
+    LOAD_DEM_MAX_PARALLEL_PIPELINES = "pinta_load_dem_max_parallel_pipelines"
+    # Number of staging tables used during load_dem to reduce PostGIS write contention
+    LOAD_DEM_STAGING_TABLES = "pinta_load_dem_staging_tables"
+
+    # Maximum number of blast2dem tile pipelines running in parallel for reference DEM
+    CALCULATE_REFERENCE_DEM_MAX_PARALLEL_PIPELINES = (
+        "pinta_calculate_reference_dem_max_parallel_pipelines"
+    )
+    CALCULATE_REFERENCE_DEM_STAGING_TABLES = (
+        "pinta_calculate_reference_dem_staging_tables"
+    )
 
 
 def connection_uri_template(conn_id: str) -> str:
