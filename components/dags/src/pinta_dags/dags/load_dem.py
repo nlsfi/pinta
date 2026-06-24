@@ -70,7 +70,12 @@ def load_dem_dag(
     def load_dem_from_files_dag() -> None:
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-        def initialize_dem_tables(connection_uri: str, staging_tables: int) -> None:
+        def initialize_dem_tables(
+            connection_uri: str,
+            staging_tables: int,
+            schema: str,
+            table_name: str,
+        ) -> None:
             import sqlalchemy
             import sqlmodel
             from pinta_db_utils.postgis import raster
@@ -78,10 +83,10 @@ def load_dem_dag(
             engine = sqlalchemy.create_engine(connection_uri)
             with sqlmodel.Session(engine) as session:
                 raster.initialize_raster_table(
-                    session, DEM_SCHEMA, DEM_TABLE_NAME, staging_tables=staging_tables
+                    session, schema, table_name, staging_tables=staging_tables
                 )
                 raster.initialize_overview_tables(
-                    session, DEM_SCHEMA, DEM_TABLE_NAME, staging_tables=staging_tables
+                    session, schema, table_name, staging_tables=staging_tables
                 )
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
@@ -105,7 +110,11 @@ def load_dem_dag(
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
         def process_dem_file(
-            connection_uri: str, input_path: str, staging_tables: int
+            connection_uri: str,
+            input_path: str,
+            staging_tables: int,
+            schema: str,
+            table_name: str,
         ) -> None:
             from pathlib import Path
 
@@ -118,14 +127,19 @@ def load_dem_dag(
                 pipeline = pipelines.rasterio_to_postgis(
                     session=session,
                     input_path=Path(input_path),
-                    schema=DEM_SCHEMA,
-                    table_name=DEM_TABLE_NAME,
+                    schema=schema,
+                    table_name=table_name,
                     staging_tables=staging_tables,
                 )
                 pipeline.execute()
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-        def merge_dem_staging_tables(connection_uri: str, staging_tables: int) -> None:
+        def merge_dem_staging_tables(
+            connection_uri: str,
+            staging_tables: int,
+            schema: str,
+            table_name: str,
+        ) -> None:
             import sqlalchemy
             import sqlmodel
             from pinta_db_utils.postgis import raster
@@ -133,17 +147,17 @@ def load_dem_dag(
             engine = sqlalchemy.create_engine(connection_uri)
             with sqlmodel.Session(engine) as session:
                 raster.merge_staging_tables(
-                    DEM_SCHEMA,
-                    DEM_TABLE_NAME,
+                    schema,
+                    table_name,
                     staging_tables=staging_tables,
                     session=session,
                 )
                 for level in raster.DEFAULT_OVERVIEW_LEVELS:
                     overview_table = raster.OVERVIEW_TABLE_NAME.format(
-                        level=level, table_name=DEM_TABLE_NAME
+                        level=level, table_name=table_name
                     )
                     raster.merge_staging_tables(
-                        DEM_SCHEMA,
+                        schema,
                         overview_table,
                         staging_tables=staging_tables,
                         session=session,
@@ -154,15 +168,28 @@ def load_dem_dag(
         files = list_dem_files("{{ params.folder }}")
         files_to_process = require_dem_files(files)
         process_dem_file_task = process_dem_file.partial(
-            connection_uri=connection_uri, staging_tables=staging_tables
+            connection_uri=connection_uri,
+            staging_tables=staging_tables,
+            schema=DEM_SCHEMA,
+            table_name=DEM_TABLE_NAME,
         )
-        initialize_task = initialize_dem_tables(connection_uri, staging_tables)
+        initialize_task = initialize_dem_tables(
+            connection_uri,
+            staging_tables,
+            schema=DEM_SCHEMA,
+            table_name=DEM_TABLE_NAME,
+        )
         processed_files = process_dem_file_task.expand(input_path=files_to_process)
         (
             files_to_process
             >> initialize_task
             >> processed_files
-            >> merge_dem_staging_tables(connection_uri, staging_tables)
+            >> merge_dem_staging_tables(
+                connection_uri,
+                staging_tables,
+                schema=DEM_SCHEMA,
+                table_name=DEM_TABLE_NAME,
+            )
         )
 
     return load_dem_from_files_dag()
