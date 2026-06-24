@@ -7,12 +7,14 @@ from typing import Any
 
 from airflow.sdk import DAG, Param, Variable, dag, task
 from pinta_common import constants
+from pinta_db.primary_db.models.dem import Dem
+from pinta_db.primary_db.schema import Schema
 
 from pinta_dags import config
 from pinta_dags.config import AirflowVariable
 
-DEM_SCHEMA = "dem"
-DEM_TABLE_NAME = "dem"
+DEM_SCHEMA = Schema.DEM.value
+DEM_TABLE_NAME = Dem.__tablename__
 
 
 def _get_max_parallel_pipelines() -> int:

@@ -6,15 +6,17 @@
 from typing import cast
 
 from airflow.sdk import DAG, Param, TriggerRule, Variable, dag, task
-from pinta_common import constants
+from pinta_common import constants, env
+from pinta_db.job_db.models.reference import Dem
+from pinta_db.job_db.schema import Schema
 
 from pinta_dags import config
 from pinta_dags.config import AirflowVariable
 
-DB_SCHEMA = "reference"
-DB_TABLE = "dem"
-JOB_TEMPLATE_NAME = "job_template"
-CRS = "EPSG:3067"
+DB_SCHEMA = Schema.REFERENCE.value
+DB_TABLE = Dem.__tablename__
+JOB_TEMPLATE_NAME = env.JOB_TEMPLATE_NAME
+CRS = f"EPSG:{env.SRID}"
 BLAST2DEM_KEEP_CLASS = [2]
 
 
