@@ -8,6 +8,8 @@
 from geoalchemy2 import Geometry
 from sqlmodel import SQLModel
 
+from pinta_db.exceptions import MissingSchemaError
+
 
 def geometry_type(model_class: type[SQLModel], field_name: str = "geom") -> str:
     """Get geometry type from SQLModel class."""
@@ -43,3 +45,12 @@ def geometry_column(model_class: type[SQLModel]) -> str:
 
     msg = f"No geometry column found in {model_class.__name__}"
     raise ValueError(msg)
+
+
+def schema_and_table(model_class: type[SQLModel]) -> tuple[str, str]:
+    """Get schema and table from SQLModel class."""
+    table_name = model_class.__tablename__
+    table_args = model_class.__table_args__ or {}  # type: ignore[attr-defined]
+    if not (schema := table_args.get("schema")):
+        raise MissingSchemaError(model_class)
+    return (str(schema), str(table_name))  # type: ignore[attr-defined]

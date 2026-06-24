@@ -96,9 +96,10 @@ class ModelLayerConfig(VectorLayerConfig):
     ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
+        schema, table = model_utils.schema_and_table(db_model)
         return ModelLayerConfig(
-            schema=_model_schema(db_model),
-            table_name=db_model.__tablename__,
+            schema=schema,
+            table_name=table,
             layer_name=layer_name,
             aliases={**COMMON_ALIASES}
             if aliases is None
@@ -181,9 +182,10 @@ class RasterModelLayerConfig(RasterLayerConfig):
         rast_column: str = "rast",
     ) -> "RasterModelLayerConfig":
         """Create a RasterModelLayerConfig instance."""
+        schema, table = model_utils.schema_and_table(db_model)
         return RasterModelLayerConfig(
-            schema=_model_schema(db_model),
-            table_name=db_model.__tablename__,
+            schema=schema,
+            table_name=table,
             layer_name=layer_name,
             layer_id=layer_id,
             rast_column=rast_column,
@@ -198,7 +200,3 @@ def geometry_type_to_qgis_wkb(geometry_type: str) -> QgsWkbTypes.Type:
         "MULTIPOLYGON": QgsWkbTypes.MultiPolygon,
     }
     return mapping.get(geometry_type.upper())
-
-
-def _model_schema(db_model: type[BaseModel]) -> str:
-    return db_model.__table_args__.get("schema")

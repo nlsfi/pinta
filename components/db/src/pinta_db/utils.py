@@ -5,14 +5,10 @@
 
 from sqlmodel import SQLModel
 
-from pinta_db.exceptions import MissingSchemaError
+from pinta_db_utils import model_utils
 
 
 def foreign_key(model_class: type[SQLModel], field_name: str = "id") -> str:
     """Generate foreign key string representation."""
-    table_name = model_class.__tablename__
-    table_args = model_class.__table_args__ or {}  # type: ignore[attr-defined]
-    if not (schema := table_args.get("schema")):
-        raise MissingSchemaError(model_class)
-
-    return f"{schema}.{table_name}.{field_name}"
+    schema, table = model_utils.schema_and_table(model_class)
+    return f"{schema}.{table}.{field_name}"
