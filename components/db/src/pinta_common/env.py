@@ -37,5 +37,7 @@ except KeyError as e:
 
 DEFAULT_TILE_SIZE = int(os.environ.get("DB_DEFAULT_TILE_SIZE", "256"))
 
+JOB_TEMPLATE_NAME = os.environ.get("DB_JOB_TEMPLATE_NAME", "job_template")
+
 # When set to a non-empty value, LASTools commands are invoked with `-demo`
 LASTOOLS_DEMO_MODE = is_truthy(os.environ.get("LASTOOLS_DEMO_MODE", ""))
