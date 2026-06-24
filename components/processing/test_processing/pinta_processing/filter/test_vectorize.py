@@ -21,7 +21,7 @@ def _make_dataset(array: np.ndarray) -> core.RasterDataset:
 
 
 def test_vectorize_raster_returns_vector_dataset():
-    """VectorizeRaster returns a VectorDataset with a score column."""
+    """VectorizeRaster returns a VectorDataset with a relevance_score column."""
     array = np.array(
         [
             [1.0, 1.0, constants.DEFAULT_NODATA, constants.DEFAULT_NODATA],
@@ -32,7 +32,7 @@ def test_vectorize_raster_returns_vector_dataset():
     result = VectorizeRaster().process(_make_dataset(array))
 
     assert isinstance(result, core.VectorDataset)
-    assert "score" in result.geodataframe.columns
+    assert "relevance_score" in result.geodataframe.columns
 
 
 def test_vectorize_raster_produces_one_polygon_per_cluster():
@@ -59,15 +59,15 @@ def test_vectorize_raster_nodata_only_input_returns_empty_geodataframe():
     assert len(result.geodataframe) == 0
 
 
-def test_vectorize_raster_score_is_non_negative():
-    """Score values are non-negative for all produced polygons."""
+def test_vectorize_raster_relevance_score_is_non_negative():
+    """relevance_score values are non-negative for all produced polygons."""
     array = np.array(
         [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
         dtype=constants.DEFAULT_DTYPE,
     )
     result = VectorizeRaster().process(_make_dataset(array))
 
-    assert (result.geodataframe["score"] >= 0).all()
+    assert (result.geodataframe["relevance_score"] >= 0).all()
 
 
 def test_vectorize_raster_crs_matches_input():
@@ -149,8 +149,8 @@ def test_vectorize_raster_polygon_follows_pixel_boundaries():
     assert len(list(top_left.interiors)) == 1
 
 
-def test_vectorize_raster_score_order_reflects_elevation_variance():
-    """Cluster with higher elevation variance receives a higher score.
+def test_vectorize_raster_relevance_score_order_reflects_elevation_variance():
+    """Cluster with higher elevation variance receives a higher relevance_score.
 
     Input array (X = varied data, U = uniform data, . = nodata):
 
@@ -161,12 +161,12 @@ def test_vectorize_raster_score_order_reflects_elevation_variance():
      2        .    .    X    X
      3        .    .    X    X
 
-    Left cluster (rows 0-1, cols 0-1): all values equal 5.0  -> std=0, score=0.
-    Right cluster (rows 2-3, cols 2-3): values 1,2,9,10      -> std>0, score>0.
+    Left cluster (rows 0-1, cols 0-1): all values equal 5.0  -> std=0, relevance_score=0.
+    Right cluster (rows 2-3, cols 2-3): values 1,2,9,10      -> std>0, relevance_score>0.
 
     The two clusters are diagonally adjacent at (row=1,col=1) and (row=2,col=2)
     but 4-connectivity labelling does not connect diagonal neighbours, so they
-    remain separate labels and receive independent scores.
+    remain separate labels and receive independent relevance_scores.
     """
     array = np.array(
         [
@@ -186,8 +186,8 @@ def test_vectorize_raster_score_order_reflects_elevation_variance():
         gdf.geometry.apply(lambda g: g.bounds[0]).sort_values().index
     ].reset_index(drop=True)
 
-    uniform_score = gdf["score"][0]
-    varied_score = gdf["score"][1]
+    uniform_relevance_score = gdf["relevance_score"][0]
+    varied_relevance_score = gdf["relevance_score"][1]
 
-    assert uniform_score == pytest.approx(0.0)
-    assert varied_score > uniform_score
+    assert uniform_relevance_score == pytest.approx(0.0)
+    assert varied_relevance_score > uniform_relevance_score

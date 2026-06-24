@@ -36,20 +36,37 @@ def lastools_in_path(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def session(worker_id: str) -> Iterator["Session"]:
-    db_name = db_utils.create_primary_db(worker_id)
+def primary_db(worker_id: str) -> str:
+    return db_utils.create_primary_db(worker_id)
+
+
+@pytest.fixture
+def job_db(worker_id: str) -> str:
+    return db_utils.create_job_db(worker_id)
+
+
+@pytest.fixture
+def session(primary_db: str) -> Iterator["Session"]:
     with engine_utils.get_session(
-        db_utils.get_primary_writer_credentials(db_name)
+        db_utils.get_primary_writer_credentials(primary_db)
     ) as session:
         yield session
         session.close()
 
 
 @pytest.fixture
-def processing_worker_session(worker_id: str) -> Iterator["Session"]:
-    db_name = db_utils.create_job_db(worker_id)
+def admin_primary_session(primary_db: str) -> Iterator["Session"]:
     with engine_utils.get_session(
-        db_utils.get_job_admin_credentials(db_name)
+        db_utils.get_primary_admin_credentials(primary_db)
+    ) as session:
+        yield session
+        session.close()
+
+
+@pytest.fixture
+def processing_worker_session(job_db: str) -> Iterator["Session"]:
+    with engine_utils.get_session(
+        db_utils.get_job_admin_credentials(job_db)
     ) as session:
         yield session
         session.close()
