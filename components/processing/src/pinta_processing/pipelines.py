@@ -8,6 +8,8 @@ import operator
 from pathlib import Path
 
 from pinta_common import env
+from pinta_db.job_db.models import reference
+from pinta_db_utils import model_utils
 from pinta_db_utils.postgis import raster
 from sqlmodel import Session
 
@@ -57,8 +59,6 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     primary_session: Session,
     job_session: Session,
     input_path: Path,
-    schema: str,
-    table_name: str,
     step: int,
     keep_class: list[int],
     staging_tables: int = 1,
@@ -82,6 +82,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
         **(extra_lastools_params or {}),
     }
 
+    schema, table_name = model_utils.schema_and_table(reference.Dem)
     return (
         reader.Blast2DemReader(
             input_path,
