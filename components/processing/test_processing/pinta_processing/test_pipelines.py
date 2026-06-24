@@ -22,8 +22,6 @@ def test_blast2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -
         primary_session=MagicMock(),
         job_session=MagicMock(),
         input_path=Path("/tmp/dir/N5122B4_1.laz"),
-        schema="test",
-        table_name="test",
         step=1,
         keep_class=[2],
     )
@@ -50,8 +48,6 @@ def test_blast2dem_to_postgis_override_extra_param_defaults(
         primary_session=MagicMock(),
         job_session=MagicMock(),
         input_path=Path("/tmp/dir/N5122B4_1.laz"),
-        schema="test",
-        table_name="test",
         step=1,
         keep_class=[2],
         extra_lastools_params={

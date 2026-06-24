@@ -52,8 +52,6 @@ def test_blast2dem_to_postgis(
         primary_session=session,
         job_session=processing_worker_session,
         input_path=input_path,
-        schema=schema,
-        table_name=table_name,
         step=_STEP,
         keep_class=_KEEP_CLASS,
     )
