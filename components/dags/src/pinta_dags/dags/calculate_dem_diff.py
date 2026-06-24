@@ -6,8 +6,8 @@
 from typing import cast
 
 from airflow.sdk import DAG, Param, Variable, dag, task
-from pinta_common import constants, env
-from pinta_db.job_db.models.reference import Dem
+from pinta_common import constants
+from pinta_db.job_db.models.reference import Diff, DiffDior
 from pinta_db.job_db.schema import Schema
 
 from pinta_dags import config
@@ -15,37 +15,39 @@ from pinta_dags.config import AirflowVariable
 from pinta_dags.tasks import get_database_name
 
 DB_SCHEMA = Schema.REFERENCE.value
-DB_TABLE = Dem.__tablename__
-CRS = f"EPSG:{env.SRID}"
-BLAST2DEM_KEEP_CLASS = [2]
+DB_TABLE_DIFF = Diff.__tablename__
+DB_TABLE_DIFF_DIOR = DiffDior.__tablename__
 
 
 def _get_max_parallel_pipelines() -> int:
-    var = AirflowVariable.CALCULATE_REFERENCE_DEM_MAX_PARALLEL_PIPELINES
-    max_parallel = int(Variable.get(var, 4))
+    max_parallel = int(
+        Variable.get(AirflowVariable.CALCULATE_DEM_DIFF_MAX_PARALLEL_PIPELINES, 4)
+    )
     if max_parallel < 1:
+        var = AirflowVariable.CALCULATE_DEM_DIFF_MAX_PARALLEL_PIPELINES
         msg = f"{var} must be at least 1"
         raise ValueError(msg)
     return max_parallel
 
 
 def _get_staging_tables() -> int:
-    var = AirflowVariable.CALCULATE_REFERENCE_DEM_STAGING_TABLES
-    staging_tables = int(Variable.get(var, 1))
+    staging_tables = int(
+        Variable.get(AirflowVariable.CALCULATE_DEM_DIFF_STAGING_TABLES, 1)
+    )
     if staging_tables < 0:
-        msg = f"{var} must be at least 0"
+        msg = f"{AirflowVariable.CALCULATE_DEM_DIFF_STAGING_TABLES} must be at least 0"
         raise ValueError(msg)
     return staging_tables
 
 
-def create_calculate_reference_dem_dag(
+def create_calculate_dem_diff_dag(
     *,
     dag_id: str,
 ) -> DAG:
     @dag(
         dag_id=dag_id,
         tags=[dag_id],
-        dag_display_name="Calculate reference dem",
+        dag_display_name="Calculate DEM diff",
         schedule=None,
         params={
             "id": Param(
@@ -57,7 +59,7 @@ def create_calculate_reference_dem_dag(
         },
         is_paused_upon_creation=False,
     )
-    def calculate_reference_dem_dag() -> None:
+    def calculate_dem_diff_dag() -> None:
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
 
@@ -75,6 +77,7 @@ def create_calculate_reference_dem_dag(
         ) -> list[str]:
             import sqlalchemy
             import sqlmodel
+            from geoalchemy2.shape import to_shape
             from pinta_db.primary_db.models.management import ProductionArea
 
             engine = sqlalchemy.create_engine(connection_uri)
@@ -85,7 +88,7 @@ def create_calculate_reference_dem_dag(
                 area_in_db = session.exec(statement).first()
                 if not area_in_db:
                     return []
-                return [tile.file_path for tile in area_in_db.tiles]
+                return [to_shape(tile.geom).wkt for tile in area_in_db.tiles]
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def initialize_dem_tables(
@@ -117,18 +120,12 @@ def create_calculate_reference_dem_dag(
             **config.PINTA_CONTAINER_TASK_ARGS,
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
-        def blast2dem(  # noqa: PLR0913
+        def calculate_dem_diff(
             primary_connection_uri: str,
             job_connection_uri: str,
-            input_path: str,
-            step: int,
-            keep_class: list[int],
-            crs: str,
+            tile_wkt: str,
             staging_tables: int,
-            extra_lastools_params: dict | None = None,
         ) -> None:
-            from pathlib import Path
-
             import sqlalchemy
             import sqlmodel
             from pinta_processing import pipelines
@@ -141,15 +138,11 @@ def create_calculate_reference_dem_dag(
                     sqlalchemy.create_engine(job_connection_uri)
                 ) as job_session,
             ):
-                pipeline = pipelines.blast2dem_to_postgis(
+                pipeline = pipelines.calculate_diff_models(
                     primary_session=primary_session,
                     job_session=job_session,
-                    input_path=Path(input_path),
-                    step=step,
-                    keep_class=keep_class,
+                    tile_wkt=tile_wkt,
                     staging_tables=staging_tables,
-                    crs=crs,
-                    extra_lastools_params=extra_lastools_params,
                 )
                 pipeline.execute()
 
@@ -182,13 +175,12 @@ def create_calculate_reference_dem_dag(
 
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
+        staging_tables = _get_staging_tables()
 
         prod_area_id = "{{ params.id }}"
         database_name = cast(
             "str", get_database_name(primary_connection_uri, prod_area_id)
         )
-        file_paths = find_production_area(primary_connection_uri, prod_area_id)
-
         job_db_uri = cast(
             "str",
             build_job_connection_uri_task(
@@ -196,33 +188,38 @@ def create_calculate_reference_dem_dag(
                 database_name=database_name,
             ),
         )
+        tile_wkt_list = find_production_area(primary_connection_uri, prod_area_id)
 
-        pixel_size = "{{ var.value.pinta_db_dem_pixel_size }}"
-        blast2dem_task = blast2dem.partial(
+        init_diff_task = initialize_dem_tables.override(
+            task_id="initialize_diff_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF, staging_tables)
+        init_diff_dior_task = initialize_dem_tables.override(
+            task_id="initialize_diff_dior_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_DIOR, staging_tables)
+
+        processed_tiles = calculate_dem_diff.partial(
             primary_connection_uri=primary_connection_uri,
             job_connection_uri=job_db_uri,
-            step=pixel_size,
-            keep_class=BLAST2DEM_KEEP_CLASS,
-            crs=CRS,
-            staging_tables=_get_staging_tables(),
-        )
+            staging_tables=staging_tables,
+        ).expand(tile_wkt=tile_wkt_list)
 
-        initialize_task = initialize_dem_tables(
-            job_db_uri, DB_SCHEMA, DB_TABLE, _get_staging_tables()
-        )
-        processed_files = blast2dem_task.expand(input_path=file_paths)
+        merge_diff_task = merge_dem_staging_tables.override(
+            task_id="merge_diff_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF, staging_tables)
+        merge_diff_dior_task = merge_dem_staging_tables.override(
+            task_id="merge_diff_dior_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_DIOR, staging_tables)
+
         (
-            file_paths
-            >> initialize_task
-            >> processed_files
-            >> merge_dem_staging_tables(
-                job_db_uri, DB_SCHEMA, DB_TABLE, _get_staging_tables()
-            )
+            tile_wkt_list
+            >> [init_diff_task, init_diff_dior_task]
+            >> processed_tiles
+            >> [merge_diff_task, merge_diff_dior_task]
         )
 
-    return calculate_reference_dem_dag()
+    return calculate_dem_diff_dag()
 
 
-DAG_ID = constants.DAG_ID_CALCULATE_REFERENCE_DEM
+DAG_ID = constants.DAG_ID_CALCULATE_DEM_DIFF
 
-globals()[DAG_ID] = create_calculate_reference_dem_dag(dag_id=DAG_ID)
+globals()[DAG_ID] = create_calculate_dem_diff_dag(dag_id=DAG_ID)
