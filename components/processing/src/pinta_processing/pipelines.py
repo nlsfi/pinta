@@ -53,24 +53,6 @@ def rasterio_to_postgis(  # noqa: PLR0913
     )
 
 
-def blast2dem_to_geotiff(  # noqa: PLR0913
-    input_path: Path,
-    output_path: str,
-    step: int,
-    keep_class: list[int],
-    crs: str = f"EPSG:{env.SRID}",
-    extra_lastools_params: dict | None = None,
-) -> core.Pipeline:
-    """Read LAS/LAZ with blast2dem and write as GeoTIFF."""
-    return reader.Blast2DemReader(
-        input_path,
-        step=step,
-        crs=crs,
-        keep_class=keep_class,
-        extra_lastools_params=extra_lastools_params,
-    ) | writer.GeotiffWriter(output_path)
-
-
 def blast2dem_to_postgis(  # noqa: PLR0913
     primary_session: Session,
     job_session: Session,

@@ -7,9 +7,7 @@ import typing
 from pathlib import Path
 
 import pytest
-import rasterio
 import sqlalchemy as sa
-from pinta_common import env
 from pinta_db_utils.postgis import raster
 from pinta_test_utils import pinta_utils
 
@@ -32,30 +30,6 @@ def _ensure_lastools_is_available(lastools_in_path: None) -> None:
 @pytest.fixture(autouse=True)
 def set_blast2dem_executable(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(Blast2DemReader, "executable", "las2dem_new64")
-
-
-def test_blast2dem_to_geotiff(
-    tmp_path: Path,
-) -> None:
-    input_path = pinta_utils.get_test_data_path(_LAZ_FILE)
-    output_path = str(tmp_path / "output.tif")
-
-    pipeline = pipelines.blast2dem_to_geotiff(
-        input_path=input_path,
-        output_path=output_path,
-        step=_STEP,
-        keep_class=_KEEP_CLASS,
-    )
-    pipeline.execute()
-
-    with rasterio.open(output_path) as src:
-        assert src.crs.to_epsg() == int(env.SRID)
-        assert src.count == 1
-        assert src.width > 0
-        assert src.height > 0
-        assert src.dtypes[0] == "float32"
-        assert src.nodata is not None
-        assert src.transform != rasterio.transform.IDENTITY
 
 
 def test_blast2dem_to_postgis(
