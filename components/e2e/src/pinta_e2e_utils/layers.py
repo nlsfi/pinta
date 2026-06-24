@@ -4,6 +4,7 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from pinta_db.common.base import BaseModel
+from pinta_db_utils import model_utils
 from qgis._core import (
     QgsAction,
     QgsDataSourceUri,
@@ -18,10 +19,8 @@ from qgis._core import (
 
 
 def _uri_matches_model(uri: QgsDataSourceUri, model: type[BaseModel]) -> bool:
-    return (
-        uri.table() == model.__tablename__
-        and uri.schema() == model.__table_args__["schema"]
-    )
+    schema, table = model_utils.schema_and_table(model)
+    return uri.table() == table and uri.schema() == schema
 
 
 def get_vector_layer_by_model(model: type[BaseModel]) -> QgsVectorLayer:

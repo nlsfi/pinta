@@ -50,3 +50,9 @@ def test_geometry_column_returns_geometry_column_from_model(
     result = model_utils.geometry_column(model_class)
 
     assert result == expected_geom_column
+
+
+def test_schema_and_table() -> None:
+    result = model_utils.schema_and_table(ProductionArea)
+
+    assert result == ("management", "production_area")
