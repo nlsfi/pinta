@@ -8,6 +8,7 @@
 import datetime
 import enum
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from airflow.sdk import Variable
 from docker.types import Mount
@@ -29,12 +30,32 @@ class AirflowVariable(enum.StrEnum):
         "pinta_calculate_reference_dem_staging_tables"
     )
 
+    # Maximum number of DEM diff tile pipelines running in parallel.
+    CALCULATE_DEM_DIFF_MAX_PARALLEL_PIPELINES = (
+        "pinta_calculate_dem_diff_max_parallel_pipelines"
+    )
+    CALCULATE_DEM_DIFF_STAGING_TABLES = "pinta_calculate_dem_diff_staging_tables"
+
 
 def connection_uri_template(conn_id: str) -> str:
     """Jinja template for a connection's SQLAlchemy URI with the psycopg3 driver."""
     return (
         f"{{{{ conn.{conn_id}.get_hook().get_uri() "
         f"| replace('postgresql://', 'postgresql+psycopg://') }}}}"
+    )
+
+
+def build_job_connection_uri(base_uri: str, database_name: str) -> str:
+    """Return ``base_uri`` with its database path replaced by ``database_name``."""
+    parts = urlsplit(base_uri)
+    return urlunsplit(
+        (
+            parts.scheme,
+            parts.netloc,
+            f"/{database_name}",
+            parts.query,
+            parts.fragment,
+        )
     )
 
 

@@ -7,8 +7,12 @@ import functools
 import typing
 
 import pytest
+import sqlmodel
+from pinta_common import constants
 from pinta_db.job_db.models import reference
-from pinta_db.primary_db.models.management import ProductionArea
+from pinta_db.primary_db.models.management import ProcessingStatus, ProductionArea
+from pinta_db_test_utils import db_utils
+from pinta_db_utils import engine_utils
 from pinta_e2e_utils import layers
 from pinta_e2e_utils.airflow_client import AirflowClient, DagRun
 from pytestqt.exceptions import TimeoutError as QtBotTimeoutError
@@ -18,13 +22,36 @@ if typing.TYPE_CHECKING:
 
     from pinta_qgis_plugin.plugin import Plugin
     from pytestqt.qtbot import QtBot
+    from sqlmodel import Session
 
-PROCESSING_STATUS_TIMEOUT_MS = 90000
+# The orchestration runs the reference DEM and DEM diff DAGs sequentially, each
+# spinning up several short-lived task containers, so allow a generous budget.
+PROCESSING_STATUS_TIMEOUT_MS = 240000
+WORKFLOW_TIMEOUT_S = 240.0
+
+
+def _get_production_area(db: "Session") -> ProductionArea:
+    db.expire_all()
+    production_area = db.exec(sqlmodel.select(ProductionArea)).first()
+    assert production_area is not None
+    return production_area
+
+
+def _count_diff_rasters(database_name: str) -> int:
+    """Count the diff and diff dior raster tiles written to the job database."""
+    credentials = db_utils.get_job_admin_credentials(database_name)
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        return connection.execute(
+            sqlmodel.text(
+                "SELECT (SELECT count(*) FROM reference.diff) "
+                "+ (SELECT count(*) FROM reference.diff_dior)"
+            )
+        ).scalar_one()
 
 
 @pytest.mark.xdist_group("airflow")
-@pytest.mark.usefixtures("processed_production_areas", "reduce_point_cloud_tiles")
-def test_reference_dem_workflow(
+@pytest.mark.usefixtures("seeded_processing_dem")
+def test_calculate_rasters_for_production_area_workflow(
     qgis_plugin: "Plugin",
     qtbot: "QtBot",
     m_error_dialog: "MagicMock",
@@ -82,3 +109,35 @@ def test_reference_dem_workflow(
     assert layers.get_raster_layer_by_model(reference.Dem)
     assert layers.get_vector_layer_by_model(reference.DiffPolygon)
     assert layers.get_vector_layer_by_model(reference.DiffPolygonCluster)
+    assert _count_diff_rasters(completed_feature["database_name"]) > 0
+
+
+@pytest.mark.xdist_group("airflow")
+@pytest.mark.usefixtures("reduce_point_cloud_tiles")
+def test_calculate_rasters_reference_dem_only(
+    db: "Session",
+    airflow_client: "AirflowClient",
+) -> None:
+    production_area = _get_production_area(db)
+
+    # Only the reference DEM is requested; the DEM diff trigger must be skipped.
+    run = airflow_client.trigger_dag_run(
+        constants.DAG_ID_CALCULATE_RASTERS_FOR_PRODUCTION_AREA,
+        conf={
+            "id": str(production_area.id),
+            "calculate_reference_dem": True,
+            "calculate_dem_diff": False,
+        },
+    )
+    state = airflow_client.wait_for_dag_run(run, timeout=WORKFLOW_TIMEOUT_S)
+    assert state == "success", (
+        f"DAG run finished with state={state}\n"
+        f"{airflow_client.describe_failed_run(run)}"
+    )
+
+    updated = _get_production_area(db)
+    assert updated.processing_status == ProcessingStatus.COMPLETED
+    assert updated.database_name is not None
+
+    # The DEM diff branch was skipped, so no diff rasters are produced.
+    assert _count_diff_rasters(updated.database_name) == 0

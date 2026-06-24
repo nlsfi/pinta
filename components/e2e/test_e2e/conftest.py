@@ -196,3 +196,48 @@ def reduce_point_cloud_tiles(
     db.commit()
 
     assert len(db.exec(sqlmodel.select(ProductionArea)).first().tiles) == 2
+
+
+@pytest.fixture
+def seeded_processing_dem(
+    reduce_point_cloud_tiles: None,
+    created_db: str,
+) -> int:
+    """Seed the cloned DEM schema with tiles overlapping the production area.
+
+    The clone is truncated on creation, but calculating a DEM diff needs an
+    existing DEM to compare the freshly computed reference DEM against, so copy
+    the relevant tiles from the source primary database. Returns the number of
+    seeded tiles.
+    """
+    source_db = created_db.rsplit("_test_", 1)[0]
+    source = db_utils.get_primary_admin_credentials(source_db)
+    destination = db_utils.get_primary_admin_credentials(created_db)
+    with (
+        engine_utils.get_autocommit_connection(source) as source_connection,
+        engine_utils.get_autocommit_connection(destination) as destination_connection,
+    ):
+        area_ewkt = destination_connection.execute(
+            sqlmodel.text(
+                "SELECT ST_AsEWKT(ST_Envelope(geom)) "
+                "FROM management.production_area LIMIT 1"
+            )
+        ).scalar_one()
+        tiles = (
+            source_connection.execute(
+                sqlmodel.text(
+                    "SELECT rast::text FROM dem.dem "
+                    "WHERE ST_Intersects(rast::geometry, ST_GeomFromEWKT(:area))"
+                ).bindparams(area=area_ewkt)
+            )
+            .scalars()
+            .all()
+        )
+        for tile in tiles:
+            destination_connection.execute(
+                sqlmodel.text(
+                    "INSERT INTO dem.dem (rast) VALUES (CAST(:rast AS raster))"
+                ).bindparams(rast=tile)
+            )
+    assert tiles, "No source DEM tiles overlap the production area"
+    return len(tiles)
