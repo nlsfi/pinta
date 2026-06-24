@@ -7,8 +7,10 @@ import logging
 import operator
 from pathlib import Path
 
+import numpy as np
 from pinta_common import env
 from pinta_db.job_db.models import reference
+from pinta_db.primary_db.models import dem
 from pinta_db_utils import model_utils
 from pinta_db_utils.postgis import raster
 from sqlmodel import Session
@@ -95,6 +97,76 @@ def blast2dem_to_postgis(  # noqa: PLR0913
         | _generate_overview_stages(schema, table_name, job_session, staging_tables)
         # Write original data
         | writer.RasterPostgisWriter(schema, table_name, job_session, staging_tables)
+    )
+
+
+def calculate_diff_models(
+    primary_session: Session,
+    job_session: Session,
+    tile_wkt: str,
+    staging_tables: int = 1,
+    threshold: float = 0.2,
+) -> core.Pipeline:
+    """Calculate difference models between DEM and reference DEM.
+
+    If difference > threshold, values fall in Diff and DiffPolygon tables.
+    Otherwise values fall in Dior table.
+    """
+    dem_schema, dem_table = model_utils.schema_and_table(dem.Dem)
+    reference_schema, reference_dem_table = model_utils.schema_and_table(reference.Dem)
+    diff_schema, diff_table = model_utils.schema_and_table(reference.Diff)
+    dior_schema, dior_table = model_utils.schema_and_table(reference.DiffDior)
+    diff_polygon_schema, diff_polygon_table = model_utils.schema_and_table(
+        reference.DiffPolygon
+    )
+
+    return (
+        reader.PostgisReader(
+            dem_schema,
+            dem_table,
+            primary_session,
+            tile_wkt,
+        )
+        | core.Zip(
+            reader.PostgisReader(
+                reference_schema,
+                reference_dem_table,
+                job_session,
+                tile_wkt,
+            )
+        )
+        | filters.RasterDiff()
+        # Diff
+        | core.Tee(
+            filters.RasterFilter(lambda x: np.abs(x) > threshold)
+            # Calculate and write overviews
+            | _generate_overview_stages(
+                diff_schema, diff_table, job_session, staging_tables
+            )
+            # Write raster
+            | core.Tee(
+                writer.RasterPostgisWriter(
+                    diff_schema, diff_table, job_session, staging_tables
+                )
+            )
+            # Write vector
+            | filters.VectorizeRaster()
+            | writer.VectorPostgisWriter(
+                diff_polygon_schema, diff_polygon_table, job_session
+            )
+        )
+        # Dior
+        | core.Tee(
+            filters.RasterFilter(lambda x: np.abs(x) <= threshold)
+            # Calculate and write overviews
+            | _generate_overview_stages(
+                dior_schema, dior_table, job_session, staging_tables
+            )
+            # Write raster
+            | writer.RasterPostgisWriter(
+                dior_schema, dior_table, job_session, staging_tables
+            )
+        )
     )
 
 

@@ -88,6 +88,11 @@ def calculate_buffered_sheet_geometry(
 
     Accepts codes like: <map_sheet>_<tile_index>
     """
-    return shapely.buffer(
-        shapely.box(*calculate_sheet_bounds_for_tile(map_sheet_code)), buffer_m
-    )
+    return shapely.buffer(calculate_bounding_box_for_tile(map_sheet_code), buffer_m)
+
+
+def calculate_bounding_box_for_tile(
+    map_sheet_code: str,
+) -> shapely.Polygon:
+    """Get the bounding box of a map sheet tile."""
+    return shapely.box(*calculate_sheet_bounds_for_tile(map_sheet_code))

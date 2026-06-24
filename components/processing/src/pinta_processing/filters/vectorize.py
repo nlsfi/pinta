@@ -3,6 +3,8 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import uuid
+
 import geopandas
 import numpy as np
 from rasterio import features
@@ -12,6 +14,7 @@ from shapely import geometry
 from pinta_processing import core, exceptions
 
 _EMPTY_CELL_VALUE = 0
+_ID_COLUMN = "id"
 
 
 class VectorizeRaster(core.Stage):
@@ -63,9 +66,13 @@ class VectorizeRaster(core.Stage):
                 scores.append(float(score))
 
         geodataframe = geopandas.GeoDataFrame(
-            {"score": scores},
+            {
+                _ID_COLUMN: [uuid.uuid4() for _ in scores],
+                "relevance_score": scores,
+            },
             geometry=polygons,
             crs=data.crs,
         )
+        geodataframe = geodataframe.rename_geometry("geom")
 
         return core.VectorDataset(geodataframe=geodataframe)
