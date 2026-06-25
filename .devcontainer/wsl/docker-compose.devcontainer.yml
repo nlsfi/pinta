@@ -4,15 +4,14 @@ services:
       file: ../docker-compose.devcontainer.yml
       service: devcontainer
     volumes:
-      - /mnt/wslg:/mnt/wslg
+      - /mnt/wslg/.X11-unix:/tmp/.X11-unix
       - type: bind
         source: ../..
         target: /workspace
         read_only: false
     environment:
-      WAYLAND_DISPLAY: wayland-0
-      XDG_RUNTIME_DIR: /mnt/wslg/runtime-dir
-      QT_QPA_PLATFORM: wayland
+      DISPLAY: ${DISPLAY}
+      QT_QPA_PLATFORM: xcb
 
 volumes:
   prek-cache:
