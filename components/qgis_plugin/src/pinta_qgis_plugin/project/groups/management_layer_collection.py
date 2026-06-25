@@ -49,7 +49,7 @@ class ManagementLayerCollection(BaseLayerCollection):
             layer = vector_layer.create_vector_layer(
                 layer_config, PROVIDER_LIB, database.get_database_uri()
             )
-            self._add_map_layer_to_project(layer)
+            self._add_map_layer_to_project(layer, layer_config)
             if layer_config.layer_id == "production_area":
                 _add_open_production_area_layers_action(layer)
                 _add_start_reference_dem_workflow_action(layer)

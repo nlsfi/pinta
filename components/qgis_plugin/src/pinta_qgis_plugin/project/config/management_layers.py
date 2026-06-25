@@ -57,6 +57,7 @@ POINT_CLOUD_TILE = ModelLayerConfig.create(
         "file_path": tr("File path"),
         "production_area_id": tr("Production area ID"),
     },
+    visible_initially=False,
 )
 
 VECTOR_LAYERS = [

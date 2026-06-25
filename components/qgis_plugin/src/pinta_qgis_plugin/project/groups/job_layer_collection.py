@@ -117,7 +117,6 @@ class JobLayerCollection(BaseLayerCollection):
                         RASTER_PROVIDER,
                         uri,
                     )
-                self._add_map_layer_to_project(layer)
-                group.addLayer(layer)
+                self._add_map_layer_to_project(layer, layer_config, group)
             except exceptions.LayerCreationError:
                 LOGGER.exception("Failed to create layer %s", layer_config.layer_name)

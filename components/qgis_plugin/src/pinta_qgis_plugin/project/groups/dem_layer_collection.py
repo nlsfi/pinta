@@ -42,5 +42,6 @@ class DemLayerCollection(BaseLayerCollection):
             self._add_map_layer_to_project(
                 raster_layer.create_postgis_raster_layer(
                     layer_config, PROVIDER, database.get_database_uri()
-                )
+                ),
+                layer_config,
             )
