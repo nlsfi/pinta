@@ -1,5 +1,6 @@
 __pycache__
 *.egg-info
+.mypy_cache
 
 # virtual environments
 .venv
