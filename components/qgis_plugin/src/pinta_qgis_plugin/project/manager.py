@@ -71,12 +71,13 @@ def clean_project() -> None:
     JobLayerCollection.remove_all_from_project()
 
 
-def open_production_area(database_name: str | None, group_name: str) -> None:
-    """Open production area layer."""
+def open_production_area(database_name: str | None, group_name: str) -> bool:
+    """Open production area layer. Return True if the layers were opened."""
     if not database_name:
         MsgBar.info(tr("Production area does not have database name set."))
-        return
+        return False
     collection = typing.cast("JobLayerCollection", JobLayerCollection.get())
     collection.set_database_name(database_name)
     collection.set_group_name(group_name)
     collection.add_to_project()
+    return True
