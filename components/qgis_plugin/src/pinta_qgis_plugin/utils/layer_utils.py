@@ -18,7 +18,27 @@
 
 import typing
 
-from qgis.core import QgsAction, QgsVectorLayer
+from qgis.core import QgsAction, QgsGeometry, QgsVectorLayer
+from qgis.utils import iface as utils_iface
+
+if typing.TYPE_CHECKING:
+    from qgis.gui import QgisInterface
+
+iface = typing.cast("QgisInterface", utils_iface)
+
+
+def zoom_to_feature(geometry_wkt: str) -> None:
+    """Zoom the map canvas to the extent of the given feature geometry.
+
+    The geometry is expected to be in the same CRS as the map canvas.
+    """
+    geometry = QgsGeometry.fromWkt(geometry_wkt)
+    if geometry.isNull() or geometry.isEmpty():
+        return
+
+    canvas = iface.mapCanvas()
+    canvas.setExtent(geometry.boundingBox())
+    canvas.refresh()
 
 
 def add_action_to_vector_layer(

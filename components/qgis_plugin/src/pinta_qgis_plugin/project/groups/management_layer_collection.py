@@ -59,9 +59,11 @@ def _add_open_production_area_layers_action(layer: QgsVectorLayer) -> None:
     """Add open production area layer action to the the layer."""
     command = textwrap.dedent("""
         from pinta_qgis_plugin.project.manager import open_production_area
+        from pinta_qgis_plugin.utils.layer_utils import zoom_to_feature
         db_name = \'[%database_name%]\'
         group_name = \'[%name%]\'
-        open_production_area(db_name, group_name)
+        if open_production_area(db_name, group_name):
+            zoom_to_feature(\'[%geom_to_wkt($geometry)%]\')
     """)
     layer_utils.add_action_to_vector_layer(
         layer,
