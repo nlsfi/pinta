@@ -91,10 +91,13 @@ class PintaAPIClient(QObject):
     @handle_api_errors(ApiEndpoint.workflows)
     def start_reference_dem_workflow(self, production_area_id: str) -> None:
         """Starts a DEM update workflow for the given production area."""
-        # TODO: correct signature and params
         self._start_workflow(
-            constants.DAG_ID_CALCULATE_REFERENCE_DEM,
-            {"id": production_area_id},
+            constants.DAG_ID_CALCULATE_RASTERS_FOR_PRODUCTION_AREA,
+            {
+                "id": production_area_id,
+                "calculate_reference_dem": True,
+                "calculate_dem_diff": True,
+            },
             production_area_id=production_area_id,
         )
         MsgBar.info(

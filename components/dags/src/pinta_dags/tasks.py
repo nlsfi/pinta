@@ -31,3 +31,69 @@ def get_database_name(
             msg = f"Production area {production_area_id} has no database name set"
             raise ValueError(msg)
         return area_in_db.database_name
+
+
+@task
+def build_job_connection_uri_task(
+    base_uri: str,
+    database_name: str,
+) -> str:
+    """Return ``base_uri`` with its database path replaced by ``database_name``."""
+    return config.build_job_connection_uri(base_uri, database_name)
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def initialize_dem_tables(
+    connection_uri: str,
+    schema: str,
+    table: str,
+    staging_tables: int,
+) -> None:
+    """Initialize the raster and overview tables (plus staging) for a DEM table."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db_utils.postgis import raster
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        raster.initialize_raster_table(
+            session,
+            schema,
+            table,
+            staging_tables,
+        )
+        raster.initialize_overview_tables(
+            session,
+            schema,
+            table,
+            staging_tables,
+        )
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def merge_dem_staging_tables(
+    connection_uri: str, schema: str, table: str, staging_tables: int
+) -> None:
+    """Merge staging tables into the target DEM table and its overview tables."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db_utils.postgis import raster
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        raster.merge_staging_tables(
+            schema,
+            table,
+            staging_tables=staging_tables,
+            session=session,
+        )
+        for level in raster.DEFAULT_OVERVIEW_LEVELS:
+            overview_table = raster.OVERVIEW_TABLE_NAME.format(
+                level=level, table_name=table
+            )
+            raster.merge_staging_tables(
+                schema,
+                overview_table,
+                staging_tables=staging_tables,
+                session=session,
+            )

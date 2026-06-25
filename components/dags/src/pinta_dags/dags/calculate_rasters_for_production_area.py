@@ -45,7 +45,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
         },
         is_paused_upon_creation=False,
     )
-    def calculate_rasters_for_production_area_dag() -> None:  # noqa: C901, PLR0915
+    def calculate_rasters_for_production_area_dag() -> None:  # noqa: PLR0915
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def ensure_job_database(
@@ -72,14 +72,11 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
                     msg = f"Production area {production_area_id} not found"
                     raise ValueError(msg)
 
-                if create_database := area.database_name is None:
+                if area.database_name is None:
                     area.database_name = f"job_{production_area_id}"
                 database_name = area.database_name
                 area.processing_status = ProcessingStatus.STARTED
                 session.commit()
-
-            if not create_database:
-                return
 
             admin_engine = sqlalchemy.create_engine(
                 job_admin_connection_uri, isolation_level="AUTOCOMMIT"

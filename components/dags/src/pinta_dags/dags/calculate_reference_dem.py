@@ -12,7 +12,12 @@ from pinta_db.job_db.schema import Schema
 
 from pinta_dags import config
 from pinta_dags.config import AirflowVariable
-from pinta_dags.tasks import get_database_name
+from pinta_dags.tasks import (
+    build_job_connection_uri_task,
+    get_database_name,
+    initialize_dem_tables,
+    merge_dem_staging_tables,
+)
 
 DB_SCHEMA = Schema.REFERENCE.value
 DB_TABLE = Dem.__tablename__
@@ -61,13 +66,6 @@ def create_calculate_reference_dem_dag(
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
 
-        @task
-        def build_job_connection_uri_task(
-            base_uri: str,
-            database_name: str,
-        ) -> str:
-            return config.build_job_connection_uri(base_uri, database_name)
-
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def find_production_area(
             connection_uri: str,
@@ -86,32 +84,6 @@ def create_calculate_reference_dem_dag(
                 if not area_in_db:
                     return []
                 return [tile.file_path for tile in area_in_db.tiles]
-
-        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-        def initialize_dem_tables(
-            connection_uri: str,
-            schema: str,
-            table: str,
-            staging_tables: int,
-        ) -> None:
-            import sqlalchemy
-            import sqlmodel
-            from pinta_db_utils.postgis import raster
-
-            engine = sqlalchemy.create_engine(connection_uri)
-            with sqlmodel.Session(engine) as session:
-                raster.initialize_raster_table(
-                    session,
-                    schema,
-                    table,
-                    staging_tables,
-                )
-                raster.initialize_overview_tables(
-                    session,
-                    schema,
-                    table,
-                    staging_tables,
-                )
 
         @task.docker(
             **config.PINTA_CONTAINER_TASK_ARGS,
@@ -152,33 +124,6 @@ def create_calculate_reference_dem_dag(
                     extra_lastools_params=extra_lastools_params,
                 )
                 pipeline.execute()
-
-        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-        def merge_dem_staging_tables(
-            connection_uri: str, schema: str, table: str, staging_tables: int
-        ) -> None:
-            import sqlalchemy
-            import sqlmodel
-            from pinta_db_utils.postgis import raster
-
-            engine = sqlalchemy.create_engine(connection_uri)
-            with sqlmodel.Session(engine) as session:
-                raster.merge_staging_tables(
-                    schema,
-                    table,
-                    staging_tables=staging_tables,
-                    session=session,
-                )
-                for level in raster.DEFAULT_OVERVIEW_LEVELS:
-                    overview_table = raster.OVERVIEW_TABLE_NAME.format(
-                        level=level, table_name=table
-                    )
-                    raster.merge_staging_tables(
-                        schema,
-                        overview_table,
-                        staging_tables=staging_tables,
-                        session=session,
-                    )
 
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")

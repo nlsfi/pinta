@@ -26,9 +26,7 @@ from pytest_mock import MockerFixture
 from pinta_qgis_plugin import exceptions
 from pinta_qgis_plugin.api import api_client
 
-EXPECTED_URL = (
-    f"http://example.test/workflows/{constants.DAG_ID_CALCULATE_REFERENCE_DEM}"
-)
+EXPECTED_URL = f"http://example.test/workflows/{constants.DAG_ID_CALCULATE_RASTERS_FOR_PRODUCTION_AREA}"
 
 
 @pytest.fixture
@@ -78,7 +76,14 @@ def test_start_reference_dem_workflow_posts_workflow_payload(
 
     mock_post.assert_called_once_with(
         EXPECTED_URL,
-        json={"parameters": {"id": "area-1"}, "production_area_id": "area-1"},
+        json={
+            "parameters": {
+                "id": "area-1",
+                "calculate_reference_dem": True,
+                "calculate_dem_diff": True,
+            },
+            "production_area_id": "area-1",
+        },
         timeout=10,
     )
     mock_post.return_value.raise_for_status.assert_called_once_with()
