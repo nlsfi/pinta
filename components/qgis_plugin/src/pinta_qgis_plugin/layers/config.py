@@ -47,6 +47,7 @@ class BaseLayerConfig:
     layer_name: str
     aliases: dict[str, str] = dataclasses.field(default_factory=dict)
     value_maps: list[ValueMapConfig] | None = None
+    visible_initially: bool = True
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -93,6 +94,7 @@ class ModelLayerConfig(VectorLayerConfig):
         style_path: Path | None = None,
         read_only: bool = False,  # noqa: FBT001, FBT002
         value_maps: list[ValueMapConfig] | None = None,
+        visible_initially: bool = True,  # noqa: FBT001, FBT002
     ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
@@ -113,6 +115,7 @@ class ModelLayerConfig(VectorLayerConfig):
             layer_id=layer_id,
             read_only=read_only,
             value_maps=value_maps,
+            visible_initially=visible_initially,
         )
 
 
@@ -174,12 +177,13 @@ class RasterModelLayerConfig(RasterLayerConfig):
     """Configuration for a PostGIS raster layer."""
 
     @staticmethod
-    def create(
+    def create(  # noqa: PLR0913
         db_model: type[BaseModel],
         layer_name: str,
         layer_id: str,
         style_path: Path | None = None,
         rast_column: str = "rast",
+        visible_initially: bool = True,  # noqa: FBT001, FBT002
     ) -> "RasterModelLayerConfig":
         """Create a RasterModelLayerConfig instance."""
         schema, table = model_utils.schema_and_table(db_model)
@@ -190,6 +194,7 @@ class RasterModelLayerConfig(RasterLayerConfig):
             layer_id=layer_id,
             rast_column=rast_column,
             style_path=style_path,
+            visible_initially=visible_initially,
         )
 
 

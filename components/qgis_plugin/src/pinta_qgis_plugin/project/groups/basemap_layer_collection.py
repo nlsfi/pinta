@@ -37,5 +37,6 @@ class BasemapLayerCollection(BaseLayerCollection):
     def _add_to_project(self) -> None:
         for layer_config in reversed(background_layers.BASEMAP_LAYERS):
             self._add_map_layer_to_project(
-                raster_layer.create_raster_layer(layer_config, PROVIDER)
+                raster_layer.create_raster_layer(layer_config, PROVIDER),
+                layer_config,
             )

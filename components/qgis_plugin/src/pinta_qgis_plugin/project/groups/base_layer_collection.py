@@ -23,6 +23,7 @@ import typing
 from qgis.core import QgsLayerTreeGroup, QgsProject, QgsRasterLayer, QgsVectorLayer
 
 from pinta_qgis_plugin.exceptions import LayerCreationError
+from pinta_qgis_plugin.layers.config import BaseLayerConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -109,12 +110,23 @@ class BaseLayerCollection(abc.ABC):
             if layer.customProperty(self.COLLECTION_ID_KEY) == self.collection_id
         ]
 
-    def _add_map_layer_to_project(self, layer: QgsVectorLayer | QgsRasterLayer) -> None:
+    def _add_map_layer_to_project(
+        self,
+        layer: QgsVectorLayer | QgsRasterLayer,
+        layer_config: BaseLayerConfig,
+        group: QgsLayerTreeGroup | None = None,
+    ) -> None:
         layer.setCustomProperty(self.COLLECTION_ID_KEY, self.collection_id)
         added_layer = QgsProject.instance().addMapLayer(
             layer, addToLegend=not self.add_layers_to_group
         )
-        if added_layer is not None:
-            LOGGER.debug("%s layer loaded successfully", layer.name())
-        else:
+        if added_layer is None:
             raise LayerCreationError(layer.name())
+        LOGGER.debug("%s layer loaded successfully", layer.name())
+
+        if group is not None:
+            tree_layer = group.addLayer(layer)
+        else:
+            tree_layer = QgsProject.instance().layerTreeRoot().findLayer(layer.id())
+        if tree_layer is not None:
+            tree_layer.setItemVisibilityChecked(layer_config.visible_initially)
