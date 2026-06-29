@@ -14,6 +14,7 @@ on:
       - '.github/workflows/build-container.yml'
       - '.github/workflows/e2e.yml'
       - '.github/workflows/integration-tests.yml'
+      - '.github/workflows/unit-tests.yml'
       - '.github/workflows/publish.yml'
       - 'test_data/**'
   pull_request:
@@ -226,6 +227,135 @@ jobs:
       head_branch: ${{ needs.resolve-tag.outputs.branch-name }}
     secrets: inherit
 
+  unit-coverage:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component-path: components/backend
+            test_folder: test_backend
+          - component-path: components/processing
+            test_folder: test_processing
+          - component-path: components/db
+            test_folder: test_db
+          - component-path: components/dags
+            test_folder: test_dags
+    needs: [ resolve-tag ]
+    uses: ./.github/workflows/unit-tests.yml
+    with:
+      component-path: ${{ matrix.component-path }}
+      test_folder: ${{ matrix.test_folder }}
+      head_branch: ${{ needs.resolve-tag.outputs.branch-name }}
+
+  # QGIS plugin tests across supported QGIS versions
+  qgis-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: qgis/qgis:${{ matrix.qgis-image-tags }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - qgis-image-tags: "3.44.8-noble"
+            coverage: true
+          - qgis-image-tags: "4.0-questing"
+            coverage: false
+    env:
+      QT_QPA_PLATFORM: offscreen
+      COVERAGE_FILE: ${{ github.workspace }}/.coverage
+      COVERAGE_PROCESS_START: ${{ github.workspace }}/pyproject.toml
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+
+      - name: Install venv
+        run: uv venv --system-site-packages
+
+      - name: Run tests
+        working-directory: components/qgis_plugin
+        run: |
+          uv sync --locked
+          if [ "${{ matrix.coverage }}" = "true" ]; then
+            uv run coverage run -m pytest -v
+          else
+            uv run pytest -v
+          fi
+
+      - name: Upload coverage fragment
+        if: ${{ matrix.coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-qgis
+          path: .coverage.*
+          include-hidden-files: true
+          if-no-files-found: error
+
+  coverage-gate:
+    needs: [ unit-coverage, integration-tests, qgis-tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Download coverage fragments
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
+      - name: Combine coverage
+        run: |
+          uvx --from 'coverage[toml]' coverage combine
+          uvx --from 'coverage[toml]' coverage xml
+
+      - name: Check coverage on changed lines
+        # Thresholds live in the Makefile
+        run: |
+          git fetch --no-tags origin main
+          make coverage-diff
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          if [ -f diff-cover.md ]; then
+            {
+              echo "## Coverage on changed lines"
+              echo
+              cat diff-cover.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload diff coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-cover-report
+          path: diff-cover.html
+          if-no-files-found: ignore
+
+      - name: Coverage gate help
+        if: failure()
+        run: |
+          echo "::error::Changed-line coverage is below the threshold. See the \
+          job summary for the uncovered lines, or download the \
+          'diff-cover-report' artifact. Reproduce locally with \
+          'make coverage && make coverage-diff' (open htmlcov/index.html for \
+          line-level detail)."
+
   publish:
     needs: [ resolve-tag, e2e, integration-tests ]
     if: ${{ needs.e2e.result == 'success' && needs.integration-tests.result == 'success' && (needs.resolve-tag.outputs.branch-name == 'main' || github.event_name == 'release') }}
@@ -238,7 +368,7 @@ jobs:
     secrets: inherit
 
   notify-teams:
-    needs: [ resolve-tag, build-containers, build-db ]
+    needs: [ resolve-tag, build-containers, build-db, qgis-tests, coverage-gate ]
     if: ${{ always() && (needs.resolve-tag.result == 'failure' || needs.build-containers.result == 'failure' || needs.build-db.result == 'failure') && needs.resolve-tag.outputs.branch-name == 'main' }}
     uses: ./.github/workflows/notify-teams.yml
     with:
