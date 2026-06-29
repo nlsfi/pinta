@@ -85,6 +85,14 @@ jobs:
         run: |
           make test-integration
 
+      - name: Upload coverage fragment
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: .coverage.*
+          include-hidden-files: true
+          if-no-files-found: error
+
   notify-teams:
     needs: integration-tests
     if: ${{ always() && needs.integration-tests.result == 'failure' && inputs.head_branch == 'main' }}
