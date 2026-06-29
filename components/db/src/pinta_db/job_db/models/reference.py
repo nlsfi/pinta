@@ -32,35 +32,35 @@ class O128Dem(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 128."""
 
 
-class Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
-    """Difference raster."""
+class DiffGtThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Difference raster above threshold."""
 
 
-class O2Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+class O2DiffGtThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 2."""
 
 
-class O8Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+class O8DiffGtThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 8."""
 
 
-class O128Diff(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+class O128DiffGtThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 128."""
 
 
-class DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
-    """Difference raster from changes below limit value."""
+class DiffLteThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+    """Difference raster from changes at or below threshold."""
 
 
-class O2DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+class O2DiffLteThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 2."""
 
 
-class O8DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+class O8DiffLteThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 8."""
 
 
-class O128DiffDior(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
+class O128DiffLteThreshold(ReferenceBase, RasterBase, table=True):  # type: ignore[call-arg]
     """Overview factor 128."""
 
 
