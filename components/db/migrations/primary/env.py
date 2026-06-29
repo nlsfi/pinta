@@ -21,9 +21,17 @@ import dotenv
 # Get env variables before importing models
 dotenv.load_dotenv()
 
+from alembic_utils import (  # noqa: E402
+    pg_function,
+    replaceable_entity,
+)
+
 from migrations import common  # noqa: E402
 from pinta_db.common.base import BasePrimaryDb  # noqa: E402
-from pinta_db.primary_db import schema  # noqa: E402
+from pinta_db.primary_db import (  # noqa: E402
+    functions,
+    schema,
+)
 from pinta_db.primary_db.models.all import *  # noqa: F403, E402
 from pinta_db_utils import engine_utils  # noqa: E402
 
@@ -33,6 +41,13 @@ if config.config_file_name is not None:
     logging.config.fileConfig(config.config_file_name)
 
 target_metadata = BasePrimaryDb.metadata
+
+# Triggers, functions, views etc. are registered here
+replaceable_entity.register_entities(
+    [*functions.ALL],
+    exclude_schemas=["public"],
+    entity_types=[pg_function.PGFunction],
+)
 
 ADMIN_CREDENTIALS = engine_utils.Credentials(
     user=os.environ["DB_PRIMARY_ADMIN_USER"],

@@ -15,6 +15,7 @@ migrations = [
   "alembic>=1.18.4",
   "dotenv>=0.9.9",
   "psycopg[binary]>=3.3.3",
+  "alembic-utils>=0.8.8",
 ]
 # Opt-in psycopg3 driver, kept out of base deps so the qgis plugin stays on psycopg2.
 psycopg = ["psycopg[binary]>=3.3.3"]
@@ -66,8 +67,8 @@ extend = "../../pyproject.toml"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "*/versions/*" = [
-  "D", # pydocstyle
-
+  "D",    # pydocstyle
+  "E501", # line-too-long
 ]
 
 [tool.pytest.ini_options]
