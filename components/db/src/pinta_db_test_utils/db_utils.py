@@ -32,15 +32,29 @@ def _create_from_template(
             {"key": _CREATE_DB_LOCK_KEY},
         )
         try:
+            # Block new connections to the template before terminating its
+            # sessions, so nothing can reconnect before the clone
+            connection.execute(
+                sqlmodel.text(
+                    f"ALTER DATABASE {template_name} WITH ALLOW_CONNECTIONS false"
+                )
+            )
             connection.execute(kill_connections_query, {"db_name": db_name})
             connection.execute(kill_connections_query, {"db_name": template_name})
-            connection.execute(sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name}"))
+            connection.execute(
+                sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name} WITH (FORCE)")
+            )
             connection.execute(
                 sqlmodel.text(
                     f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}"
                 )
             )
         finally:
+            connection.execute(
+                sqlmodel.text(
+                    f"ALTER DATABASE {template_name} WITH ALLOW_CONNECTIONS true"
+                )
+            )
             connection.execute(
                 sqlmodel.text("SELECT pg_advisory_unlock(hashtext(:key))"),
                 {"key": _CREATE_DB_LOCK_KEY},
