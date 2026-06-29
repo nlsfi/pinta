@@ -179,3 +179,5 @@ ncols
 nrows
 pyqt
 rasters
+lte
+gt
