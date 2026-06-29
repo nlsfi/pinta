@@ -2278,6 +2278,8 @@ ci = [
     { name = "import-linter" },
 ]
 dev = [
+    { name = "coverage" },
+    { name = "coverage-enable-subprocess" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
@@ -2295,6 +2297,8 @@ lint = [
 [package.metadata.requires-dev]
 ci = [{ name = "import-linter" }]
 dev = [
+    { name = "coverage", extras = ["toml"] },
+    { name = "coverage-enable-subprocess" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]

@@ -37,6 +37,8 @@ explicit = true
 dev = [
   "pytest-timeout",
   "pytest-xdist>=3.8.0",
+  "coverage[toml]",
+  "coverage-enable-subprocess",
 ]
 lint = [
   "flake8>=7.3.0",
@@ -177,6 +179,68 @@ exclude = "^test"
 [tool.pytest.ini_options]
 addopts = "-n auto --import-mode=importlib"
 timeout = 180
+
+
+[tool.coverage.run]
+source_pkgs = [
+  "pinta_backend",
+  "pinta_common",
+  "pinta_dags",
+  "pinta_db",
+  "pinta_db_utils",
+  "pinta_processing",
+  "pinta_qgis_plugin",
+]
+parallel = true
+relative_files = true
+# TODO: set branch=true and remove core="sysmon" when python 3.14
+# is used (coverage will use sysmon by default)
+branch = false
+core = "sysmon"
+omit = [
+  "*/test/*",
+  "*/test_*/*",
+  "*/migrations/*",
+  "*_test_utils/*",
+]
+
+[tool.coverage.paths]
+backend = [
+  "components/backend/src/pinta_backend",
+  "src/pinta_backend",
+]
+processing = [
+  "components/processing/src/pinta_processing",
+  "src/pinta_processing",
+]
+db = [
+  "components/db/src/pinta_db",
+  "src/pinta_db",
+]
+db_utils = [
+  "components/db/src/pinta_db_utils",
+  "src/pinta_db_utils",
+]
+common = [
+  "components/db/src/pinta_common",
+  "src/pinta_common",
+]
+dags = [
+  "components/dags/src/pinta_dags",
+  "src/pinta_dags",
+]
+qgis_plugin = [
+  "components/qgis_plugin/src/pinta_qgis_plugin",
+  "src/pinta_qgis_plugin",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
 
 
 [tool.importlinter]

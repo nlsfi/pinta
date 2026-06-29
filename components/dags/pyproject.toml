@@ -57,25 +57,6 @@ testpaths = [
 addopts = "-n 0 --import-mode=importlib -p no:pytest-qgis"
 timeout = 60
 
-[tool.coverage.paths]
-
-[tool.coverage.run]
-source_pkgs = ["pinta_dags"]
-parallel = true
-relative_files = false
-# TODO: set branch=true and remove core="sysmon" when python 3.14
-# is used (coverage will use sysmon by default)
-branch = false
-core = "sysmon"
-
-[tool.coverage.report]
-exclude_lines = [
-  "pragma: no cover",
-  "def __repr__",
-  "if TYPE_CHECKING:",
-  "raise NotImplementedError",
-]
-
 # extend required for isort action to pick up correct config
 [tool.ruff]
 extend = "../../pyproject.toml"

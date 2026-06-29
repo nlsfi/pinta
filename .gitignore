@@ -2,6 +2,15 @@ __pycache__
 *.egg-info
 .mypy_cache
 
+# coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+diff-cover.md
+diff-cover.html
+report.json
+
 # virtual environments
 .venv
 

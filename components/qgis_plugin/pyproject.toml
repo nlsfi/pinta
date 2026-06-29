@@ -95,14 +95,12 @@ testpaths = [
 addopts = "--import-mode=importlib -n auto"
 timeout = 30
 
-[tool.coverage.paths]
-source = ["src", "**/site-packages"]
 
 [tool.coverage.run]
 source_pkgs = ["pinta_qgis_plugin"]
-# generate distinct coverage files with relative paths
+# relative paths so cross-cwd fragments combine at the repo root
 parallel = true
-relative_files = false
+relative_files = true
 # TODO: set branch=true and remove core="sysmon" when python 3.14
 # is used (coverage will use sysmon by default)
 branch = false
