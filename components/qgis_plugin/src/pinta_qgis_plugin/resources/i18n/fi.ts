@@ -14,7 +14,7 @@
         <translation>Tunniste</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="66"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="68"/>
         <source>Add production area related layers to map</source>
         <translation>Lisää tuotantoalueen tasot karttalle</translation>
     </message>
@@ -24,57 +24,57 @@
         <translation>Avaa tuotantoalue</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Production area</source>
         <translation>Tuotantoalue</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Name</source>
         <translation>Nimi</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Database name</source>
         <translation>Tietokannan nimi</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Pending</source>
         <translation>Ei aloitettu</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Queued</source>
         <translation>Jonossa</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Started</source>
         <translation>Käynnissä</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Completed</source>
         <translation>Valmis</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Failed</source>
         <translation>Päättynyt virheeseen</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="50"/>
+        <location filename="../../project/config/management_layers.py" line="55"/>
         <source>Point cloud tile</source>
         <translation>Pistepilvitiilet</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="50"/>
+        <location filename="../../project/config/management_layers.py" line="55"/>
         <source>File path</source>
         <translation>Tiedostopolku</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="50"/>
+        <location filename="../../project/config/management_layers.py" line="55"/>
         <source>Production area ID</source>
         <translation>Tuotantoalueen ID</translation>
     </message>
@@ -86,25 +86,20 @@
     <message>
         <location filename="../../project/config/job_layers.py" line="36"/>
         <source>DEM difference</source>
-        <translation>Erotusmalli</translation>
+        <translation>Erotusmalli, yli 20cm eroavaisuudet</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="42"/>
-        <source>DEM difference DIOR</source>
-        <translation>Erotusmalli DIOR</translation>
-    </message>
-    <message>
-        <location filename="../../project/config/job_layers.py" line="48"/>
+        <location filename="../../project/config/job_layers.py" line="51"/>
         <source>Polygonized DEM difference</source>
         <translation>Muutospolygonit</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="58"/>
+        <location filename="../../project/config/job_layers.py" line="62"/>
         <source>Modification area suggestions</source>
         <translation>Muutosalue-ehdotukset</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="58"/>
+        <location filename="../../project/config/job_layers.py" line="62"/>
         <source>Cluster significance</source>
         <translation>Klusterin merkittävyys</translation>
     </message>
@@ -114,7 +109,7 @@
         <translation>Korkeusmalli</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="25"/>
+        <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Processing status</source>
         <translation>Laskennan tila</translation>
     </message>
@@ -144,17 +139,17 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="135"/>
+        <location filename="../../api/api_client.py" line="137"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="151"/>
+        <location filename="../../api/api_client.py" line="153"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="81"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="83"/>
         <source>Start reference DEM workflow for production area</source>
         <translation>Käynnistä vertausmallin työnkulku tuotantoalueelle</translation>
     </message>
@@ -164,14 +159,19 @@
         <translation>Käynnistä vertausmallin työnkulku</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="101"/>
+        <location filename="../../api/api_client.py" line="103"/>
         <source>Reference DEM workflow task created successfully</source>
         <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
     </message>
     <message>
-        <location filename="../../project/manager.py" line="78"/>
+        <location filename="../../project/manager.py" line="77"/>
         <source>Production area does not have database name set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuotantoalueelle ei ole tietokantaa määritetty.</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="43"/>
+        <source>DEM difference LTE threshold</source>
+        <translation>Erotusmalli, 20cm tai alle eroavaisuudet</translation>
     </message>
 </context>
 </TS>
