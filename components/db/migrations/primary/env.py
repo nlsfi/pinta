@@ -23,6 +23,7 @@ dotenv.load_dotenv()
 
 from alembic_utils import (  # noqa: E402
     pg_function,
+    pg_trigger,
     replaceable_entity,
 )
 
@@ -31,6 +32,7 @@ from pinta_db.common.base import BasePrimaryDb  # noqa: E402
 from pinta_db.primary_db import (  # noqa: E402
     functions,
     schema,
+    triggers,
 )
 from pinta_db.primary_db.models.all import *  # noqa: F403, E402
 from pinta_db_utils import engine_utils  # noqa: E402
@@ -44,9 +46,9 @@ target_metadata = BasePrimaryDb.metadata
 
 # Triggers, functions, views etc. are registered here
 replaceable_entity.register_entities(
-    [*functions.ALL],
+    [*functions.ALL, *triggers.ALL],
     exclude_schemas=["public"],
-    entity_types=[pg_function.PGFunction],
+    entity_types=[pg_function.PGFunction, pg_trigger.PGTrigger],
 )
 
 ADMIN_CREDENTIALS = engine_utils.Credentials(

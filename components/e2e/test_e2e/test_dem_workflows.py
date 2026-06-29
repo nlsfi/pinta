@@ -138,6 +138,8 @@ def test_calculate_rasters_reference_dem_only(
     updated = _get_production_area(db)
     assert updated.processing_status == ProcessingStatus.COMPLETED
     assert updated.database_name is not None
+    # The trigger stamps the timestamp whenever processing_status changes.
+    assert updated.processing_status_last_updated is not None
 
     # The DEM diff branch was skipped, so no diff rasters are produced.
     assert _count_diff_rasters(updated.database_name) == 0

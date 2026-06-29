@@ -8,7 +8,11 @@ from pathlib import Path
 import pytest
 import sqlmodel
 
-from pinta_db.primary_db.models.management import PointCloudTile, ProductionArea
+from pinta_db.primary_db.models.management import (
+    PointCloudTile,
+    ProcessingStatus,
+    ProductionArea,
+)
 
 
 @pytest.fixture
@@ -38,6 +42,30 @@ def test_production_area_model(db: sqlmodel.Session, point_cloud_file: Path):
     assert production_area.geom_wkt == "MULTIPOLYGON (((0 0, 10 0, 10 10, 0 10, 0 0)))"
     assert point_cloud_tile.geom_wkt == "POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))"
     assert production_area.tiles == [point_cloud_tile]
+
+
+def test_processing_status_last_updated_trigger(db: sqlmodel.Session):
+    production_area = ProductionArea(
+        name="area 1",
+        geom="MultiPolygon(((0 0, 10 0, 10 10, 0 10, 0 0)))",
+    )
+    db.add(production_area)
+    db.commit()
+
+    # Inserting a row does not fire the AFTER UPDATE trigger.
+    assert production_area.processing_status == ProcessingStatus.NOT_STARTED
+    assert production_area.processing_status_last_updated is None
+
+    # Changing the status stamps the timestamp.
+    production_area.processing_status = ProcessingStatus.COMPLETED
+    db.commit()
+    stamped_at = production_area.processing_status_last_updated
+    assert stamped_at is not None
+
+    # Updating another column leaves the status unchanged and the timestamp intact.
+    production_area.database_name = "db name 1"
+    db.commit()
+    assert production_area.processing_status_last_updated == stamped_at
 
 
 def test_production_area_model_update(db: sqlmodel.Session, point_cloud_file: Path):
