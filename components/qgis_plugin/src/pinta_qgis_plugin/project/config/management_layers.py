@@ -45,7 +45,7 @@ PRODUCTION_AREA = ModelLayerConfig.create(
                 "queued": tr("Queued"),
                 "started": tr("Started"),
                 "completed": tr("Completed"),
-                "failed": tr("Failed"),
+                "failure": tr("Failed"),
             },
         )
     ],

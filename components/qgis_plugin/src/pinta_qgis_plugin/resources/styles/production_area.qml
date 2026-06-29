@@ -146,7 +146,7 @@
   </elevation>
   <renderer-v2 enableorderby="0" forceraster="0" referencescale="-1" symbollevels="0" type="RuleRenderer">
     <rules key="{59bedd22-4537-459c-ad00-1f2bd65a3d00}">
-      <rule filter="&quot;processing_status&quot; = 'failed'" key="{11de9abd-080e-444b-b759-ddf4c1fd9416}" label="Päättynyt virheeseen" symbol="0"/>
+      <rule filter="&quot;processing_status&quot; = 'failure'" key="{11de9abd-080e-444b-b759-ddf4c1fd9416}" label="Päättynyt virheeseen" symbol="0"/>
       <rule filter="&quot;processing_status&quot; = 'completed'" key="{e3cefeb0-101f-425c-86e9-894deae610db}" label="Valmis" symbol="1"/>
       <rule filter="&quot;processing_status&quot; = 'started'" key="{791157e7-970f-4d0f-985f-7a0f912fc9b3}" label="Käynnissä" symbol="2"/>
       <rule filter="&quot;processing_status&quot; = 'queued'" key="{8f2b1971-27f3-42cb-be2a-a4b33e1aab71}" label="Jonossa" symbol="3"/>
