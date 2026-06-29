@@ -57,10 +57,7 @@ jobs:
         run: mkdir -p test_data/dem
 
       - name: Pull candidate images
-        run: docker compose pull processing airflow backend qgis
-
-      - name: Build empty database image
-        run: docker compose build db
+        run: docker compose pull
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
