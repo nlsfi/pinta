@@ -29,8 +29,8 @@ def _assert_table_exists(
 
 def test_job_db(job_db: sqlmodel.Session):
     _assert_table_exists(job_db, "reference", "dem")
-    _assert_table_exists(job_db, "reference", "diff")
-    _assert_table_exists(job_db, "reference", "diff_dior")
+    _assert_table_exists(job_db, "reference", "diff_gt_threshold")
+    _assert_table_exists(job_db, "reference", "diff_lte_threshold")
     _assert_table_exists(job_db, "reference", "diff_polygon")
     _assert_table_exists(job_db, "reference", "diff_polygon_cluster")
     _assert_table_exists(job_db, "user_data", "update_area")
