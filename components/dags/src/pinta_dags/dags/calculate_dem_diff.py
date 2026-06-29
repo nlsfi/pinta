@@ -7,7 +7,7 @@ from typing import cast
 
 from airflow.sdk import DAG, Param, Variable, dag, task
 from pinta_common import constants
-from pinta_db.job_db.models.reference import Diff, DiffDior
+from pinta_db.job_db.models.reference import DiffGtThreshold, DiffLteThreshold
 from pinta_db.job_db.schema import Schema
 
 from pinta_dags import config
@@ -20,8 +20,8 @@ from pinta_dags.tasks import (
 )
 
 DB_SCHEMA = Schema.REFERENCE.value
-DB_TABLE_DIFF = Diff.__tablename__
-DB_TABLE_DIFF_DIOR = DiffDior.__tablename__
+DB_TABLE_DIFF = DiffGtThreshold.__tablename__
+DB_TABLE_DIFF_LTE_THRESHOLD = DiffLteThreshold.__tablename__
 
 
 def _get_max_parallel_pipelines() -> int:
@@ -138,9 +138,9 @@ def create_calculate_dem_diff_dag(
         init_diff_task = initialize_dem_tables.override(
             task_id="initialize_diff_tables"
         )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF, staging_tables)
-        init_diff_dior_task = initialize_dem_tables.override(
-            task_id="initialize_diff_dior_tables"
-        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_DIOR, staging_tables)
+        init_diff_lte_threshold_task = initialize_dem_tables.override(
+            task_id="initialize_diff_lte_threshold_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_LTE_THRESHOLD, staging_tables)
 
         processed_tiles = calculate_dem_diff.partial(
             primary_connection_uri=primary_connection_uri,
@@ -151,15 +151,15 @@ def create_calculate_dem_diff_dag(
         merge_diff_task = merge_dem_staging_tables.override(
             task_id="merge_diff_tables"
         )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF, staging_tables)
-        merge_diff_dior_task = merge_dem_staging_tables.override(
-            task_id="merge_diff_dior_tables"
-        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_DIOR, staging_tables)
+        merge_diff_lte_threshold_task = merge_dem_staging_tables.override(
+            task_id="merge_diff_lte_threshold_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_LTE_THRESHOLD, staging_tables)
 
         (
             tile_wkt_list
-            >> [init_diff_task, init_diff_dior_task]
+            >> [init_diff_task, init_diff_lte_threshold_task]
             >> processed_tiles
-            >> [merge_diff_task, merge_diff_dior_task]
+            >> [merge_diff_task, merge_diff_lte_threshold_task]
         )
 
     return calculate_dem_diff_dag()
