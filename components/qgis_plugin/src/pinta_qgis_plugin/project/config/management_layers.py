@@ -16,11 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
+import pathlib
+
 from pinta_db.primary_db.models.all import PointCloudTile, ProductionArea
 from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin.layers import config
 from pinta_qgis_plugin.layers.config import ModelLayerConfig
+
+_STYLES_PATH = pathlib.Path(__file__).parent.parent.parent / "resources" / "styles"
 
 PRODUCTION_AREA = ModelLayerConfig.create(
     db_model=ProductionArea,
@@ -45,6 +49,7 @@ PRODUCTION_AREA = ModelLayerConfig.create(
             },
         )
     ],
+    style_path=_STYLES_PATH / "production_area.qml",
 )
 
 POINT_CLOUD_TILE = ModelLayerConfig.create(
@@ -58,6 +63,7 @@ POINT_CLOUD_TILE = ModelLayerConfig.create(
         "production_area_id": tr("Production area ID"),
     },
     visible_initially=False,
+    style_path=_STYLES_PATH / "point_cloud_tile.qml",
 )
 
 VECTOR_LAYERS = [

@@ -38,12 +38,15 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         table_name="diff",
         layer_name=tr("DEM difference"),
         layer_id="dem_diff",
+        style_path=_STYLES_PATH / "raster_diff.qml",
     ),
     config.RasterLayerConfig(
         schema="reference",
         table_name="diff_dior",
         layer_name=tr("DEM difference DIOR"),
         layer_id="dem_diff_dior",
+        style_path=_STYLES_PATH / "raster_diff.qml",
+        visible_initially=False,
     ),
     config.VectorLayerConfig(
         schema="reference",
@@ -54,6 +57,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         key_column="id",
         wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
         srid=env.SRID,
+        visible_initially=False,
     ),
     config.VectorLayerConfig(
         schema="reference",
