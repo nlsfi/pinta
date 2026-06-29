@@ -1,17 +1,17 @@
-# reference.diff_dior
+# reference.diff_gt_threshold
 
 ## Columns
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| rid | bigint | nextval('reference.diff_dior_rid_seq'::regclass) | false |  |  |  |
+| rid | bigint | nextval('reference.diff_rid_seq'::regclass) | false |  |  |  |
 | rast | raster |  | false |  |  |  |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| enforce_coverage_tile_diff_dior_rast | CHECK | CHECK (COALESCE(st_iscoveragetile(NULL::raster, NULL::raster, 0, 0), ((mod(((st_upperleftx(rast))::numeric - (500000)::numeric), (512)::numeric) = (0)::numeric) AND (mod(((st_upperlefty(rast))::numeric - (6570000)::numeric), (512)::numeric) = (0)::numeric)))) |
+| enforce_coverage_tile_diff_gt_threshold_rast | CHECK | CHECK (COALESCE(st_iscoveragetile(NULL::raster, NULL::raster, 0, 0), ((mod(((st_upperleftx(rast))::numeric - (500000)::numeric), (512)::numeric) = (0)::numeric) AND (mod(((st_upperlefty(rast))::numeric - (6570000)::numeric), (512)::numeric) = (0)::numeric)))) |
 | enforce_height_rast | CHECK | CHECK ((st_height(rast) = 256)) |
 | enforce_max_extent_rast | CHECK | CHECK ((st_envelope(rast) @ '0103000020FB0B00000100000005000000000000000024E4400000000004105941000000000024E4400000000004105E4100000000404227410000000004105E4100000000404227410000000004105941000000000024E4400000000004105941'::geometry)) NOT VALID |
 | enforce_nodata_values_rast | CHECK | CHECK ((_raster_constraint_nodata_values(rast) = '{-9999.0000000000}'::numeric[])) |
@@ -23,16 +23,16 @@
 | enforce_scaley_rast | CHECK | CHECK ((round((st_scaley(rast))::numeric, 10) = round((- (2)::numeric), 10))) |
 | enforce_srid_rast | CHECK | CHECK ((st_srid(rast) = 3067)) |
 | enforce_width_rast | CHECK | CHECK ((st_width(rast) = 256)) |
-| diff_dior_pkey | PRIMARY KEY | PRIMARY KEY (rid) |
-| enforce_spatially_unique_diff_dior_rast | x | EXCLUDE USING btree (((rast)::geometry) WITH =) |
+| diff_pkey | PRIMARY KEY | PRIMARY KEY (rid) |
+| enforce_spatially_unique_diff_gt_threshold_rast | x | EXCLUDE USING btree (((rast)::geometry) WITH =) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| diff_dior_pkey | CREATE UNIQUE INDEX diff_dior_pkey ON reference.diff_dior USING btree (rid) |
-| idx_diff_dior_rast | CREATE INDEX idx_diff_dior_rast ON reference.diff_dior USING gist (st_convexhull(rast)) |
-| enforce_spatially_unique_diff_dior_rast | CREATE INDEX enforce_spatially_unique_diff_dior_rast ON reference.diff_dior USING btree (((rast)::geometry)) |
+| diff_pkey | CREATE UNIQUE INDEX diff_pkey ON reference.diff_gt_threshold USING btree (rid) |
+| idx_diff_gt_threshold_rast | CREATE INDEX idx_diff_gt_threshold_rast ON reference.diff_gt_threshold USING gist (st_convexhull(rast)) |
+| enforce_spatially_unique_diff_gt_threshold_rast | CREATE INDEX enforce_spatially_unique_diff_gt_threshold_rast ON reference.diff_gt_threshold USING btree (((rast)::geometry)) |
 
 ## Relations
 
@@ -40,7 +40,7 @@
 erDiagram
 
 
-"reference.diff_dior" {
+"reference.diff_gt_threshold" {
   bigint rid
   raster rast
 }

@@ -5,20 +5,20 @@
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
 | [reference.dem](reference.dem.md) | 2 |  | BASE TABLE |
-| [reference.diff](reference.diff.md) | 2 |  | BASE TABLE |
-| [reference.diff_dior](reference.diff_dior.md) | 2 |  | BASE TABLE |
+| [reference.diff_gt_threshold](reference.diff_gt_threshold.md) | 2 |  | BASE TABLE |
+| [reference.diff_lte_threshold](reference.diff_lte_threshold.md) | 2 |  | BASE TABLE |
 | [reference.diff_polygon](reference.diff_polygon.md) | 3 |  | BASE TABLE |
 | [reference.diff_polygon_cluster](reference.diff_polygon_cluster.md) | 5 |  | BASE TABLE |
 | [user_data.update_area](user_data.update_area.md) | 2 |  | BASE TABLE |
 | [reference.o_2_dem](reference.o_2_dem.md) | 2 |  | BASE TABLE |
 | [reference.o_8_dem](reference.o_8_dem.md) | 2 |  | BASE TABLE |
 | [reference.o_128_dem](reference.o_128_dem.md) | 2 |  | BASE TABLE |
-| [reference.o_2_diff](reference.o_2_diff.md) | 2 |  | BASE TABLE |
-| [reference.o_8_diff](reference.o_8_diff.md) | 2 |  | BASE TABLE |
-| [reference.o_128_diff](reference.o_128_diff.md) | 2 |  | BASE TABLE |
-| [reference.o_2_diff_dior](reference.o_2_diff_dior.md) | 2 |  | BASE TABLE |
-| [reference.o_8_diff_dior](reference.o_8_diff_dior.md) | 2 |  | BASE TABLE |
-| [reference.o_128_diff_dior](reference.o_128_diff_dior.md) | 2 |  | BASE TABLE |
+| [reference.o_2_diff_gt_threshold](reference.o_2_diff_gt_threshold.md) | 2 |  | BASE TABLE |
+| [reference.o_8_diff_gt_threshold](reference.o_8_diff_gt_threshold.md) | 2 |  | BASE TABLE |
+| [reference.o_128_diff_gt_threshold](reference.o_128_diff_gt_threshold.md) | 2 |  | BASE TABLE |
+| [reference.o_2_diff_lte_threshold](reference.o_2_diff_lte_threshold.md) | 2 |  | BASE TABLE |
+| [reference.o_8_diff_lte_threshold](reference.o_8_diff_lte_threshold.md) | 2 |  | BASE TABLE |
+| [reference.o_128_diff_lte_threshold](reference.o_128_diff_lte_threshold.md) | 2 |  | BASE TABLE |
 
 ## Relations
 
@@ -30,11 +30,11 @@ erDiagram
   bigint rid
   raster rast
 }
-"reference.diff" {
+"reference.diff_gt_threshold" {
   bigint rid
   raster rast
 }
-"reference.diff_dior" {
+"reference.diff_lte_threshold" {
   bigint rid
   raster rast
 }
@@ -66,27 +66,27 @@ erDiagram
   bigint rid
   raster rast
 }
-"reference.o_2_diff" {
+"reference.o_2_diff_gt_threshold" {
   bigint rid
   raster rast
 }
-"reference.o_8_diff" {
+"reference.o_8_diff_gt_threshold" {
   bigint rid
   raster rast
 }
-"reference.o_128_diff" {
+"reference.o_128_diff_gt_threshold" {
   bigint rid
   raster rast
 }
-"reference.o_2_diff_dior" {
+"reference.o_2_diff_lte_threshold" {
   bigint rid
   raster rast
 }
-"reference.o_8_diff_dior" {
+"reference.o_8_diff_lte_threshold" {
   bigint rid
   raster rast
 }
-"reference.o_128_diff_dior" {
+"reference.o_128_diff_lte_threshold" {
   bigint rid
   raster rast
 }

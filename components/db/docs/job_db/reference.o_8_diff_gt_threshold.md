@@ -1,4 +1,4 @@
-# reference.o_8_diff
+# reference.o_8_diff_gt_threshold
 
 ## Columns
 
@@ -11,29 +11,29 @@
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| enforce_coverage_tile_o_8_diff_rast | CHECK | CHECK (COALESCE(st_iscoveragetile(NULL::raster, NULL::raster, 0, 0), ((mod(((st_upperleftx(rast))::numeric - (500000)::numeric), (4096)::numeric) = (0)::numeric) AND (mod(((st_upperlefty(rast))::numeric - (6570000)::numeric), (4096)::numeric) = (0)::numeric)))) |
+| enforce_coverage_tile_o_8_diff_gt_threshold_rast | CHECK | CHECK (COALESCE(st_iscoveragetile(NULL::raster, NULL::raster, 0, 0), ((mod(((st_upperleftx(rast))::numeric - (500000)::numeric), (4096)::numeric) = (0)::numeric) AND (mod(((st_upperlefty(rast))::numeric - (6570000)::numeric), (4096)::numeric) = (0)::numeric)))) |
 | enforce_height_rast | CHECK | CHECK ((st_height(rast) = 256)) |
 | enforce_max_extent_rast | CHECK | CHECK ((st_envelope(rast) @ '0103000020FB0B00000100000005000000000000000024E4400000000004105941000000000024E4400000000004105E4100000000404227410000000004105E4100000000404227410000000004105941000000000024E4400000000004105941'::geometry)) NOT VALID |
 | enforce_nodata_values_rast | CHECK | CHECK ((_raster_constraint_nodata_values(rast) = '{-9999.0000000000}'::numeric[])) |
 | enforce_num_bands_rast | CHECK | CHECK ((st_numbands(rast) = 1)) |
 | enforce_out_db_rast | CHECK | CHECK ((_raster_constraint_out_db(rast) = '{f}'::boolean[])) |
-| enforce_overview_rast | CHECK | CHECK (_overview_constraint(rast, 8, 'reference'::name, 'diff'::name, 'rast'::name)) |
+| enforce_overview_rast | CHECK | CHECK (_overview_constraint(rast, 8, 'reference'::name, 'diff_gt_threshold'::name, 'rast'::name)) |
 | enforce_pixel_types_rast | CHECK | CHECK ((_raster_constraint_pixel_types(rast) = '{32BF}'::text[])) |
 | enforce_same_alignment_rast | CHECK | CHECK (st_samealignment(rast, '0100000000000000000000304000000000000030C0000000000024E4400000000004105E4100000000000000000000000000000000FB0B000001000100'::raster)) |
 | enforce_scalex_rast | CHECK | CHECK ((round((st_scalex(rast))::numeric, 10) = round((16)::numeric, 10))) |
 | enforce_scaley_rast | CHECK | CHECK ((round((st_scaley(rast))::numeric, 10) = round((- (16)::numeric), 10))) |
 | enforce_srid_rast | CHECK | CHECK ((st_srid(rast) = 3067)) |
 | enforce_width_rast | CHECK | CHECK ((st_width(rast) = 256)) |
-| pk_o_8_diff | PRIMARY KEY | PRIMARY KEY (rid) |
-| enforce_spatially_unique_o_8_diff_rast | x | EXCLUDE USING btree (((rast)::geometry) WITH =) |
+| pk_o_8_diff_gt_threshold | PRIMARY KEY | PRIMARY KEY (rid) |
+| enforce_spatially_unique_o_8_diff_gt_threshold_rast | x | EXCLUDE USING btree (((rast)::geometry) WITH =) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| pk_o_8_diff | CREATE UNIQUE INDEX pk_o_8_diff ON reference.o_8_diff USING btree (rid) |
-| idx_o_8_diff_rast | CREATE INDEX idx_o_8_diff_rast ON reference.o_8_diff USING gist (st_convexhull(rast)) |
-| enforce_spatially_unique_o_8_diff_rast | CREATE INDEX enforce_spatially_unique_o_8_diff_rast ON reference.o_8_diff USING btree (((rast)::geometry)) |
+| pk_o_8_diff_gt_threshold | CREATE UNIQUE INDEX pk_o_8_diff_gt_threshold ON reference.o_8_diff_gt_threshold USING btree (rid) |
+| idx_o_8_diff_gt_threshold_rast | CREATE INDEX idx_o_8_diff_gt_threshold_rast ON reference.o_8_diff_gt_threshold USING gist (st_convexhull(rast)) |
+| enforce_spatially_unique_o_8_diff_gt_threshold_rast | CREATE INDEX enforce_spatially_unique_o_8_diff_gt_threshold_rast ON reference.o_8_diff_gt_threshold USING btree (((rast)::geometry)) |
 
 ## Relations
 
@@ -41,7 +41,7 @@
 erDiagram
 
 
-"reference.o_8_diff" {
+"reference.o_8_diff_gt_threshold" {
   bigint rid
   raster rast
 }
