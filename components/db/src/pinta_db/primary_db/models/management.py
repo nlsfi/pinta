@@ -5,6 +5,7 @@
 
 """Temporary models."""
 
+import datetime
 import enum
 import uuid
 from pathlib import Path
@@ -49,6 +50,7 @@ class ProductionArea(BasePrimaryDb, ManagementBase, table=True):  # type: ignore
             server_default=ProcessingStatus.NOT_STARTED.value,
         ),
     )
+    processing_status_last_updated: datetime.datetime | None = Field(default=None)
     geom: Any = Field(
         sa_column=Column(Geometry(MULTIPOLYGON, srid=SRID, nullable=False))
     )
