@@ -109,13 +109,15 @@ def calculate_diff_models(
 ) -> core.Pipeline:
     """Calculate difference models between DEM and reference DEM.
 
-    If difference > threshold, values fall in Diff and DiffPolygon tables.
-    Otherwise values fall in Dior table.
+    If difference > threshold, values fall in DiffGtThreshold and DiffPolygon tables.
+    Otherwise values fall in DiffLteThreshold table.
     """
     dem_schema, dem_table = model_utils.schema_and_table(dem.Dem)
     reference_schema, reference_dem_table = model_utils.schema_and_table(reference.Dem)
-    diff_schema, diff_table = model_utils.schema_and_table(reference.Diff)
-    dior_schema, dior_table = model_utils.schema_and_table(reference.DiffDior)
+    diff_schema, diff_table = model_utils.schema_and_table(reference.DiffGtThreshold)
+    lte_threshold_schema, lte_threshold_table = model_utils.schema_and_table(
+        reference.DiffLteThreshold
+    )
     diff_polygon_schema, diff_polygon_table = model_utils.schema_and_table(
         reference.DiffPolygon
     )
@@ -155,16 +157,16 @@ def calculate_diff_models(
                 diff_polygon_schema, diff_polygon_table, job_session
             )
         )
-        # Dior
+        # Diff lte threshold
         | core.Tee(
             filters.RasterFilter(lambda x: np.abs(x) <= threshold)
             # Calculate and write overviews
             | _generate_overview_stages(
-                dior_schema, dior_table, job_session, staging_tables
+                lte_threshold_schema, lte_threshold_table, job_session, staging_tables
             )
             # Write raster
             | writer.RasterPostgisWriter(
-                dior_schema, dior_table, job_session, staging_tables
+                lte_threshold_schema, lte_threshold_table, job_session, staging_tables
             )
         )
     )
