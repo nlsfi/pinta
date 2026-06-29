@@ -38,13 +38,13 @@ def _get_production_area(db: "Session") -> ProductionArea:
 
 
 def _count_diff_rasters(database_name: str) -> int:
-    """Count the diff and diff dior raster tiles written to the job database."""
+    """Count the diff raster tiles written to the job database."""
     credentials = db_utils.get_job_admin_credentials(database_name)
     with engine_utils.get_autocommit_connection(credentials) as connection:
         return connection.execute(
             sqlmodel.text(
-                "SELECT (SELECT count(*) FROM reference.diff) "
-                "+ (SELECT count(*) FROM reference.diff_dior)"
+                "SELECT (SELECT count(*) FROM reference.diff_gt_threshold) "
+                "+ (SELECT count(*) FROM reference.diff_lte_threshold)"
             )
         ).scalar_one()
 
