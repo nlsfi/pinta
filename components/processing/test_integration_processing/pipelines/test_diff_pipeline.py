@@ -39,7 +39,7 @@ class DiffArea:
     """Square area where the reference surface differs from the DEM by `delta` m.
 
     `abs(delta) > threshold` ends up as a diff polygon, a smaller non-zero
-    delta as a dior region. Areas must not touch (4-connectivity) so each stays
+    delta as a lte_threshold region. Areas must not touch (4-connectivity) so each stays
     a separate cluster.
     """
 
@@ -110,14 +110,14 @@ def _populate(
     _write_raster(primary_session, dem.Dem, dem_dataset)
     _write_raster(job_session, reference.Dem, reference_dataset)
     # Staging tables the diff pipeline writes its raster output into.
-    _init_raster_tables(job_session, reference.Diff)
-    _init_raster_tables(job_session, reference.DiffDior)
+    _init_raster_tables(job_session, reference.DiffGtThreshold)
+    _init_raster_tables(job_session, reference.DiffLteThreshold)
     job_session.commit()
 
 
-def _dior_region_count(session: "Session") -> int:
-    """Count distinct non-zero (sub-threshold) areas in the dior raster."""
-    schema, table = model_utils.schema_and_table(reference.DiffDior)
+def _lte_threshold_region_count(session: "Session") -> int:
+    """Count distinct non-zero (sub-threshold) areas in the lte_threshold raster."""
+    schema, table = model_utils.schema_and_table(reference.DiffLteThreshold)
     return session.exec(  # type: ignore[call-overload]
         sa.text(f"""
             WITH unioned AS (
@@ -131,7 +131,7 @@ def _dior_region_count(session: "Session") -> int:
 
 
 @pytest.mark.parametrize(
-    ("areas", "expected_polygons", "expected_dior_regions"),
+    ("areas", "expected_polygons", "expected_lte_threshold_regions"),
     [
         pytest.param([DiffArea(60, 60, 40, OVER)], 1, 0, id="single-over"),
         pytest.param(
@@ -159,7 +159,7 @@ def test_calculate_diff_models(
     processing_worker_session: "Session",
     areas: list[DiffArea],
     expected_polygons: int,
-    expected_dior_regions: int,
+    expected_lte_threshold_regions: int,
 ) -> None:
     _populate(admin_primary_session, processing_worker_session, areas)
     wkt = tm35_map_sheet_utils.calculate_bounding_box_for_tile(TILE).wkt
@@ -176,4 +176,7 @@ def test_calculate_diff_models(
 
     assert len(polygons) == expected_polygons
     assert all(polygon.geom is not None for polygon in polygons)
-    assert _dior_region_count(processing_worker_session) == expected_dior_regions
+    assert (
+        _lte_threshold_region_count(processing_worker_session)
+        == expected_lte_threshold_regions
+    )
