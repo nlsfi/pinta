@@ -70,6 +70,12 @@ Imports should follow the [Google style guide](https://google.github.io/stylegui
 classes and airflow sdk. Classes could be imported directly
 from the module as well as airflow sdk components.
 
+### Tests and coverage
+
+Run the suites with `make test` (unit) and `make test-integration` (needs the
+databases up — `make up`). Both run under `coverage`, writing fragments to the
+repo root.
+
 ## Release steps
 
 Component releases are automatized with [Python Semantic Release (PSR)](https://python-semantic-release.readthedocs.io).

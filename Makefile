@@ -191,11 +191,15 @@ backend-tc:
 # Tests
 # ======
 
+COVERAGE_FILE := $(ROOT_DIR)/.coverage
+COV_ENV := COVERAGE_FILE=$(COVERAGE_FILE) COVERAGE_PROCESS_START=$(ROOT_DIR)/pyproject.toml
+
+
 test: sync
-	uv run pytest -k "not test_integration" --ignore=$(E2E_DIR)
+	$(COV_ENV) uv run --no-sync coverage run -m pytest -k "not test_integration" --ignore=$(E2E_DIR)
 
 test-integration: sync-all-but-qgis-and-airflow
-	uv run pytest -v -k test_integration --ignore=$(E2E_DIR) --ignore=$(QGIS_DIR)
+	$(COV_ENV) uv run --no-sync coverage run -m pytest -v -k test_integration --ignore=$(E2E_DIR) --ignore=$(QGIS_DIR)
 
 test-qgis: sync
 	uv run --directory $(QGIS_DIR) pytest -v
@@ -210,3 +214,31 @@ test-e2e-in-container: up db-migrate-all
 	docker compose run --rm qgis uv run --active pytest
 
 test-all: test test-integration test-e2e
+
+coverage-clean:
+	rm -f $(ROOT_DIR)/.coverage $(ROOT_DIR)/.coverage.* $(ROOT_DIR)/coverage.xml
+
+coverage-combine:
+	uv run --no-sync coverage combine
+	uv run --no-sync coverage report
+	uv run --no-sync coverage xml
+	uv run --no-sync coverage html
+
+# Full local run: unit + integration (needs DB up), then a combined report.
+coverage: coverage-clean test test-integration coverage-combine
+
+# PR gate: changed lines (vs origin/main) must stay >= $(COVERAGE_FAIL_UNDER)%
+COVERAGE_FAIL_UNDER := 80
+COVERAGE_DIFF_MIN_LINES := 20
+
+coverage-diff:
+	uvx diff-cover coverage.xml --compare-branch=origin/main \
+		--format markdown:diff-cover.md,html:diff-cover.html,json:report.json
+	@lines=$$(python3 -c 'import json; print(json.load(open("report.json"))["total_num_lines"])'); \
+	pct=$$(python3 -c 'import json; print(json.load(open("report.json"))["total_percent_covered"])'); \
+	echo "Changed lines: $$lines, covered: $$pct% (require >= $(COVERAGE_FAIL_UNDER)% above $(COVERAGE_DIFF_MIN_LINES) lines)"; \
+	if [ "$$lines" -le $(COVERAGE_DIFF_MIN_LINES) ] || [ "$$pct" -ge $(COVERAGE_FAIL_UNDER) ]; then \
+		exit 0; \
+	fi; \
+	echo "Changed-line coverage $$pct% is below $(COVERAGE_FAIL_UNDER)%. See diff-cover.md or htmlcov/index.html." >&2; \
+	exit 1
