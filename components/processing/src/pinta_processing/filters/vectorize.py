@@ -49,12 +49,15 @@ class VectorizeRaster(core.Stage):
         counts = np.maximum(ndimage.sum(mask, labeled, index=labels), 1)
         sums = ndimage.sum(arr, labeled, index=labels)
         sums_sq = ndimage.sum(arr**2, labeled, index=labels)
+        abs_sums = ndimage.sum(np.abs(arr), labeled, index=labels)
         means = sums / counts
         stds = np.sqrt(np.maximum((sums_sq / counts) - means**2, 0))
         std_lookup: dict[float, float] = dict(zip(labels, stds, strict=True))
+        abs_sum_lookup: dict[float, float] = dict(zip(labels, abs_sums, strict=True))
 
         polygons = []
         scores = []
+        energy_sums = []
         for geom_dict, val in features.shapes(
             labeled.astype(np.int32), mask=mask, transform=data.transform
         ):
@@ -64,11 +67,13 @@ class VectorizeRaster(core.Stage):
                 score = std / np.log1p(polygon.area)
                 polygons.append(polygon)
                 scores.append(float(score))
+                energy_sums.append(float(abs_sum_lookup.get(val, 0.0)))
 
         geodataframe = geopandas.GeoDataFrame(
             {
                 _ID_COLUMN: [uuid.uuid4() for _ in scores],
                 "relevance_score": scores,
+                "energy_sum": energy_sums,
             },
             geometry=polygons,
             crs=data.crs,
