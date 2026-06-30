@@ -7,7 +7,7 @@ import pathlib
 import sqlalchemy
 import sqlmodel
 from geoalchemy2 import WKTElement
-from pinta_db.env import SRID
+from pinta_common import Settings
 from pinta_db.primary_db.models.management import PointCloudTile
 from sqlmodel import Session
 
@@ -23,7 +23,7 @@ def find_neighboring_tm35_laz_files(
     geometry = tm35_map_sheet_utils.calculate_buffered_sheet_geometry(
         laz_file_path.stem, buffer_meters
     )
-    search_area = WKTElement(geometry.wkt, srid=int(SRID))
+    search_area = WKTElement(geometry.wkt, srid=int(Settings.DB_SRID))
 
     statement = sqlmodel.select(PointCloudTile).where(
         sqlalchemy.func.ST_Intersects(PointCloudTile.geom, search_area)

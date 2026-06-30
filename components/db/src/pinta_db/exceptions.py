@@ -18,10 +18,3 @@ class MissingSchemaError(RuntimeError):
 class MissingRoleError(RuntimeError):
     def __init__(self, role_name: str) -> None:
         super().__init__(f"Role is missing: {role_name}")
-
-
-class MissingEnvironmentError(RuntimeError):
-    def __init__(self, env_variable_name: str) -> None:
-        super().__init__(
-            f"Environment configuration error: {env_variable_name}",
-        )

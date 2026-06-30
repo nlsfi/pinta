@@ -16,7 +16,7 @@ from collections.abc import Sequence
 from alembic import op
 
 from migrations import _schema_op
-from pinta_db import env
+from pinta_common import Settings
 
 # revision identifiers, used by Alembic.
 revision: str = "003"
@@ -30,9 +30,9 @@ _BASE_TABLES = ("dem", "diff", "diff_dior")
 
 def upgrade() -> None:
     """Upgrade schema."""
-    srid = int(env.SRID)
-    pixel_size = env.DEM_PIXEL_SIZE
-    nodata = env.DEM_NODATA
+    srid = int(Settings.DB_SRID)
+    pixel_size = Settings.DB_DEM_PIXEL_SIZE
+    nodata = Settings.DB_DEM_NODATA
 
     for base_table in _BASE_TABLES:
         for factor in _OVERVIEW_FACTORS:

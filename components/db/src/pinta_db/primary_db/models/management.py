@@ -16,10 +16,10 @@ from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlmodel import Field, Relationship
 
+from pinta_common import Settings
 from pinta_db import utils
 from pinta_db.common.base import BasePrimaryDb
 from pinta_db.constants import MULTIPOLYGON, POLYGON
-from pinta_db.env import SRID
 from pinta_db.primary_db.models.base import ManagementBase
 
 
@@ -52,7 +52,7 @@ class ProductionArea(BasePrimaryDb, ManagementBase, table=True):  # type: ignore
     )
     processing_status_last_updated: datetime.datetime | None = Field(default=None)
     geom: Any = Field(
-        sa_column=Column(Geometry(MULTIPOLYGON, srid=SRID, nullable=False))
+        sa_column=Column(Geometry(MULTIPOLYGON, srid=Settings.DB_SRID, nullable=False))
     )
 
     tiles: list["PointCloudTile"] = Relationship(
@@ -63,7 +63,9 @@ class ProductionArea(BasePrimaryDb, ManagementBase, table=True):  # type: ignore
 class PointCloudTile(BasePrimaryDb, ManagementBase, table=True):  # type: ignore[call-arg]
     """Point cloud tile for single lidar mission."""
 
-    geom: Any = Field(sa_column=Column(Geometry(POLYGON, srid=SRID, nullable=False)))
+    geom: Any = Field(
+        sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=False))
+    )
     file_path: str
 
     production_area_id: uuid.UUID = Field(foreign_key=utils.foreign_key(ProductionArea))

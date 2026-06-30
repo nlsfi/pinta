@@ -34,7 +34,7 @@ def test_render_item_replaces_srid(
 
     result = alembic_helpers.render_item("type", object(), autogen_context)
 
-    assert "srid=SRID" in result
+    assert "srid=Settings.DB_SRID" in result
     assert "srid=3067" not in result
 
 
@@ -52,7 +52,7 @@ def test_render_item_preserves_other_attributes(
 
     result = alembic_helpers.render_item("type", object(), autogen_context)
 
-    assert "srid=SRID" in result
+    assert "srid=Settings.DB_SRID" in result
     assert "dimension=2" in result
     assert "spatial_index=True" in result
 
@@ -68,7 +68,9 @@ def test_render_item_adds_import(
 
     alembic_helpers.render_item("type", object(), autogen_context)
 
-    autogen_context.imports.add.assert_called_once_with("from pinta_db.env import SRID")
+    autogen_context.imports.add.assert_called_once_with(
+        "from pinta_common import Settings"
+    )
 
 
 def test_render_item_returns_false_for_non_geometry(
@@ -99,4 +101,4 @@ def test_render_item_replaces_any_srid(
 
     result = alembic_helpers.render_item("type", object(), autogen_context)
 
-    assert result == "Geometry(geometry_type='POINT', srid=SRID)"
+    assert result == "Geometry(geometry_type='POINT', srid=Settings.DB_SRID)"
