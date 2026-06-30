@@ -7,7 +7,7 @@ import pytest
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_common import env
+from pinta_common import Settings
 from pinta_db_utils.postgis import constraints, raster
 
 _SCHEMA = "reference"
@@ -18,9 +18,11 @@ def _create_template_raster_table(
     schema: str,
     table_name: str,
     extra_columns: list[sa.Column] | None = None,
-    pixel_size: int = env.DEM_PIXEL_SIZE,
+    pixel_size: int | None = None,
 ) -> None:
     """Create a main raster table to simulate the template database."""
+    if pixel_size is None:
+        pixel_size = Settings.DB_DEM_PIXEL_SIZE
     created = raster._create_raster_table(
         session,
         schema,
@@ -49,7 +51,7 @@ def _create_template_overview_tables(
         created = raster._create_raster_table(session, schema, overview_table_name)
         if created:
             constraints.add_raster_constraints(
-                session, schema, overview_table_name, env.DEM_PIXEL_SIZE * level
+                session, schema, overview_table_name, Settings.DB_DEM_PIXEL_SIZE * level
             )
             raster.register_overview_table(
                 session, schema, table_name, overview_table_name, level
@@ -595,7 +597,7 @@ def test_initialize_overview_tables_does_not_create_staging_when_overview_is_mis
             job_db,
             schema,
             overview_name,
-            pixel_size=env.DEM_PIXEL_SIZE * level,
+            pixel_size=Settings.DB_DEM_PIXEL_SIZE * level,
         )
 
     missing_overview_name = raster.OVERVIEW_TABLE_NAME.format(

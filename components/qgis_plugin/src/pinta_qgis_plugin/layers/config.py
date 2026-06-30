@@ -19,7 +19,7 @@ import dataclasses
 import json
 from pathlib import Path
 
-from pinta_common import env as env_common
+from pinta_common import Settings
 from pinta_db.common.base import BaseModel
 from pinta_db_utils import model_utils
 from qgis.core import QgsWkbTypes
@@ -67,7 +67,7 @@ class VectorLayerConfig(DatabaseLayerConfig):
 
     key_column: str
     wkb_type: QgsWkbTypes.Type
-    srid: str = env_common.SRID
+    srid: str = dataclasses.field(default_factory=lambda: Settings.DB_SRID)
     geom_column: str = "geom"
     aliases: dict[str, str] = dataclasses.field(
         default_factory=lambda: {**COMMON_ALIASES}

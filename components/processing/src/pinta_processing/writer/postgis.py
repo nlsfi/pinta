@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 import sqlmodel
 from affine import Affine
-from pinta_common import env
+from pinta_common import Settings
 from rasterio.windows import Window, from_bounds
 
 from pinta_processing import core, exceptions
@@ -57,14 +57,16 @@ class RasterPostgisWriter(core.Stage):
         table_name: str,
         session: sqlmodel.Session,
         staging_tables: int = 0,
-        tile_size: int = env.DEFAULT_TILE_SIZE,
+        tile_size: int | None = None,
     ) -> None:
         super().__init__()
         self.schema = schema
         self.table_name = table_name
         self.session = session
         self.staging_tables = staging_tables
-        self.tile_size = tile_size
+        self.tile_size = (
+            tile_size if tile_size is not None else Settings.DB_DEFAULT_TILE_SIZE
+        )
 
     def process(self, data: core.RasterDataset | None) -> None:
         """Write raster data to PostGIS table."""

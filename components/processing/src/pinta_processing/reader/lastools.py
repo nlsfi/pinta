@@ -7,7 +7,7 @@ import pathlib
 import subprocess
 import tempfile
 
-from pinta_common import env
+from pinta_common import Settings
 
 from pinta_processing import core
 from pinta_processing.exceptions import LasToolsError
@@ -87,7 +87,7 @@ class LASToolsReader(core.Stage):
                 base_command.extend(str(item) for item in value)
             else:
                 base_command.append(str(value))
-        if env.LASTOOLS_DEMO_MODE:
+        if Settings.LASTOOLS_DEMO_MODE:
             base_command.append("-demo")
         return base_command
 

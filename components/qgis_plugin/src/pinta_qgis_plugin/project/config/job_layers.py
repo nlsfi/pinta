@@ -18,7 +18,7 @@
 
 import pathlib
 
-from pinta_common import env
+from pinta_common import Settings
 from qgis_plugin_tools.tools.i18n import tr
 
 from pinta_qgis_plugin.layers import config
@@ -56,7 +56,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         geom_column="geom",
         key_column="id",
         wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
-        srid=env.SRID,
+        srid=Settings.DB_SRID,
         visible_initially=False,
         read_only=True,
         aliases={
@@ -73,7 +73,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         geom_column="geom",
         key_column="id",
         wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
-        srid=env.SRID,
+        srid=Settings.DB_SRID,
         aliases={
             **config.COMMON_ALIASES,
             "energy_distribution": tr("Cluster significance"),

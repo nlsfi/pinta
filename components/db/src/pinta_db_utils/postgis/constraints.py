@@ -11,7 +11,7 @@ import psycopg
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_common import env
+from pinta_common import Settings
 from pinta_db_utils.postgis import utils
 
 DEFAULT_EMPTY_RASTER_ANCHOR = (41248, 7880720)  # upper left
@@ -144,12 +144,16 @@ def _make_empty_raster(  # noqa: PLR0913
     schema: str,
     table: str,
     pixel_size: int,
-    srid: int = int(env.SRID),
-    nodata: float = env.DEM_NODATA,
+    srid: int | None = None,
+    nodata: float | None = None,
     upper_left_x: int = DEFAULT_EMPTY_RASTER_ANCHOR[0],
     upper_left_y: int = DEFAULT_EMPTY_RASTER_ANCHOR[1],
 ) -> None:
     """Insert an empty raster into the specified table."""
+    if srid is None:
+        srid = int(Settings.DB_SRID)
+    if nodata is None:
+        nodata = Settings.DB_DEM_NODATA
     session.exec(  # type: ignore[call-overload]
         sa.text(f"""
                    INSERT INTO "{schema}"."{table}" ("rast")
@@ -171,7 +175,7 @@ def _make_empty_raster(  # noqa: PLR0913
             negative_pixel_size=-pixel_size,
             srid=srid,
             nodata=nodata,
-            block_size=env.DEFAULT_TILE_SIZE,
+            block_size=Settings.DB_DEFAULT_TILE_SIZE,
         )
     )
 

@@ -8,7 +8,6 @@ import typing
 from collections.abc import Iterator
 
 import pytest
-from pinta_common import env
 from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
 from pinta_test_utils import pinta_utils
@@ -32,7 +31,7 @@ def lastools_in_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
         "PATH", f"{LASTOOLS_BIN_DIR}{os.pathsep}{os.environ.get('PATH', '')}"
     )
-    monkeypatch.setattr(env, "LASTOOLS_DEMO_MODE", "true")
+    monkeypatch.setenv("LASTOOLS_DEMO_MODE", "true")
 
 
 @pytest.fixture

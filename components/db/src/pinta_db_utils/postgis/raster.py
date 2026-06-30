@@ -13,7 +13,7 @@ import geoalchemy2
 import sqlalchemy as sa
 import sqlmodel
 
-from pinta_common import env
+from pinta_common import Settings
 from pinta_db_utils.postgis import constraints, utils
 
 OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"
@@ -73,7 +73,7 @@ def initialize_raster_table(
             table_type=TableType.UNLOGGED,
         )
         constraints.add_raster_constraints(
-            session, schema, staging_name, pixel_size=env.DEM_PIXEL_SIZE
+            session, schema, staging_name, pixel_size=Settings.DB_DEM_PIXEL_SIZE
         )
         create_raster_index(session, schema, staging_name)
 
@@ -109,7 +109,10 @@ def initialize_overview_tables(
                 table_type=TableType.UNLOGGED,
             )
             constraints.add_raster_constraints(
-                session, schema, staging_name, pixel_size=env.DEM_PIXEL_SIZE * level
+                session,
+                schema,
+                staging_name,
+                pixel_size=Settings.DB_DEM_PIXEL_SIZE * level,
             )
 
         session.commit()
@@ -217,7 +220,9 @@ def merge_staging_tables(
         session,
         schema,
         table_name,
-        tile_size_meters=env.DEFAULT_TILE_SIZE * env.DEM_PIXEL_SIZE * overview_level,
+        tile_size_meters=Settings.DB_DEFAULT_TILE_SIZE
+        * Settings.DB_DEM_PIXEL_SIZE
+        * overview_level,
     )
 
     for i in range(staging_tables):

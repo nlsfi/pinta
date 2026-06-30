@@ -8,7 +8,7 @@ import operator
 from pathlib import Path
 
 import numpy as np
-from pinta_common import env
+from pinta_common import Settings
 from pinta_db.job_db.models import reference
 from pinta_db.primary_db.models import dem
 from pinta_db_utils import model_utils
@@ -31,7 +31,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def rasterio_to_geotiff(
-    input_path: str, output_path: str, crs: str = f"EPSG:{env.SRID}"
+    input_path: str, output_path: str, crs: str | None = f"EPSG:{Settings.DB_SRID}"
 ) -> core.Pipeline:
     """Read rasterio input and write it as geotiff."""
     return reader.RasterioReader(input_path, crs=crs) | writer.GeotiffWriter(
@@ -45,7 +45,7 @@ def rasterio_to_postgis(  # noqa: PLR0913
     schema: str,
     table_name: str,
     staging_tables: int = 1,
-    crs: str | None = f"EPSG:{env.SRID}",
+    crs: str | None = f"EPSG:{Settings.DB_SRID}",
 ) -> core.Pipeline:
     """Read rasterio input and write it to PostGIS with overviews."""
     return (
@@ -64,7 +64,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     step: int,
     keep_class: list[int],
     staging_tables: int = 1,
-    crs: str = f"EPSG:{env.SRID}",
+    crs: str = f"EPSG:{Settings.DB_SRID}",
     extra_lastools_params: dict | None = None,
 ) -> core.Pipeline:
     """Read LAS/LAZ with blast2dem and write to PostGIS with overviews."""

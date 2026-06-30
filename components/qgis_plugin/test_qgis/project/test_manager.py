@@ -18,7 +18,7 @@
 import typing
 
 import pytest
-from pinta_common import env
+from pinta_common import Settings
 from qgis.core import QgsProject
 
 from pinta_qgis_plugin.project import manager
@@ -107,7 +107,7 @@ def test_initialize_layers_should_initialize_all_layers(
     manager.initialize_project()
     mock_basemap_layer_collection.add_to_project.assert_called_once()
     mock_management_layer_collection.add_to_project.assert_called_once()
-    assert QgsProject.instance().crs().authid() == f"EPSG:{env.SRID}"
+    assert QgsProject.instance().crs().authid() == f"EPSG:{Settings.DB_SRID}"
     assert qgis_canvas.extent() != initial_extent
 
 
