@@ -36,6 +36,7 @@ PRODUCTION_AREA = ModelLayerConfig.create(
         "name": tr("Name"),
         "database_name": tr("Database name"),
         "processing_status": tr("Processing status"),
+        "processing_status_last_updated": tr("Processing status last updated"),
     },
     value_maps=[
         config.ValueMapConfig(
