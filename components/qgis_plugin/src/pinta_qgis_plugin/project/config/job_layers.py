@@ -58,6 +58,10 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
         srid=env.SRID,
         visible_initially=False,
+        aliases={
+            **config.COMMON_ALIASES,
+            "energy_sum": tr("Energy sum"),
+        },
     ),
     config.VectorLayerConfig(
         schema="reference",

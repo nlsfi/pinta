@@ -94,12 +94,12 @@
         <translation>Muutospolygonit</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="62"/>
+        <location filename="../../project/config/job_layers.py" line="66"/>
         <source>Modification area suggestions</source>
         <translation>Muutosalue-ehdotukset</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="62"/>
+        <location filename="../../project/config/job_layers.py" line="66"/>
         <source>Cluster significance</source>
         <translation>Klusterin merkittävyys</translation>
     </message>
@@ -177,6 +177,11 @@
         <location filename="../../project/config/management_layers.py" line="29"/>
         <source>Processing status last updated</source>
         <translation>Ajon tilan viimeinen muutosaika</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="51"/>
+        <source>Energy sum</source>
+        <translation>Energiasumma</translation>
     </message>
 </context>
 </TS>
