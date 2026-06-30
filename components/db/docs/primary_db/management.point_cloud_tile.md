@@ -42,6 +42,7 @@ erDiagram
   geometry_MultiPolygon_3067_ geom
   varchar database_name
   processing_status processing_status
+  timestamp_without_time_zone processing_status_last_updated
 }
 ```
 

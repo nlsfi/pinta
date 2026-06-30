@@ -4,12 +4,18 @@
 
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
-| [management.production_area](management.production_area.md) | 5 |  | BASE TABLE |
+| [management.production_area](management.production_area.md) | 6 |  | BASE TABLE |
 | [management.point_cloud_tile](management.point_cloud_tile.md) | 4 |  | BASE TABLE |
 | [dem.dem](dem.dem.md) | 2 |  | BASE TABLE |
 | [dem.o_2_dem](dem.o_2_dem.md) | 2 |  | BASE TABLE |
 | [dem.o_8_dem](dem.o_8_dem.md) | 2 |  | BASE TABLE |
 | [dem.o_128_dem](dem.o_128_dem.md) | 2 |  | BASE TABLE |
+
+## Stored procedures and functions
+
+| Name | ReturnType | Arguments | Type |
+| ---- | ------- | ------- | ---- |
+| management.update_processing_timestamp | trigger |  | FUNCTION |
 
 ## Enums
 
@@ -30,6 +36,7 @@ erDiagram
   geometry_MultiPolygon_3067_ geom
   varchar database_name
   processing_status processing_status
+  timestamp_without_time_zone processing_status_last_updated
 }
 "management.point_cloud_tile" {
   uuid id

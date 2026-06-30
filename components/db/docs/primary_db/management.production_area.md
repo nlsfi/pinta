@@ -9,6 +9,7 @@
 | geom | geometry(MultiPolygon,3067) |  | false |  |  |  |
 | database_name | varchar |  | true |  |  |  |
 | processing_status | processing_status | 'not_started'::processing_status | false |  |  |  |
+| processing_status_last_updated | timestamp without time zone |  | true |  |  |  |
 
 ## Constraints
 
@@ -23,6 +24,12 @@
 | pk_production_area | CREATE UNIQUE INDEX pk_production_area ON management.production_area USING btree (id) |
 | idx_production_area_geom | CREATE INDEX idx_production_area_geom ON management.production_area USING gist (geom) |
 
+## Triggers
+
+| Name | Definition |
+| ---- | ---------- |
+| update_processing_timestamp_trigger | CREATE TRIGGER update_processing_timestamp_trigger BEFORE UPDATE ON management.production_area FOR EACH ROW EXECUTE FUNCTION management.update_processing_timestamp() |
+
 ## Relations
 
 ```mermaid
@@ -36,6 +43,7 @@ erDiagram
   geometry_MultiPolygon_3067_ geom
   varchar database_name
   processing_status processing_status
+  timestamp_without_time_zone processing_status_last_updated
 }
 "management.point_cloud_tile" {
   uuid id
