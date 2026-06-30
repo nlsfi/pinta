@@ -7,6 +7,7 @@
 | id | uuid |  | false |  |  |  |
 | relevance_score | double precision |  | true |  |  |  |
 | geom | geometry(Polygon,3067) |  | false |  |  |  |
+| energy_sum | double precision |  | true |  |  |  |
 
 ## Constraints
 
@@ -31,6 +32,7 @@ erDiagram
   uuid id
   double_precision relevance_score
   geometry_Polygon_3067_ geom
+  double_precision energy_sum
 }
 ```
 
