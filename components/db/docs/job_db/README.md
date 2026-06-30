@@ -7,7 +7,7 @@
 | [reference.dem](reference.dem.md) | 2 |  | BASE TABLE |
 | [reference.diff_gt_threshold](reference.diff_gt_threshold.md) | 2 |  | BASE TABLE |
 | [reference.diff_lte_threshold](reference.diff_lte_threshold.md) | 2 |  | BASE TABLE |
-| [reference.diff_polygon](reference.diff_polygon.md) | 3 |  | BASE TABLE |
+| [reference.diff_polygon](reference.diff_polygon.md) | 4 |  | BASE TABLE |
 | [reference.diff_polygon_cluster](reference.diff_polygon_cluster.md) | 5 |  | BASE TABLE |
 | [user_data.update_area](user_data.update_area.md) | 2 |  | BASE TABLE |
 | [reference.o_2_dem](reference.o_2_dem.md) | 2 |  | BASE TABLE |
@@ -42,6 +42,7 @@ erDiagram
   uuid id
   double_precision relevance_score
   geometry_Polygon_3067_ geom
+  double_precision energy_sum
 }
 "reference.diff_polygon_cluster" {
   uuid id
