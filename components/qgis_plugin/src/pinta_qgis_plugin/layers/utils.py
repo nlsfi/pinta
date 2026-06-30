@@ -16,9 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
-from qgis.core import QgsEditorWidgetSetup, QgsMapLayer
+from qgis.core import QgsEditorWidgetSetup, QgsMapLayer, QgsVectorLayer
 
 from pinta_qgis_plugin.layers.config import BaseLayerConfig
+
+
+def set_read_only_fields(layer: QgsVectorLayer, field_names: list[str]) -> None:
+    """Mark individual fields as read-only in the layer's attribute form."""
+    if not field_names:
+        return
+
+    form_config = layer.editFormConfig()
+    fields = layer.fields()
+    for field_name in field_names:
+        field_index = fields.lookupField(field_name)
+        if field_index >= 0:
+            form_config.setReadOnly(field_index, True)  # noqa: FBT003
+    layer.setEditFormConfig(form_config)
 
 
 def set_field_aliases(layer: QgsMapLayer, aliases: dict[str, str]) -> None:
