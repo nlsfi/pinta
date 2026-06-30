@@ -69,6 +69,7 @@ class DiffPolygon(ReferenceBase, table=True):  # type: ignore[call-arg]
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     relevance_score: float | None = Field(sa_column=Column(Float, nullable=True))
+    energy_sum: float | None = Field(sa_column=Column(Float, nullable=True))
     geom: Any = Field(sa_column=Column(Geometry(POLYGON, srid=SRID, nullable=False)))
 
 
