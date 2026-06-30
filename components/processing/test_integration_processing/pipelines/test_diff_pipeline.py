@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import sqlalchemy as sa
 from affine import Affine
-from pinta_common import env
+from pinta_common import Settings
 from pinta_db.job_db.models import reference
 from pinta_db.primary_db.models import dem
 from pinta_db_utils import model_utils
@@ -69,8 +69,8 @@ def _build_surfaces(
         return core.RasterDataset(
             array=array,
             transform=transform,
-            crs=f"EPSG:{env.SRID}",
-            nodata=env.DEM_NODATA,
+            crs=f"EPSG:{Settings.DB_SRID}",
+            nodata=Settings.DB_DEM_NODATA,
         )
 
     return dataset(dem_array), dataset(reference_array)

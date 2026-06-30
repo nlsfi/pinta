@@ -101,10 +101,10 @@ def create_calculate_reference_dem_dag(
 
             import sqlalchemy
             import sqlmodel
-            from pinta_common import env
+            from pinta_common import Settings
             from pinta_processing import pipelines
 
-            crs = f"EPSG:{env.SRID}"
+            crs = f"EPSG:{Settings.DB_SRID}"
 
             with (
                 sqlmodel.Session(

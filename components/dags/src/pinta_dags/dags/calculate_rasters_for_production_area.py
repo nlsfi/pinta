@@ -55,7 +55,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
         ) -> None:
             import sqlalchemy
             import sqlmodel
-            from pinta_common import env
+            from pinta_common import Settings
             from pinta_db.primary_db.models.management import (
                 ProcessingStatus,
                 ProductionArea,
@@ -92,7 +92,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
                 admin_session.exec(
                     sqlalchemy.text(
                         f'CREATE DATABASE "{database_name}" '
-                        f'WITH TEMPLATE "{env.JOB_TEMPLATE_NAME}"'
+                        f'WITH TEMPLATE "{Settings.DB_JOB_TEMPLATE_NAME}"'
                     )  # type: ignore[call-overload]
                 )
                 admin_session.commit()
