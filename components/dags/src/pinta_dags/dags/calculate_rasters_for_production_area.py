@@ -9,7 +9,7 @@ from airflow.providers.standard.operators.trigger_dagrun import (  # noqa: SC200
     TriggerDagRunOperator,
 )
 from airflow.sdk import DAG, Param, TriggerRule, dag, task
-from pinta_common import constants, env
+from pinta_common import constants
 
 from pinta_dags import config
 
@@ -52,10 +52,10 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
             primary_connection_uri: str,
             job_admin_connection_uri: str,
             production_area_id: str,
-            template_name: str,
         ) -> None:
             import sqlalchemy
             import sqlmodel
+            from pinta_common import env
             from pinta_db.primary_db.models.management import (
                 ProcessingStatus,
                 ProductionArea,
@@ -92,7 +92,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
                 admin_session.exec(
                     sqlalchemy.text(
                         f'CREATE DATABASE "{database_name}" '
-                        f'WITH TEMPLATE "{template_name}"'
+                        f'WITH TEMPLATE "{env.JOB_TEMPLATE_NAME}"'
                     )  # type: ignore[call-overload]
                 )
                 admin_session.commit()
@@ -172,7 +172,6 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
             primary_connection_uri,
             job_admin_connection_uri,
             prod_area_id,
-            env.JOB_TEMPLATE_NAME,
         )
 
         reference_gate = should_run.override(

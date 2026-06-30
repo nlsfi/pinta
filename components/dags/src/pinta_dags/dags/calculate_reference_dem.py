@@ -6,7 +6,7 @@
 from typing import cast
 
 from airflow.sdk import DAG, Param, Variable, dag, task
-from pinta_common import constants, env
+from pinta_common import constants
 from pinta_db.job_db.models.reference import Dem
 from pinta_db.job_db.schema import Schema
 
@@ -21,7 +21,6 @@ from pinta_dags.tasks import (
 
 DB_SCHEMA = Schema.REFERENCE.value
 DB_TABLE = Dem.__tablename__
-CRS = f"EPSG:{env.SRID}"
 BLAST2DEM_KEEP_CLASS = [2]
 
 
@@ -95,7 +94,6 @@ def create_calculate_reference_dem_dag(
             input_path: str,
             step: int,
             keep_class: list[int],
-            crs: str,
             staging_tables: int,
             extra_lastools_params: dict | None = None,
         ) -> None:
@@ -103,7 +101,10 @@ def create_calculate_reference_dem_dag(
 
             import sqlalchemy
             import sqlmodel
+            from pinta_common import env
             from pinta_processing import pipelines
+
+            crs = f"EPSG:{env.SRID}"
 
             with (
                 sqlmodel.Session(
@@ -148,7 +149,6 @@ def create_calculate_reference_dem_dag(
             job_connection_uri=job_db_uri,
             step=pixel_size,
             keep_class=BLAST2DEM_KEEP_CLASS,
-            crs=CRS,
             staging_tables=_get_staging_tables(),
         )
 
