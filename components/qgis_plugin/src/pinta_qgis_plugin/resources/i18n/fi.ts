@@ -9,7 +9,7 @@
         <translation>Pinta lisäosa</translation>
     </message>
     <message>
-        <location filename="../../layers/config.py" line="31"/>
+        <location filename="../../layers/config.py" line="32"/>
         <source>Identifier</source>
         <translation>Tunniste</translation>
     </message>
@@ -94,12 +94,12 @@
         <translation>Muutospolygonit</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="66"/>
+        <location filename="../../project/config/job_layers.py" line="68"/>
         <source>Modification area suggestions</source>
         <translation>Muutosalue-ehdotukset</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="66"/>
+        <location filename="../../project/config/job_layers.py" line="68"/>
         <source>Cluster significance</source>
         <translation>Klusterin merkittävyys</translation>
     </message>
@@ -179,9 +179,19 @@
         <translation>Ajon tilan viimeinen muutosaika</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="51"/>
+        <location filename="../../project/config/job_layers.py" line="68"/>
         <source>Energy sum</source>
         <translation>Energiasumma</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="51"/>
+        <source>Relevance score</source>
+        <translation>Merkittävyys</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="68"/>
+        <source>Cluster area</source>
+        <translation>Klusterin pinta-ala</translation>
     </message>
 </context>
 </TS>

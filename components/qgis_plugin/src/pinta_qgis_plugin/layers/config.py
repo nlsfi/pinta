@@ -26,6 +26,7 @@ from qgis.core import QgsWkbTypes
 from qgis_plugin_tools.tools.i18n import tr
 
 PINTA_LAYER_ID = "PINTA_LAYER_ID"
+LAYER_ID_COLUMN = "id"
 
 COMMON_ALIASES = {
     "id": tr("Identifier"),
@@ -72,6 +73,7 @@ class VectorLayerConfig(DatabaseLayerConfig):
         default_factory=lambda: {**COMMON_ALIASES}
     )
     read_only: bool = False
+    read_only_fields: list[str] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -93,12 +95,14 @@ class ModelLayerConfig(VectorLayerConfig):
         aliases: dict[str, str] | None = None,
         style_path: Path | None = None,
         read_only: bool = False,  # noqa: FBT001, FBT002
+        read_only_fields: list[str] | None = None,
         value_maps: list[ValueMapConfig] | None = None,
         visible_initially: bool = True,  # noqa: FBT001, FBT002
     ) -> "ModelLayerConfig":
         """Create a LayerConfig instance."""
         geom_column = model_utils.geometry_column(db_model)
         schema, table = model_utils.schema_and_table(db_model)
+        key_column = model_utils.primary_key_column(db_model)
         return ModelLayerConfig(
             schema=schema,
             table_name=table,
@@ -107,13 +111,16 @@ class ModelLayerConfig(VectorLayerConfig):
             if aliases is None
             else {**COMMON_ALIASES, **aliases},
             geom_column=geom_column,
-            key_column=model_utils.primary_key_column(db_model),
+            key_column=key_column,
             wkb_type=geometry_type_to_qgis_wkb(
                 model_utils.geometry_type(db_model, geom_column)
             ),
             style_path=style_path,
             layer_id=layer_id,
             read_only=read_only,
+            read_only_fields=[key_column]
+            if read_only_fields is None
+            else read_only_fields,
             value_maps=value_maps,
             visible_initially=visible_initially,
         )

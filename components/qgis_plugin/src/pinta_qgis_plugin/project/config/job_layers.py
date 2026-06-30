@@ -58,9 +58,11 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
         srid=env.SRID,
         visible_initially=False,
+        read_only=True,
         aliases={
             **config.COMMON_ALIASES,
             "energy_sum": tr("Energy sum"),
+            "relevance_score": tr("Relevance score"),
         },
     ),
     config.VectorLayerConfig(
@@ -75,6 +77,9 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         aliases={
             **config.COMMON_ALIASES,
             "energy_distribution": tr("Cluster significance"),
+            "energy_sum": tr("Energy sum"),
+            "cluster_area": tr("Cluster area"),
         },
+        read_only_fields=["energy_distribution", "energy_sum", "cluster_area"],
     ),
 ]
