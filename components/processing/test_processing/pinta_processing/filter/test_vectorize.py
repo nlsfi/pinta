@@ -21,7 +21,7 @@ def _make_dataset(array: np.ndarray) -> core.RasterDataset:
 
 
 def test_vectorize_raster_returns_vector_dataset():
-    """VectorizeRaster returns a VectorDataset with a relevance_score column."""
+    """VectorizeRaster returns a VectorDataset with relevance_score and energy_sum columns."""
     array = np.array(
         [
             [1.0, 1.0, constants.DEFAULT_NODATA, constants.DEFAULT_NODATA],
@@ -33,6 +33,22 @@ def test_vectorize_raster_returns_vector_dataset():
 
     assert isinstance(result, core.VectorDataset)
     assert "relevance_score" in result.geodataframe.columns
+    assert "energy_sum" in result.geodataframe.columns
+
+
+def test_vectorize_raster_energy_sum_is_abs_sum_of_cluster_values():
+    """energy_sum equals the sum of absolute raster values for each polygon cluster."""
+    array = np.array(
+        [
+            [-3.0, 2.0, constants.DEFAULT_NODATA, constants.DEFAULT_NODATA],
+            [-1.0, 4.0, constants.DEFAULT_NODATA, constants.DEFAULT_NODATA],
+        ],
+        dtype=constants.DEFAULT_DTYPE,
+    )
+    result = VectorizeRaster().process(_make_dataset(array))
+
+    assert len(result.geodataframe) == 1
+    assert result.geodataframe["energy_sum"].iloc[0] == pytest.approx(10.0)
 
 
 def test_vectorize_raster_produces_one_polygon_per_cluster():
