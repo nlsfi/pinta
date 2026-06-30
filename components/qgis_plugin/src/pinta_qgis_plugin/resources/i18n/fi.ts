@@ -64,17 +64,17 @@
         <translation>Päättynyt virheeseen</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="55"/>
+        <location filename="../../project/config/management_layers.py" line="56"/>
         <source>Point cloud tile</source>
         <translation>Pistepilvitiilet</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="55"/>
+        <location filename="../../project/config/management_layers.py" line="56"/>
         <source>File path</source>
         <translation>Tiedostopolku</translation>
     </message>
     <message>
-        <location filename="../../project/config/management_layers.py" line="55"/>
+        <location filename="../../project/config/management_layers.py" line="56"/>
         <source>Production area ID</source>
         <translation>Tuotantoalueen ID</translation>
     </message>
@@ -172,6 +172,11 @@
         <location filename="../../project/config/job_layers.py" line="43"/>
         <source>DEM difference LTE threshold</source>
         <translation>Erotusmalli, 20cm tai alle eroavaisuudet</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/management_layers.py" line="29"/>
+        <source>Processing status last updated</source>
+        <translation>Ajon tilan viimeinen muutosaika</translation>
     </message>
 </context>
 </TS>
