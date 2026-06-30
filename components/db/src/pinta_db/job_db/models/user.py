@@ -9,12 +9,14 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Column
 from sqlmodel import Field
 
+from pinta_common import Settings
 from pinta_db.constants import POLYGON
-from pinta_db.env import SRID
 from pinta_db.job_db.models.base import UserBase
 
 
 class UpdateArea(UserBase, table=True):  # type: ignore[call-arg]
     """Final update area."""
 
-    geom: Any = Field(sa_column=Column(Geometry(POLYGON, srid=SRID, nullable=False)))
+    geom: Any = Field(
+        sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=False))
+    )

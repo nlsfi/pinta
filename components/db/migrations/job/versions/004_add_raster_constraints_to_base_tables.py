@@ -15,7 +15,7 @@ import os
 from collections.abc import Sequence
 
 from migrations import _schema_op
-from pinta_db import env
+from pinta_common import Settings
 
 # revision identifiers, used by Alembic.
 revision: str = "004"
@@ -30,9 +30,9 @@ _PROCESSING_WORKER = os.environ["DB_JOB_PROCESSING_WORKER_ROLE"]
 
 def upgrade() -> None:
     """Upgrade schema."""
-    srid = int(env.SRID)
-    pixel_size = env.DEM_PIXEL_SIZE
-    nodata = env.DEM_NODATA
+    srid = int(Settings.DB_SRID)
+    pixel_size = Settings.DB_DEM_PIXEL_SIZE
+    nodata = Settings.DB_DEM_NODATA
 
     for table in _BASE_TABLES:
         _schema_op.add_raster_constraints_to_existing_table(

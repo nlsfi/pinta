@@ -31,8 +31,8 @@ def render_item(
         # Default rendering for other objects
         return False
 
-    # Ensure the SRID symbol is imported into the migration file
-    autogen_context.imports.add("from pinta_db.env import SRID")
+    # Ensure the settings symbol is imported into the migration file
+    autogen_context.imports.add("from pinta_common import Settings")
 
-    # Replace srid=<number> with srid=SRID
-    return re.sub(r"srid\s*=\s*[^,)\n]+", "srid=SRID", rendered)
+    # Replace srid=<number> with srid=Settings.DB_SRID
+    return re.sub(r"srid\s*=\s*[^,)\n]+", "srid=Settings.DB_SRID", rendered)

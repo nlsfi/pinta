@@ -18,7 +18,7 @@ import sqlalchemy as sa
 from alembic import op
 from geoalchemy2 import Raster
 
-from pinta_db.env import DEM_NODATA, DEM_PIXEL_SIZE, SRID
+from pinta_common import Settings
 from pinta_db.primary_db.models import dem
 
 # revision identifiers, used by Alembic.
@@ -83,9 +83,9 @@ def _add_overview_constraints(table: str, factor: int) -> Any:  # noqa: ANN401
 
 def upgrade() -> None:
     """Upgrade schema."""
-    srid = int(SRID)
-    pixel_size = DEM_PIXEL_SIZE
-    nodata = DEM_NODATA
+    srid = int(Settings.DB_SRID)
+    pixel_size = Settings.DB_DEM_PIXEL_SIZE
+    nodata = Settings.DB_DEM_NODATA
     pixel_size_overview_2 = pixel_size * 2
     pixel_size_overview_8 = pixel_size * 8
     pixel_size_overview_128 = pixel_size * 128

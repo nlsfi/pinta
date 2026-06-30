@@ -17,7 +17,7 @@ import sqlalchemy as sa
 from alembic import op
 from geoalchemy2 import Geometry, Raster
 
-from pinta_db.env import SRID
+from pinta_common import Settings
 
 # revision identifiers, used by Alembic.
 revision: str = "002"
@@ -97,7 +97,7 @@ def upgrade() -> None:
             "geom",
             Geometry(
                 geometry_type="POLYGON",
-                srid=SRID,
+                srid=Settings.DB_SRID,
                 dimension=2,
                 spatial_index=False,
                 from_text="ST_GeomFromEWKT",
@@ -128,7 +128,7 @@ def upgrade() -> None:
             "geom",
             Geometry(
                 geometry_type="POLYGON",
-                srid=SRID,
+                srid=Settings.DB_SRID,
                 dimension=2,
                 spatial_index=False,
                 from_text="ST_GeomFromEWKT",
@@ -156,7 +156,7 @@ def upgrade() -> None:
             "geom",
             Geometry(
                 geometry_type="POLYGON",
-                srid=SRID,
+                srid=Settings.DB_SRID,
                 dimension=2,
                 spatial_index=False,
                 from_text="ST_GeomFromEWKT",
