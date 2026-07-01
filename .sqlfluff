@@ -1,0 +1,20 @@
+[sqlfluff]
+dialect = postgres
+templater = placeholder
+max_line_length = 88
+# capitalisation.functions: PostGIS functions are canonically mixed-case
+#   (e.g. ST_Union), so do not enforce function-name capitalisation.
+# layout.select_targets: conflicts with layout.long_lines for long single-target
+#   selects; keep such targets wrapped for consistency with multi-target selects.
+exclude_rules = capitalisation.functions, layout.select_targets
+
+[sqlfluff:templater:placeholder]
+# Render named bind parameters (e.g. :pixel_area) so the SQL can be parsed.
+param_style = colon
+pixel_area = 4
+
+[sqlfluff:indentation]
+tab_space_size = 4
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
