@@ -51,6 +51,11 @@ def create_vector_layer(
     if not layer.isValid():
         raise LayerCreationError(config.layer_name)
 
+    if config.subset_string is not None and not layer.setSubsetString(
+        config.subset_string
+    ):
+        raise LayerCreationError(config.layer_name)
+
     layer.setReadOnly(config.read_only)
     utils.set_field_aliases(layer, config.aliases)
     utils.set_read_only_fields(layer, [LAYER_ID_COLUMN, *config.read_only_fields])
