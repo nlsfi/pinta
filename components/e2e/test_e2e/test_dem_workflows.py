@@ -108,8 +108,11 @@ def test_calculate_rasters_for_production_area_workflow(
 
     assert layers.get_raster_layer_by_model(reference.Dem)
     assert layers.get_vector_layer_by_model(reference.DiffPolygon)
-    assert layers.get_vector_layer_by_model(reference.DiffPolygonCluster)
     assert _count_diff_rasters(completed_feature["database_name"]) > 0
+
+    cluster_layer = layers.get_vector_layer_by_model(reference.DiffPolygonCluster)
+    assert cluster_layer.setSubsetString("")
+    assert cluster_layer.featureCount() > 0
 
 
 @pytest.mark.xdist_group("airflow")

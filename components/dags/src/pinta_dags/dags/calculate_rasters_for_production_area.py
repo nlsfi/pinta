@@ -14,7 +14,7 @@ from pinta_common import constants
 from pinta_dags import config
 
 
-def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
+def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
     *,
     dag_id: str,
 ) -> DAG:
@@ -42,6 +42,11 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
                 type="boolean",
                 description="Trigger calculate DEM diff DAG",
             ),
+            "cluster_diff_polygons": Param(
+                default=True,
+                type="boolean",
+                description="Cluster difference polygons in the DEM diff DAG",
+            ),
         },
         is_paused_upon_creation=False,
     )
@@ -55,11 +60,11 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
         ) -> None:
             import sqlalchemy
             import sqlmodel
-            from pinta_common import Settings
             from pinta_db.primary_db.models.management import (
                 ProcessingStatus,
                 ProductionArea,
             )
+            from pinta_db_utils import database_utils
 
             engine = sqlalchemy.create_engine(primary_connection_uri)
             with sqlmodel.Session(engine) as session:
@@ -81,21 +86,14 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
             admin_engine = sqlalchemy.create_engine(
                 job_admin_connection_uri, isolation_level="AUTOCOMMIT"
             )
-            with sqlmodel.Session(admin_engine) as admin_session:
-                exists = admin_session.exec(
-                    sqlalchemy.text(
-                        "SELECT 1 FROM pg_database WHERE datname = :database_name"
-                    ).bindparams(database_name=database_name)  # type: ignore[call-overload]
-                ).first()
-                if exists:
-                    return
-                admin_session.exec(
-                    sqlalchemy.text(
-                        f'CREATE DATABASE "{database_name}" '
-                        f'WITH TEMPLATE "{Settings.DB_JOB_TEMPLATE_NAME}"'
-                    )  # type: ignore[call-overload]
+            # Clones the template when the job database does not yet exist; an
+            # existing database is kept as-is. The template name defaults to
+            # Settings.DB_JOB_TEMPLATE_NAME.
+            with admin_engine.connect() as admin_connection:
+                database_utils.initialize_db_from_template(
+                    admin_connection,
+                    database_name,
                 )
-                admin_session.commit()
 
         @task.short_circuit(ignore_downstream_trigger_rules=False)
         def should_run(*, requested: bool) -> bool:
@@ -112,7 +110,10 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: C901, PLR0915
         trigger_calculate_dem_diff = TriggerDagRunOperator(
             task_id="trigger_calculate_dem_diff",
             trigger_dag_id=constants.DAG_ID_CALCULATE_DEM_DIFF,
-            conf={"id": "{{ params.id }}"},
+            conf={
+                "id": "{{ params.id }}",
+                "cluster": "{{ params.cluster_diff_polygons }}",
+            },
             wait_for_completion=True,
         )
 
