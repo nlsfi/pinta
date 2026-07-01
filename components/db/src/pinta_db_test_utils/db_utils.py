@@ -8,9 +8,7 @@ import os
 import sqlmodel
 from sqlalchemy import bindparam
 
-from pinta_db_utils import engine_utils
-
-_CREATE_DB_LOCK_KEY = "pinta-create-db"
+from pinta_db_utils import database_utils, engine_utils
 
 PINTA_MANAGED_SCHEMAS = ("dem", "management", "reference", "user_data")
 
@@ -18,47 +16,12 @@ PINTA_MANAGED_SCHEMAS = ("dem", "management", "reference", "user_data")
 def _create_from_template(
     db_name: str, template_name: str, admin_credentials: engine_utils.Credentials
 ) -> None:
-    kill_connections_query = sqlmodel.text(
-        "SELECT pg_terminate_backend(pg_stat_activity.pid) "
-        "FROM pg_stat_activity "
-        "WHERE pg_stat_activity.datname = :db_name "
-        "AND pid <> pg_backend_pid()"
-    )
-
     with engine_utils.get_autocommit_connection(admin_credentials) as connection:
-        # To avoid race conditions with pytest-xdist
-        connection.execute(
-            sqlmodel.text("SELECT pg_advisory_lock(hashtext(:key))"),
-            {"key": _CREATE_DB_LOCK_KEY},
+        # replace_existing so each test session starts from a clean clone; the
+        # advisory lock inside handles pytest-xdist race conditions.
+        database_utils.initialize_db_from_template(
+            connection, db_name, template_name, replace_existing=True
         )
-        try:
-            # Block new connections to the template before terminating its
-            # sessions, so nothing can reconnect before the clone
-            connection.execute(
-                sqlmodel.text(
-                    f"ALTER DATABASE {template_name} WITH ALLOW_CONNECTIONS false"
-                )
-            )
-            connection.execute(kill_connections_query, {"db_name": db_name})
-            connection.execute(kill_connections_query, {"db_name": template_name})
-            connection.execute(
-                sqlmodel.text(f"DROP DATABASE IF EXISTS {db_name} WITH (FORCE)")
-            )
-            connection.execute(
-                sqlmodel.text(
-                    f"CREATE DATABASE {db_name} WITH TEMPLATE {template_name}"
-                )
-            )
-        finally:
-            connection.execute(
-                sqlmodel.text(
-                    f"ALTER DATABASE {template_name} WITH ALLOW_CONNECTIONS true"
-                )
-            )
-            connection.execute(
-                sqlmodel.text("SELECT pg_advisory_unlock(hashtext(:key))"),
-                {"key": _CREATE_DB_LOCK_KEY},
-            )
 
 
 def _truncate_pinta_schemas(credentials: engine_utils.Credentials) -> None:
