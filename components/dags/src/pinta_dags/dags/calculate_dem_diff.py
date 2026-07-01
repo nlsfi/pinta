@@ -5,7 +5,7 @@
 
 from typing import cast
 
-from airflow.sdk import DAG, Param, Variable, dag, task
+from airflow.sdk import DAG, Param, TriggerRule, Variable, dag, task
 from pinta_common import constants
 from pinta_db.job_db.models.reference import DiffGtThreshold, DiffLteThreshold
 from pinta_db.job_db.schema import Schema
@@ -54,13 +54,20 @@ def create_calculate_dem_diff_dag(
         tags=[dag_id],
         dag_display_name="Calculate DEM diff",
         schedule=None,
+        # Render templates to native Python objects so boolean params stay bools.
+        render_template_as_native_obj=True,
         params={
             "id": Param(
                 "",
                 type="string",
                 format="uuid",
                 description=("Production area id as UUID"),
-            )
+            ),
+            "cluster": Param(
+                default=True,
+                type="boolean",
+                description="Cluster difference polygons after diffs are calculated",
+            ),
         },
         is_paused_upon_creation=False,
     )
@@ -118,6 +125,21 @@ def create_calculate_dem_diff_dag(
                 )
                 pipeline.execute()
 
+        @task.short_circuit(ignore_downstream_trigger_rules=False)
+        def should_cluster(*, requested: bool) -> bool:
+            # Skip only the directly downstream clustering task when not requested.
+            return requested
+
+        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+        def cluster_diff_polygons(job_connection_uri: str) -> None:
+            import sqlalchemy
+            import sqlmodel
+            from pinta_processing.scripts import cluster
+
+            engine = sqlalchemy.create_engine(job_connection_uri)
+            with sqlmodel.Session(engine) as session:
+                cluster.cluster_diff_polygons(session)
+
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
         staging_tables = _get_staging_tables()
@@ -155,11 +177,19 @@ def create_calculate_dem_diff_dag(
             task_id="merge_diff_lte_threshold_tables"
         )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_LTE_THRESHOLD, staging_tables)
 
+        cluster_gate = should_cluster.override(
+            task_id="should_cluster",
+            trigger_rule=TriggerRule.NONE_FAILED,
+        )(requested=cast("bool", "{{ params.cluster }}"))
+        cluster_task = cluster_diff_polygons(job_db_uri)
+
         (
             tile_wkt_list
             >> [init_diff_task, init_diff_lte_threshold_task]
             >> processed_tiles
             >> [merge_diff_task, merge_diff_lte_threshold_task]
+            >> cluster_gate
+            >> cluster_task
         )
 
     return calculate_dem_diff_dag()
