@@ -66,6 +66,9 @@ PINTA_COMMON_TASK_ARGS: dict[str, Any] = {
 
 PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
     "image": "{{ var.value.pinta_processing_image }}",
+    # Always pull the image so workers pick up a freshly pushed processing
+    # image (with the current pinta_common) instead of a stale local copy.
+    "force_pull": True,
     # Cannot be templated at the moment
     "docker_url": Variable.get(
         "pinta_docker_socket_url", "unix:///var/run/docker.sock"
