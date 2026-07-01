@@ -56,6 +56,14 @@ repos:
       - id: ruff
         args: [ --fix, --exit-non-zero-on-fix, --extend-fixable=F401 ]
       - id: ruff-format
+  # SQL formatter/linter
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 1c2ec52808fdc09efa1552437ec9d140749f98d0  # frozen: 4.2.2
+    hooks:
+      - id: sqlfluff-fix
+        # create_development_users.sql uses psql meta-commands (\set, \gset,
+        # \if) that sqlfluff cannot parse.
+        exclude: ^components/db/scripts/create_development_users\.sql$
   - repo: https://github.com/PyCQA/flake8
     rev: c48217e1fc006c2dddd14df54e83b67da15de5cd  # frozen: 7.3.0
     hooks:
