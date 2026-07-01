@@ -74,6 +74,7 @@ class VectorLayerConfig(DatabaseLayerConfig):
     )
     read_only: bool = False
     read_only_fields: list[str] = dataclasses.field(default_factory=list)
+    subset_string: str | None = None
 
 
 @dataclasses.dataclass(kw_only=True)

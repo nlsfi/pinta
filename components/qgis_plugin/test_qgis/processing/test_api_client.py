@@ -81,6 +81,7 @@ def test_start_reference_dem_workflow_posts_workflow_payload(
                 "id": "area-1",
                 "calculate_reference_dem": True,
                 "calculate_dem_diff": True,
+                "cluster_diff_polygons": True,
             },
             "production_area_id": "area-1",
         },

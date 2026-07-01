@@ -81,5 +81,6 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
             "cluster_area": tr("Cluster area"),
         },
         read_only_fields=["energy_distribution", "energy_sum", "cluster_area"],
+        subset_string="energy_distribution >= 1",
     ),
 ]
