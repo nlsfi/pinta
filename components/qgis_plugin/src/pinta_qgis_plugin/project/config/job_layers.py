@@ -83,4 +83,18 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         read_only_fields=["energy_distribution", "energy_sum", "cluster_area"],
         subset_string="energy_distribution >= 1",
     ),
+    config.VectorLayerConfig(
+        schema="user_data",
+        table_name="update_area",
+        layer_name=tr("Update area"),
+        layer_id="update_area",
+        geom_column="geom",
+        key_column="id",
+        wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
+        srid=Settings.DB_SRID,
+        aliases={
+            **config.COMMON_ALIASES,
+            "elevation": tr("Elevation"),
+        },
+    ),
 ]
