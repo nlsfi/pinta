@@ -89,17 +89,17 @@
         <translation>Erotusmalli, yli 20cm eroavaisuudet</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="51"/>
+        <location filename="../../project/config/job_layers.py" line="59"/>
         <source>Polygonized DEM difference</source>
         <translation>Muutospolygonit</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="68"/>
+        <location filename="../../project/config/job_layers.py" line="76"/>
         <source>Modification area suggestions</source>
         <translation>Muutosalue-ehdotukset</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="68"/>
+        <location filename="../../project/config/job_layers.py" line="76"/>
         <source>Cluster significance</source>
         <translation>Klusterin merkittävyys</translation>
     </message>
@@ -179,29 +179,34 @@
         <translation>Ajon tilan viimeinen muutosaika</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="68"/>
+        <location filename="../../project/config/job_layers.py" line="76"/>
         <source>Energy sum</source>
         <translation>Energiasumma</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="51"/>
+        <location filename="../../project/config/job_layers.py" line="59"/>
         <source>Relevance score</source>
         <translation>Merkittävyys</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="68"/>
+        <location filename="../../project/config/job_layers.py" line="76"/>
         <source>Cluster area</source>
         <translation>Klusterin pinta-ala</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="86"/>
+        <location filename="../../project/config/job_layers.py" line="94"/>
         <source>Update area</source>
         <translation>Muutosalue</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="86"/>
+        <location filename="../../project/config/job_layers.py" line="94"/>
         <source>Elevation</source>
         <translation>Korkeus</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="51"/>
+        <source>DEM preview</source>
+        <translation>Tuloskorkeusmalli</translation>
     </message>
 </context>
 </TS>

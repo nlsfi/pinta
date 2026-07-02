@@ -48,6 +48,14 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         style_path=_STYLES_PATH / "raster_diff.qml",
         visible_initially=False,
     ),
+    config.RasterLayerConfig(
+        schema="user_data",
+        table_name="dem_preview",
+        layer_name=tr("DEM preview"),
+        layer_id="dem_preview",
+        style_path=_STYLES_PATH / "elevation_model.qml",
+        visible_initially=False,
+    ),
     config.VectorLayerConfig(
         schema="reference",
         table_name="diff_polygon",
