@@ -98,6 +98,7 @@ class PintaAPIClient(QObject):
                 "calculate_reference_dem": True,
                 "calculate_dem_diff": True,
                 "cluster_diff_polygons": True,
+                "initialize_dem_preview": True,
             },
             production_area_id=production_area_id,
         )
