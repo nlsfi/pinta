@@ -10,13 +10,30 @@ from sqlalchemy import Column
 from sqlmodel import Field
 
 from pinta_common import Settings
+from pinta_db.common import base
 from pinta_db.constants import POLYGON
-from pinta_db.job_db.models.base import UserBase
+from pinta_db.job_db.models import base as job_base
 
 
-class UpdateArea(UserBase, table=True):  # type: ignore[call-arg]
+class UpdateArea(job_base.UserVectorBase, table=True):  # type: ignore[call-arg]
     """Final update area."""
 
     geom: Any = Field(
         sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=False))
     )
+
+
+class DemPreview(job_base.UserBase, base.RasterBase, table=True):  # type: ignore[call-arg]
+    """Reference raster."""
+
+
+class O2DemPreview(job_base.UserBase, base.RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 2."""
+
+
+class O8DemPreview(job_base.UserBase, base.RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 8."""
+
+
+class O128DemPreview(job_base.UserBase, base.RasterBase, table=True):  # type: ignore[call-arg]
+    """Overview factor 128."""
