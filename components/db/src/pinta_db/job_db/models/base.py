@@ -22,4 +22,8 @@ class UserBase(BaseJobDb):
 
     __table_args__ = {"schema": Schema.USER.value}  # noqa: RUF012
 
+
+class UserVectorBase(UserBase):
+    """Base model for tables in user schema."""
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
