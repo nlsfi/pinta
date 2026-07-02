@@ -139,12 +139,12 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="137"/>
+        <location filename="../../api/api_client.py" line="138"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="153"/>
+        <location filename="../../api/api_client.py" line="154"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
@@ -159,7 +159,7 @@
         <translation>Käynnistä vertausmallin työnkulku</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="103"/>
+        <location filename="../../api/api_client.py" line="104"/>
         <source>Reference DEM workflow task created successfully</source>
         <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
     </message>
@@ -192,6 +192,16 @@
         <location filename="../../project/config/job_layers.py" line="68"/>
         <source>Cluster area</source>
         <translation>Klusterin pinta-ala</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="86"/>
+        <source>Update area</source>
+        <translation>Muutosalue</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="86"/>
+        <source>Elevation</source>
+        <translation>Korkeus</translation>
     </message>
 </context>
 </TS>
