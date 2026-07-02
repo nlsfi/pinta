@@ -14,6 +14,7 @@ from pinta_dags import config
 from pinta_dags.config import AirflowVariable
 from pinta_dags.tasks import (
     build_job_connection_uri_task,
+    find_production_area_tile_geometries,
     get_database_name,
     initialize_dem_tables,
     merge_dem_staging_tables,
@@ -75,26 +76,6 @@ def create_calculate_dem_diff_dag(
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
 
-        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-        def find_production_area(
-            connection_uri: str,
-            production_area_id: str,
-        ) -> list[str]:
-            import sqlalchemy
-            import sqlmodel
-            from geoalchemy2.shape import to_shape
-            from pinta_db.primary_db.models.management import ProductionArea
-
-            engine = sqlalchemy.create_engine(connection_uri)
-            with sqlmodel.Session(engine) as session:
-                statement = sqlmodel.select(ProductionArea).where(
-                    ProductionArea.id == production_area_id
-                )
-                area_in_db = session.exec(statement).first()
-                if not area_in_db:
-                    return []
-                return [to_shape(tile.geom).wkt for tile in area_in_db.tiles]
-
         @task.docker(
             **config.PINTA_CONTAINER_TASK_ARGS,
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
@@ -155,7 +136,9 @@ def create_calculate_dem_diff_dag(
                 database_name=database_name,
             ),
         )
-        tile_wkt_list = find_production_area(primary_connection_uri, prod_area_id)
+        tile_wkt_list = find_production_area_tile_geometries.override(
+            task_id="find_production_area"
+        )(primary_connection_uri, prod_area_id)
 
         init_diff_task = initialize_dem_tables.override(
             task_id="initialize_diff_tables"

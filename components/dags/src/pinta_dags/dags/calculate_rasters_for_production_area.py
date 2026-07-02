@@ -47,6 +47,11 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
                 type="boolean",
                 description="Cluster difference polygons in the DEM diff DAG",
             ),
+            "initialize_dem_preview": Param(
+                default=True,
+                type="boolean",
+                description="Initialize DEM preview table",
+            ),
         },
         is_paused_upon_creation=False,
     )
@@ -117,6 +122,13 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
             wait_for_completion=True,
         )
 
+        trigger_initialize_dem_preview = TriggerDagRunOperator(
+            task_id="trigger_initialize_dem_preview",
+            trigger_dag_id=constants.DAG_ID_INITIALIZE_DEM_PREVIEW,
+            conf={"id": "{{ params.id }}"},
+            wait_for_completion=True,
+        )
+
         @task.docker(
             **config.PINTA_CONTAINER_TASK_ARGS,
             trigger_rule=TriggerRule.NONE_FAILED,
@@ -184,8 +196,17 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
             task_id="should_calculate_dem_diff",
             trigger_rule=TriggerRule.NONE_FAILED,
         )(requested=cast("bool", "{{ params.calculate_dem_diff }}"))
+        # The DEM preview copy is independent of the reference DEM -> DEM diff
+        # chain, so it runs in parallel straight off ensure_database.
+        preview_gate = should_run.override(
+            task_id="should_initialize_dem_preview",
+        )(requested=cast("bool", "{{ params.initialize_dem_preview }}"))
 
-        triggers = [trigger_calculate_reference_dem, trigger_calculate_dem_diff]
+        triggers = [
+            trigger_calculate_reference_dem,
+            trigger_calculate_dem_diff,
+            trigger_initialize_dem_preview,
+        ]
         status_completed = set_processing_status_completed(
             primary_connection_uri, prod_area_id
         )
@@ -197,6 +218,8 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
         # DEM so it can compare against freshly computed reference rasters.
         ensure_database >> reference_gate >> trigger_calculate_reference_dem
         trigger_calculate_reference_dem >> diff_gate >> trigger_calculate_dem_diff
+        # Runs in parallel with the reference DEM -> DEM diff chain.
+        ensure_database >> preview_gate >> trigger_initialize_dem_preview
         # Also depend on ensure_database so a failure there (before any trigger
         # runs) still resolves the processing status instead of leaving the
         # production area stuck in STARTED.
