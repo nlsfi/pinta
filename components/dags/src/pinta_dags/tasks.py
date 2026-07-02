@@ -33,6 +33,51 @@ def get_database_name(
         return area_in_db.database_name
 
 
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def find_production_area_tile_paths(
+    connection_uri: str,
+    production_area_id: str,
+) -> list[str]:
+    """Return the source file paths of the production area's point cloud tiles."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db.primary_db.models.management import ProductionArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        area_in_db = session.exec(
+            sqlmodel.select(ProductionArea).where(
+                ProductionArea.id == production_area_id
+            )
+        ).first()
+        if not area_in_db:
+            return []
+        return [tile.file_path for tile in area_in_db.tiles]
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def find_production_area_tile_geometries(
+    connection_uri: str,
+    production_area_id: str,
+) -> list[str]:
+    """Return the geometries (as WKT) of the production area's point cloud tiles."""
+    import sqlalchemy
+    import sqlmodel
+    from geoalchemy2.shape import to_shape
+    from pinta_db.primary_db.models.management import ProductionArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        area_in_db = session.exec(
+            sqlmodel.select(ProductionArea).where(
+                ProductionArea.id == production_area_id
+            )
+        ).first()
+        if not area_in_db:
+            return []
+        return [to_shape(tile.geom).wkt for tile in area_in_db.tiles]
+
+
 @task
 def build_job_connection_uri_task(
     base_uri: str,

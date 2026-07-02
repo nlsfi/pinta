@@ -7,25 +7,29 @@ from typing import cast
 
 from airflow.sdk import DAG, Param, Variable, dag, task
 from pinta_common import constants
-from pinta_db.job_db.models.reference import Dem
+from pinta_db.job_db.models.user import DemPreview
 from pinta_db.job_db.schema import Schema
+from pinta_db.primary_db.models.dem import Dem as PrimaryDem
+from pinta_db.primary_db.schema import Schema as PrimarySchema
 
 from pinta_dags import config
 from pinta_dags.config import AirflowVariable
 from pinta_dags.tasks import (
     build_job_connection_uri_task,
-    find_production_area_tile_paths,
+    find_production_area_tile_geometries,
     get_database_name,
     initialize_dem_tables,
     merge_dem_staging_tables,
 )
 
-DB_SCHEMA = Schema.REFERENCE.value
-DB_TABLE = Dem.__tablename__
-BLAST2DEM_KEEP_CLASS = [2]
+FROM_DB_SCHEMA = PrimarySchema.DEM.value
+FROM_DB_TABLE = PrimaryDem.__tablename__
+TO_DB_SCHEMA = Schema.USER.value
+TO_DB_TABLE = DemPreview.__tablename__
 
 
 def _get_max_parallel_pipelines() -> int:
+    # Reuses the reference DEM parallelism variable
     var = AirflowVariable.CALCULATE_REFERENCE_DEM_MAX_PARALLEL_PIPELINES
     max_parallel = int(Variable.get(var, 4))
     if max_parallel < 1:
@@ -35,6 +39,7 @@ def _get_max_parallel_pipelines() -> int:
 
 
 def _get_staging_tables() -> int:
+    # Reuses the reference DEM staging tables variable
     var = AirflowVariable.CALCULATE_REFERENCE_DEM_STAGING_TABLES
     staging_tables = int(Variable.get(var, 1))
     if staging_tables < 0:
@@ -43,14 +48,14 @@ def _get_staging_tables() -> int:
     return staging_tables
 
 
-def create_calculate_reference_dem_dag(
+def create_initialize_dem_preview_dag(
     *,
     dag_id: str,
 ) -> DAG:
     @dag(
         dag_id=dag_id,
         tags=[dag_id],
-        dag_display_name="Calculate reference dem",
+        dag_display_name="Initialize DEM preview",
         schedule=None,
         params={
             "id": Param(
@@ -62,7 +67,7 @@ def create_calculate_reference_dem_dag(
         },
         is_paused_upon_creation=False,
     )
-    def calculate_reference_dem_dag() -> None:
+    def initialize_dem_preview_dag() -> None:
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
 
@@ -70,23 +75,19 @@ def create_calculate_reference_dem_dag(
             **config.PINTA_CONTAINER_TASK_ARGS,
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
-        def blast2dem(  # noqa: PLR0913
+        def copy_dem_preview(  # noqa: PLR0913
             primary_connection_uri: str,
             job_connection_uri: str,
-            input_path: str,
-            step: int,
-            keep_class: list[int],
+            tile_wkt: str,
             staging_tables: int,
-            extra_lastools_params: dict | None = None,
+            from_schema: str,
+            from_table: str,
+            to_schema: str,
+            to_table: str,
         ) -> None:
-            from pathlib import Path
-
             import sqlalchemy
             import sqlmodel
-            from pinta_common import Settings
             from pinta_processing import pipelines
-
-            crs = f"EPSG:{Settings.DB_SRID}"
 
             with (
                 sqlmodel.Session(
@@ -96,29 +97,26 @@ def create_calculate_reference_dem_dag(
                     sqlalchemy.create_engine(job_connection_uri)
                 ) as job_session,
             ):
-                pipeline = pipelines.blast2dem_to_postgis(
-                    primary_session=primary_session,
-                    job_session=job_session,
-                    input_path=Path(input_path),
-                    step=step,
-                    keep_class=keep_class,
+                pipeline = pipelines.postgis_to_postgis(
+                    from_session=primary_session,
+                    from_schema=from_schema,
+                    from_table=from_table,
+                    to_session=job_session,
+                    to_schema=to_schema,
+                    to_table=to_table,
+                    tile_wkt=tile_wkt,
                     staging_tables=staging_tables,
-                    crs=crs,
-                    extra_lastools_params=extra_lastools_params,
                 )
                 pipeline.execute()
 
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
+        staging_tables = _get_staging_tables()
 
         prod_area_id = "{{ params.id }}"
         database_name = cast(
             "str", get_database_name(primary_connection_uri, prod_area_id)
         )
-        file_paths = find_production_area_tile_paths.override(
-            task_id="find_production_area"
-        )(primary_connection_uri, prod_area_id)
-
         job_db_uri = cast(
             "str",
             build_job_connection_uri_task(
@@ -126,32 +124,34 @@ def create_calculate_reference_dem_dag(
                 database_name=database_name,
             ),
         )
-
-        pixel_size = "{{ var.value.pinta_db_dem_pixel_size }}"
-        blast2dem_task = blast2dem.partial(
-            primary_connection_uri=primary_connection_uri,
-            job_connection_uri=job_db_uri,
-            step=pixel_size,
-            keep_class=BLAST2DEM_KEEP_CLASS,
-            staging_tables=_get_staging_tables(),
-        )
+        tile_wkt_list = find_production_area_tile_geometries.override(
+            task_id="find_production_area"
+        )(primary_connection_uri, prod_area_id)
 
         initialize_task = initialize_dem_tables(
-            job_db_uri, DB_SCHEMA, DB_TABLE, _get_staging_tables()
+            job_db_uri, TO_DB_SCHEMA, TO_DB_TABLE, staging_tables
         )
-        processed_files = blast2dem_task.expand(input_path=file_paths)
+        copied_tiles = copy_dem_preview.partial(
+            primary_connection_uri=primary_connection_uri,
+            job_connection_uri=job_db_uri,
+            staging_tables=staging_tables,
+            from_schema=FROM_DB_SCHEMA,
+            from_table=FROM_DB_TABLE,
+            to_schema=TO_DB_SCHEMA,
+            to_table=TO_DB_TABLE,
+        ).expand(tile_wkt=tile_wkt_list)
         (
-            file_paths
+            tile_wkt_list
             >> initialize_task
-            >> processed_files
+            >> copied_tiles
             >> merge_dem_staging_tables(
-                job_db_uri, DB_SCHEMA, DB_TABLE, _get_staging_tables()
+                job_db_uri, TO_DB_SCHEMA, TO_DB_TABLE, staging_tables
             )
         )
 
-    return calculate_reference_dem_dag()
+    return initialize_dem_preview_dag()
 
 
-DAG_ID = constants.DAG_ID_CALCULATE_REFERENCE_DEM
+DAG_ID = constants.DAG_ID_INITIALIZE_DEM_PREVIEW
 
-globals()[DAG_ID] = create_calculate_reference_dem_dag(dag_id=DAG_ID)
+globals()[DAG_ID] = create_initialize_dem_preview_dag(dag_id=DAG_ID)
