@@ -37,16 +37,19 @@ def _get_production_area(db: "Session") -> ProductionArea:
     return production_area
 
 
-def _count_diff_rasters(database_name: str) -> int:
-    """Count the diff raster tiles written to the job database."""
+def _count_rows(database_name: str, *tables: str) -> int:
+    """Count the total rows across the given ``schema.table`` names in the job db."""
+    counts = " + ".join(f"(SELECT count(*) FROM {table})" for table in tables)
     credentials = db_utils.get_job_admin_credentials(database_name)
     with engine_utils.get_autocommit_connection(credentials) as connection:
-        return connection.execute(
-            sqlmodel.text(
-                "SELECT (SELECT count(*) FROM reference.diff_gt_threshold) "
-                "+ (SELECT count(*) FROM reference.diff_lte_threshold)"
-            )
-        ).scalar_one()
+        return connection.execute(sqlmodel.text(f"SELECT {counts}")).scalar_one()
+
+
+def _count_diff_rasters(database_name: str) -> int:
+    """Count the diff raster tiles written to the job database."""
+    return _count_rows(
+        database_name, "reference.diff_gt_threshold", "reference.diff_lte_threshold"
+    )
 
 
 @pytest.mark.xdist_group("airflow")
@@ -109,6 +112,9 @@ def test_calculate_rasters_for_production_area_workflow(
     assert layers.get_raster_layer_by_model(reference.Dem)
     assert layers.get_vector_layer_by_model(reference.DiffPolygon)
     assert _count_diff_rasters(completed_feature["database_name"]) > 0
+
+    # The DEM preview copy runs in parallel and populates user_data.dem_preview.
+    assert _count_rows(completed_feature["database_name"], "user_data.dem_preview") > 0
 
     cluster_layer = layers.get_vector_layer_by_model(reference.DiffPolygonCluster)
     assert cluster_layer.setSubsetString("")
