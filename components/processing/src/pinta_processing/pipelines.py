@@ -172,6 +172,29 @@ def calculate_diff_models(
     )
 
 
+def postgis_to_postgis(  # noqa: PLR0913
+    from_session: Session,
+    from_schema: str,
+    from_table: str,
+    to_session: Session,
+    to_schema: str,
+    to_table: str,
+    tile_wkt: str,
+    staging_tables: int = 0,
+) -> core.Pipeline:
+    """Read raster from Postgis, write to Postgis."""
+    return (
+        reader.PostgisReader(
+            from_schema,
+            from_table,
+            from_session,
+            tile_wkt,
+        )
+        | _generate_overview_stages(to_schema, to_table, to_session, staging_tables)
+        | writer.RasterPostgisWriter(to_schema, to_table, to_session, staging_tables)
+    )
+
+
 def _generate_overview_stages(
     schema: str,
     table_name: str,
