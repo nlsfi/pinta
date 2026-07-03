@@ -19,6 +19,10 @@
 | [reference.o_2_diff_lte_threshold](reference.o_2_diff_lte_threshold.md) | 2 |  | BASE TABLE |
 | [reference.o_8_diff_lte_threshold](reference.o_8_diff_lte_threshold.md) | 2 |  | BASE TABLE |
 | [reference.o_128_diff_lte_threshold](reference.o_128_diff_lte_threshold.md) | 2 |  | BASE TABLE |
+| [user_data.dem_preview](user_data.dem_preview.md) | 2 |  | BASE TABLE |
+| [user_data.o_2_dem_preview](user_data.o_2_dem_preview.md) | 2 |  | BASE TABLE |
+| [user_data.o_8_dem_preview](user_data.o_8_dem_preview.md) | 2 |  | BASE TABLE |
+| [user_data.o_128_dem_preview](user_data.o_128_dem_preview.md) | 2 |  | BASE TABLE |
 
 ## Relations
 
@@ -88,6 +92,22 @@ erDiagram
   raster rast
 }
 "reference.o_128_diff_lte_threshold" {
+  bigint rid
+  raster rast
+}
+"user_data.dem_preview" {
+  bigint rid
+  raster rast
+}
+"user_data.o_2_dem_preview" {
+  bigint rid
+  raster rast
+}
+"user_data.o_8_dem_preview" {
+  bigint rid
+  raster rast
+}
+"user_data.o_128_dem_preview" {
   bigint rid
   raster rast
 }

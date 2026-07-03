@@ -45,11 +45,11 @@ flowchart LR
 | Role | `alembic` | `public` | `reference` | `user_data` |
 | --- | --- | --- | --- | --- |
 | `pinta_owner` | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE |
-| `pinta_processing_worker` | — | USAGE | USAGE, CREATE | USAGE |
+| `pinta_processing_worker` | — | USAGE | USAGE, CREATE | USAGE, CREATE |
 | `pinta_reader` | — | USAGE | USAGE | USAGE |
 | `pinta_writer` | — | USAGE | USAGE | USAGE |
 | `admin` | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE | USAGE, CREATE |
-| `processing_worker` | — | USAGE | USAGE, CREATE | USAGE |
+| `processing_worker` | — | USAGE | USAGE, CREATE | USAGE, CREATE |
 | `qgis_editor` | — | USAGE | USAGE | USAGE |
 | `qgis_viewer` | — | USAGE | USAGE | USAGE |
 
