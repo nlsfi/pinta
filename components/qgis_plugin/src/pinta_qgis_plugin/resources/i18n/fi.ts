@@ -223,5 +223,10 @@
         <source>Start dissolve update areas workflow for production area</source>
         <translation>Käynnistä tuloskorkeusmallin päivityksen työnkulku tuotantoalueelle</translation>
     </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="94"/>
+        <source>Dirty</source>
+        <translation>Päivittämättä</translation>
+    </message>
 </context>
 </TS>
