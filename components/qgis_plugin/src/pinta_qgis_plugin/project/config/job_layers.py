@@ -103,6 +103,8 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         aliases={
             **config.COMMON_ALIASES,
             "elevation": tr("Elevation"),
+            "dirty": tr("Dirty"),
         },
+        read_only_fields=["dirty"],
     ),
 ]
