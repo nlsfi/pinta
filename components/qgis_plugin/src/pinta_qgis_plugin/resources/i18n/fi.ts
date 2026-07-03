@@ -14,7 +14,7 @@
         <translation>Tunniste</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="68"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="70"/>
         <source>Add production area related layers to map</source>
         <translation>Lisää tuotantoalueen tasot karttalle</translation>
     </message>
@@ -139,17 +139,17 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="138"/>
+        <location filename="../../api/api_client.py" line="152"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="154"/>
+        <location filename="../../api/api_client.py" line="168"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="83"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="85"/>
         <source>Start reference DEM workflow for production area</source>
         <translation>Käynnistä vertausmallin työnkulku tuotantoalueelle</translation>
     </message>
@@ -159,7 +159,7 @@
         <translation>Käynnistä vertausmallin työnkulku</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="104"/>
+        <location filename="../../api/api_client.py" line="105"/>
         <source>Reference DEM workflow task created successfully</source>
         <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
     </message>
@@ -207,6 +207,21 @@
         <location filename="../../project/config/job_layers.py" line="51"/>
         <source>DEM preview</source>
         <translation>Tuloskorkeusmalli</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="117"/>
+        <source>Dissolve update areas workflow task created successfully</source>
+        <translation>Tuloskorkeusmallin päivityksen työnkulku käynnistettiin onnistuneesti </translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="39"/>
+        <source>Dissolve update areas</source>
+        <translation>Päivitä tuloskorkeusmalli</translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="100"/>
+        <source>Start dissolve update areas workflow for production area</source>
+        <translation>Käynnistä tuloskorkeusmallin päivityksen työnkulku tuotantoalueelle</translation>
     </message>
 </context>
 </TS>
