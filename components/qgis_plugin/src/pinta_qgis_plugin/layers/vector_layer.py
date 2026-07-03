@@ -59,6 +59,7 @@ def create_vector_layer(
     layer.setReadOnly(config.read_only)
     utils.set_field_aliases(layer, config.aliases)
     utils.set_read_only_fields(layer, [LAYER_ID_COLUMN, *config.read_only_fields])
+    utils.set_default_value_expressions(layer, config.default_expressions)
 
     if config.style_path is not None:
         styles.apply_style(layer, config.style_path)

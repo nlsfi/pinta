@@ -175,6 +175,34 @@ def test_create_layer_sets_value_maps(mocker: MockerFixture, mock_uri: MagicMock
     }
 
 
+def test_create_layer_sets_default_value_expressions(
+    mocker: MockerFixture, mock_uri: MagicMock
+):
+    layer = QgsVectorLayer(
+        "MultiPolygon?field=id:string&field=name:string", "", "memory"
+    )
+    mocker.patch.object(
+        vector_layer,
+        "_create_qgs_vector_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    layer_config = config.VectorLayerConfig(
+        schema="user_data",
+        table_name="update_area",
+        layer_name="Update area",
+        layer_id="update_area",
+        key_column="id",
+        wkb_type=management_layers.PRODUCTION_AREA.wkb_type,
+        default_expressions={"id": "uuid('WithoutBraces')"},
+    )
+
+    vector_layer.create_vector_layer(layer_config, PROVIDER, mock_uri)
+
+    default_value = layer.defaultValueDefinition(layer.fields().lookupField("id"))
+    assert default_value.expression() == "uuid('WithoutBraces')"
+
+
 def test_create_layer_with_invalid_layer_raises_exception(
     mocker: MockerFixture,
 ):
