@@ -26,6 +26,16 @@ class RasterDataset:
         # Bypass frozen dataclass assignment for construction-time normalization.
         object.__setattr__(self, "array", self.array.astype(np.float32, copy=False))
 
+    @property
+    def bounds(self) -> tuple[float, float, float, float]:
+        """Return the raster's map bounds as (left, bottom, right, top)."""
+        height, width = self.array.shape
+        left = self.transform.c
+        top = self.transform.f
+        right = left + self.transform.a * width
+        bottom = top + self.transform.e * height
+        return left, bottom, right, top
+
     @staticmethod
     def from_rasterio(src: rasterio.DatasetReader) -> "RasterDataset":
         """Construct dataset from rasterio reader."""

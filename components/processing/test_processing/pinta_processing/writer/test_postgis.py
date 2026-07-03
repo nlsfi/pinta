@@ -11,6 +11,7 @@ from rasterio.transform import Affine
 from shapely.geometry import Point
 
 from pinta_processing import core, exceptions
+from pinta_processing.filters import DownsampleOverview
 from pinta_processing.writer import RasterPostgisWriter, VectorPostgisWriter
 
 
@@ -154,6 +155,118 @@ def test_resolve_partition_different_locations(dataset: core.RasterDataset):
         assert partition == expected_partitions[i], (
             f"Dataset {i}: expected partition {expected_partitions[i]}, got {partition}"
         )
+
+
+def _mock_update_session(mocker: MockerFixture) -> tuple:
+    """Session whose raw connection exposes cursor/copy as context managers."""
+    session = mocker.MagicMock()
+    raw_connection = session.connection.return_value.connection
+    cursor = raw_connection.cursor.return_value.__enter__.return_value
+    cursor.copy.return_value.__enter__.return_value = mocker.MagicMock()
+    return session, raw_connection, cursor
+
+
+def test_generate_tiles_returns_empty_for_zero_sized_raster():
+    """A degenerate raster (zero-sized dimension) yields no tiles."""
+    empty = core.RasterDataset(
+        array=np.empty((0, 0), dtype=np.float32),
+        transform=Affine.identity(),
+        crs="EPSG:3067",
+        nodata=-9999.0,
+    )
+    stage = RasterPostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[arg-type]
+
+    assert stage._generate_tiles(empty) == []
+
+
+def test_update_mode_skips_raster_downsampled_below_one_pixel(
+    dataset: core.RasterDataset, mocker: MockerFixture
+):
+    """A small patch downsampled past its own size must not crash the writer.
+
+    Reproduces the overview edge case: a tiny update-area patch downsampled for a
+    high overview level (factor 128) collapses to a 0x0 raster, which previously
+    raised a rasterio WindowError while tiling.
+    """
+    session, raw_connection, cursor = _mock_update_session(mocker)
+    downsampled = DownsampleOverview(factor=128).process(dataset)
+    assert downsampled is not None
+    assert downsampled.array.size == 0  # 2x2 // 128 -> 0x0
+
+    stage = RasterPostgisWriter(
+        "myschema", "mytable", session, staging_tables=0, mode="update"
+    )
+    stage.process(downsampled)
+
+    cursor.execute.assert_not_called()
+    raw_connection.commit.assert_not_called()
+    raw_connection.rollback.assert_not_called()
+
+
+def test_update_mode_rejects_staging_tables():
+    """Update mode is only supported with staging_tables=0."""
+    with pytest.raises(ValueError, match="staging_tables"):
+        RasterPostgisWriter("foo", "bar", None, staging_tables=1, mode="update")  # type: ignore[arg-type]
+
+
+def test_update_mode_merges_and_commits(
+    dataset: core.RasterDataset, mocker: MockerFixture
+):
+    """Update mode stages tiles, runs merge + insert, and commits once."""
+    session, raw_connection, cursor = _mock_update_session(mocker)
+
+    stage = RasterPostgisWriter(
+        "myschema", "mytable", session, staging_tables=0, tile_size=4, mode="update"
+    )
+    stage.process(dataset)
+
+    executed_sql = " ".join(str(call.args[0]) for call in cursor.execute.call_args_list)
+    assert "CREATE TEMP TABLE" in executed_sql
+    assert "ST_MapAlgebra" in executed_sql
+    assert "INSERT INTO myschema.mytable" in executed_sql
+
+    raw_connection.commit.assert_called_once()
+    raw_connection.rollback.assert_not_called()
+
+
+def test_update_mode_skips_all_nodata_data(
+    dataset: core.RasterDataset, mocker: MockerFixture
+):
+    """A fully nodata input stages nothing and merges nothing."""
+    session, raw_connection, cursor = _mock_update_session(mocker)
+    nodata_dataset = core.RasterDataset(
+        array=np.full_like(dataset.array, dataset.nodata),
+        transform=dataset.transform,
+        crs=dataset.crs,
+        nodata=dataset.nodata,
+    )
+
+    stage = RasterPostgisWriter(
+        "myschema", "mytable", session, staging_tables=0, tile_size=4, mode="update"
+    )
+    stage.process(nodata_dataset)
+
+    cursor.execute.assert_not_called()
+    raw_connection.commit.assert_not_called()
+    raw_connection.rollback.assert_not_called()
+
+
+def test_update_mode_rolls_back_on_failure(
+    dataset: core.RasterDataset, mocker: MockerFixture
+):
+    """A failure mid-write rolls back so no half-updated rows remain."""
+    session, raw_connection, cursor = _mock_update_session(mocker)
+    cursor.execute.side_effect = [None, RuntimeError("merge failed")]
+
+    stage = RasterPostgisWriter(
+        "myschema", "mytable", session, staging_tables=0, tile_size=4, mode="update"
+    )
+
+    with pytest.raises(RuntimeError, match="merge failed"):
+        stage.process(dataset)
+
+    raw_connection.rollback.assert_called_once()
+    raw_connection.commit.assert_not_called()
 
 
 def test_vector_postgis_writer_writes_to_postgis(

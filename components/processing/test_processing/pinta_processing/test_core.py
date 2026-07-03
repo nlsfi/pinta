@@ -5,6 +5,7 @@
 
 import copy
 
+import affine
 import numpy as np
 import pytest
 import pytest_mock
@@ -79,6 +80,19 @@ def test_raster_dataset_converts_array_to_float32():
     )
 
     assert dataset.array.dtype == np.float32
+
+
+def test_raster_dataset_bounds():
+    # 3 rows x 4 cols, 1 m pixels, origin at (10, 20) top-left.
+    dataset = core.RasterDataset(
+        array=np.zeros((3, 4), dtype=np.float32),
+        transform=affine.Affine(1.0, 0.0, 10.0, 0.0, -1.0, 20.0),
+        crs=constants.DEFAULT_CRS,
+        nodata=None,
+    )
+
+    # bounds are ordered left, bottom, right, top
+    assert dataset.bounds == (10.0, 17.0, 14.0, 20.0)
 
 
 def test_pipeline_executes_all_stages(mocker: pytest_mock.MockerFixture):
