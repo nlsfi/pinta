@@ -5,7 +5,7 @@
 
 """Airflow tasks shared across Pinta DAGs."""
 
-from airflow.sdk import task
+from airflow.sdk import TriggerRule, task
 
 from pinta_dags import config
 
@@ -78,6 +78,22 @@ def find_production_area_tile_geometries(
         return [to_shape(tile.geom).wkt for tile in area_in_db.tiles]
 
 
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def find_update_area_geometries(
+    connection_uri: str,
+) -> list[str]:
+    """Return the geometries (as WKT) of all update areas in the job database."""
+    import sqlalchemy
+    import sqlmodel
+    from geoalchemy2.shape import to_shape
+    from pinta_db.job_db.models.user import UpdateArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        update_areas = session.exec(sqlmodel.select(UpdateArea)).all()
+        return [to_shape(area.geom).wkt for area in update_areas]
+
+
 @task
 def build_job_connection_uri_task(
     base_uri: str,
@@ -142,3 +158,68 @@ def merge_dem_staging_tables(
                 staging_tables=staging_tables,
                 session=session,
             )
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def set_processing_status_started(connection_uri: str, production_area_id: str) -> None:
+    """Mark the production area as processing started."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db.primary_db.models.management import ProcessingStatus, ProductionArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        area_in_db = session.exec(
+            sqlmodel.select(ProductionArea).where(
+                ProductionArea.id == production_area_id
+            )
+        ).first()
+        if area_in_db:
+            area_in_db.processing_status = ProcessingStatus.STARTED
+            session.commit()
+
+
+@task.docker(
+    **config.PINTA_CONTAINER_TASK_ARGS,
+    trigger_rule=TriggerRule.NONE_FAILED,
+)
+def set_processing_status_completed(
+    connection_uri: str, production_area_id: str
+) -> None:
+    """Mark the production area as processing completed when nothing failed."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db.primary_db.models.management import ProcessingStatus, ProductionArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        area_in_db = session.exec(
+            sqlmodel.select(ProductionArea).where(
+                ProductionArea.id == production_area_id
+            )
+        ).first()
+        if area_in_db:
+            area_in_db.processing_status = ProcessingStatus.COMPLETED
+            session.commit()
+
+
+@task.docker(
+    **config.PINTA_CONTAINER_TASK_ARGS,
+    trigger_rule=TriggerRule.ONE_FAILED,
+)
+def set_processing_status_failed(connection_uri: str, production_area_id: str) -> None:
+    """Mark the production area as processing failed when any upstream failed."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db.primary_db.models.management import ProcessingStatus, ProductionArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        area_in_db = session.exec(
+            sqlmodel.select(ProductionArea).where(
+                ProductionArea.id == production_area_id
+            )
+        ).first()
+        if area_in_db:
+            area_in_db.processing_status = ProcessingStatus.FAILURE
+            session.commit()

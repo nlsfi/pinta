@@ -36,6 +36,11 @@ class AirflowVariable(enum.StrEnum):
     )
     CALCULATE_DEM_DIFF_STAGING_TABLES = "pinta_calculate_dem_diff_staging_tables"
 
+    # Maximum number of update area dissolve pipelines running in parallel.
+    DISSOLVE_UPDATE_AREAS_MAX_PARALLEL_PIPELINES = (
+        "pinta_dissolve_update_areas_max_parallel_pipelines"
+    )
+
 
 def connection_uri_template(conn_id: str) -> str:
     """Jinja template for a connection's SQLAlchemy URI with the psycopg3 driver."""
