@@ -74,6 +74,9 @@ class VectorLayerConfig(DatabaseLayerConfig):
     )
     read_only: bool = False
     read_only_fields: list[str] = dataclasses.field(default_factory=list)
+    # Map of field name -> QGIS expression evaluated to the field's default value
+    # when a new feature is created (e.g. {"id": "uuid('WithoutBraces')"}).
+    default_expressions: dict[str, str] = dataclasses.field(default_factory=dict)
     subset_string: str | None = None
 
 
@@ -97,6 +100,7 @@ class ModelLayerConfig(VectorLayerConfig):
         style_path: Path | None = None,
         read_only: bool = False,  # noqa: FBT001, FBT002
         read_only_fields: list[str] | None = None,
+        default_expressions: dict[str, str] | None = None,
         value_maps: list[ValueMapConfig] | None = None,
         visible_initially: bool = True,  # noqa: FBT001, FBT002
     ) -> "ModelLayerConfig":
@@ -122,6 +126,7 @@ class ModelLayerConfig(VectorLayerConfig):
             read_only_fields=[key_column]
             if read_only_fields is None
             else read_only_fields,
+            default_expressions=default_expressions or {},
             value_maps=value_maps,
             visible_initially=visible_initially,
         )

@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
-from qgis.core import QgsEditorWidgetSetup, QgsMapLayer, QgsVectorLayer
+from qgis.core import (
+    QgsDefaultValue,
+    QgsEditorWidgetSetup,
+    QgsMapLayer,
+    QgsVectorLayer,
+)
 
 from pinta_qgis_plugin.layers.config import BaseLayerConfig
 
@@ -33,6 +38,24 @@ def set_read_only_fields(layer: QgsVectorLayer, field_names: list[str]) -> None:
         if field_index >= 0:
             form_config.setReadOnly(field_index, True)  # noqa: FBT003
     layer.setEditFormConfig(form_config)
+
+
+def set_default_value_expressions(
+    layer: QgsVectorLayer, default_expressions: dict[str, str]
+) -> None:
+    """Set QGIS default value expressions for the given fields.
+
+    Each expression is evaluated when a new feature is created, e.g. to generate
+    a UUID for a not-null primary key that has no database-side default.
+    """
+    if not default_expressions:
+        return
+
+    fields = layer.fields()
+    for field_name, expression in default_expressions.items():
+        field_index = fields.lookupField(field_name)
+        if field_index >= 0:
+            layer.setDefaultValueDefinition(field_index, QgsDefaultValue(expression))
 
 
 def set_field_aliases(layer: QgsMapLayer, aliases: dict[str, str]) -> None:

@@ -106,5 +106,8 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
             "dirty": tr("Dirty"),
         },
         read_only_fields=["dirty"],
+        # The id primary key has no database-side default, so generate a UUID
+        # client-side when a new update area is digitised.
+        default_expressions={"id": "uuid('WithoutBraces')"},
     ),
 ]
