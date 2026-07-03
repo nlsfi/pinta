@@ -181,3 +181,8 @@ pyqt
 rasters
 lte
 gt
+datasets
+griddata
+rasterize
+isclose
+tol

@@ -4,6 +4,15 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from pinta_processing.writer.geotiff import GeotiffWriter
-from pinta_processing.writer.postgis import RasterPostgisWriter, VectorPostgisWriter
+from pinta_processing.writer.postgis import (
+    RasterPostgisWriter,
+    VectorPostgisWriter,
+    WriterMode,
+)
 
-__all__ = ["GeotiffWriter", "RasterPostgisWriter", "VectorPostgisWriter"]
+__all__ = [
+    "GeotiffWriter",
+    "RasterPostgisWriter",
+    "VectorPostgisWriter",
+    "WriterMode",
+]

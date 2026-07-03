@@ -14,6 +14,7 @@ import logging
 import math
 import struct
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import sqlmodel
@@ -24,6 +25,15 @@ from rasterio.windows import Window, from_bounds
 from pinta_processing import core, exceptions
 
 LOGGER = logging.getLogger(__name__)
+
+WriterMode = Literal["insert", "update"]
+
+# Output pixel type for merged tiles, matching the float32 DEM band.
+_MERGE_PIXEL_TYPE = "32BF"
+
+# When updating existing tiles, TEMP table holding incoming tiles before they are
+# merged into the target table.
+_UPDATE_STAGING_TABLE = "_pinta_raster_update_staging"
 
 
 @dataclass
@@ -51,19 +61,24 @@ class DataTypeConfig:
 class RasterPostgisWriter(core.Stage):
     """Write raster data to PostGIS table using COPY FROM stdin."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         schema: str,
         table_name: str,
         session: sqlmodel.Session,
         staging_tables: int = 0,
         tile_size: int | None = None,
+        mode: WriterMode = "insert",
     ) -> None:
         super().__init__()
+        if mode == "update" and staging_tables != 0:
+            msg = "update mode requires staging_tables=0"
+            raise ValueError(msg)
         self.schema = schema
         self.table_name = table_name
         self.session = session
         self.staging_tables = staging_tables
+        self.mode = mode
         self.tile_size = (
             tile_size if tile_size is not None else Settings.DB_DEFAULT_TILE_SIZE
         )
@@ -80,6 +95,9 @@ class RasterPostgisWriter(core.Stage):
         if data.crs is None:
             msg = "CRS is required for writing to PostGIS. "
             raise ValueError(msg)
+
+        if self.mode == "update":
+            return self._update_to_postgis(data)
         if self.staging_tables == 0:
             return self._write_to_postgis(data, self.table_name)
 
@@ -98,6 +116,82 @@ class RasterPostgisWriter(core.Stage):
                 copy.write(raster_bytes.hex() + "\n")
 
         raw_connection.commit()
+
+    def _update_to_postgis(self, data: core.RasterDataset) -> None:
+        """Merge raster tiles into an existing PostGIS table.
+
+        Incoming pixels overwrite the target, target pixels are
+        kept where the incoming tile is nodata. Tiles with no matching row yet
+        are inserted.
+        """
+        tiles = [tile for tile in self._generate_tiles(data) if _tile_has_data(tile)]
+        if not tiles:
+            LOGGER.info(
+                "No data to merge into table %s.%s", self.schema, self.table_name
+            )
+            return
+
+        raw_connection = self.session.connection().connection
+        nodata_value = data.nodata if data.nodata is not None else 0.0
+        LOGGER.info("Merging data into table %s.%s", self.schema, self.table_name)
+        try:
+            with raw_connection.cursor() as cursor:
+                cursor.execute(
+                    f"CREATE TEMP TABLE {_UPDATE_STAGING_TABLE} "
+                    "(rast raster) ON COMMIT DROP"
+                )
+                copy_sql = f"COPY {_UPDATE_STAGING_TABLE} (rast) FROM STDIN"
+                with cursor.copy(copy_sql) as copy:
+                    for tile in tiles:
+                        raster_bytes = self._raster_dataset_to_postgis_bytes(tile)
+                        copy.write(raster_bytes.hex() + "\n")
+
+                cursor.execute(self._merge_update_sql(), (nodata_value, nodata_value))
+                cursor.execute(self._merge_insert_sql())
+
+            raw_connection.commit()
+        except Exception:
+            raw_connection.rollback()
+            raise
+
+    def _merge_update_sql(self) -> str:
+        """SQL merging staged tiles into existing rows via ST_MapAlgebra.
+
+        Matches rows by extent. Takes two nodata
+        parameters: the both-nodata fill value and the merged band's nodata.
+        """
+        # Schema/table come from trusted model metadata, not user input.
+        target = f"{self.schema}.{self.table_name}"
+        return f"""
+            UPDATE {target} AS target
+            SET rast = ST_SetBandNoDataValue(
+                ST_MapAlgebra(
+                    target.rast, staging.rast,
+                    '[rast2]',              -- both valid: incoming wins
+                    '{_MERGE_PIXEL_TYPE}',  -- output pixel type
+                    'FIRST',                -- keep target extent
+                    '[rast2]',              -- target nodata: use incoming
+                    '[rast1]',              -- incoming nodata: keep target
+                    %s                      -- both nodata: fill value
+                ),
+                %s
+            )
+            FROM {_UPDATE_STAGING_TABLE} AS staging
+            WHERE target.rast::geometry = staging.rast::geometry
+        """  # noqa: S608
+
+    def _merge_insert_sql(self) -> str:
+        # Schema/table come from trusted model metadata, not user input.
+        target = f"{self.schema}.{self.table_name}"
+        return f"""
+            INSERT INTO {target} (rast)
+            SELECT staging.rast
+            FROM {_UPDATE_STAGING_TABLE} AS staging
+            WHERE NOT EXISTS (
+                SELECT 1 FROM {target} AS target
+                WHERE target.rast::geometry = staging.rast::geometry
+            )
+        """  # noqa: S608
 
     def _generate_tiles(
         self,
@@ -121,6 +215,10 @@ class RasterPostgisWriter(core.Stage):
         tile_height = self.tile_size * pixel_height
 
         height, width = data.array.shape[:2]
+
+        if height == 0 or width == 0:
+            return []
+
         nodata_value = data.nodata if data.nodata is not None else 0.0
 
         # Raster bounds
@@ -270,6 +368,16 @@ class RasterPostgisWriter(core.Stage):
 def _bits_to_int(*bits: tuple[int, int]) -> int:
     """Convert bits to integer."""
     return int("".join(f"{value:0{size}b}" for value, size in bits), 2)
+
+
+def _tile_has_data(tile: core.RasterDataset) -> bool:
+    """Return True if the tile has at least one non-nodata pixel."""
+    nodata = tile.nodata
+    if nodata is None:
+        return True
+    if isinstance(nodata, float) and math.isnan(nodata):
+        return bool(np.any(~np.isnan(tile.array)))
+    return bool(np.any(tile.array != nodata))
 
 
 class VectorPostgisWriter(core.Stage):
