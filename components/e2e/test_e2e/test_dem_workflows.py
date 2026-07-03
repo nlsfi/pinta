@@ -136,6 +136,8 @@ def test_calculate_rasters_reference_dem_only(
             "id": str(production_area.id),
             "calculate_reference_dem": True,
             "calculate_dem_diff": False,
+            "cluster_diff_polygons": False,
+            "initialize_dem_preview": False,
         },
     )
     state = airflow_client.wait_for_dag_run(run, timeout=WORKFLOW_TIMEOUT_S)
