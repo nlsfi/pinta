@@ -9,10 +9,11 @@ from pathlib import Path
 
 import numpy as np
 from pinta_common import Settings
-from pinta_db.job_db.models import reference
+from pinta_db.job_db.models import reference, user
 from pinta_db.primary_db.models import dem
 from pinta_db_utils import model_utils
 from pinta_db_utils.postgis import raster
+from shapely import wkt as shapely_wkt
 from sqlmodel import Session
 
 from pinta_processing import core, filters, reader, writer
@@ -20,6 +21,8 @@ from pinta_processing.scripts import find_intersecting_tiles
 from pinta_processing.utils import tm35_map_sheet_utils
 
 DEFAULT_BUFFERED = 300
+DISSOLVE_PRIMARY_DEM_BUFFER = 50  # Read dem from primary db around the update area
+DISSOLVE_INTERPOLATE_AREA_BUFFER = 4  # Interpolate zone around the update area
 DEFAULT_LASTOOLS_PARAMS = {
     "buffered": DEFAULT_BUFFERED,
     "kill": 300,
@@ -172,6 +175,57 @@ def calculate_diff_models(
     )
 
 
+def dissolve_update_area(
+    primary_session: Session,
+    job_session: Session,
+    geom_wkt: str,
+) -> core.Pipeline:
+    """Merge the primary and reference DEM and smooth the update area seam.
+
+    - Read primary DEM buffered by DISSOLVE_PRIMARY_DEM_BUFFER around udpate area.
+    - Read reference DEM buffered by DISSOLVE_INTERPOLATE_AREA_BUFFER around udpate area
+    - Union the DEMs, reference dem has priority.
+    - Interpolate DISSOLVE_INTERPOLATE_AREA_BUFFER meters wide donut outside the update
+      area to smooth the seam.
+
+    The blended result is merged into dem_preview and its overviews. Overviews are
+    downsampled from the blended patch, so under concurrent update-area tasks a shared
+    overview tile may end up with slightly stale value (overview are visualization-only)
+    Only dem_preview needs to be eventually consistent, which the
+    tile-level merge guarantees.
+    """
+    geom = shapely_wkt.loads(geom_wkt)
+    primary_dem_area = geom.buffer(DISSOLVE_PRIMARY_DEM_BUFFER)
+    reference_dem_area = geom.buffer(DISSOLVE_INTERPOLATE_AREA_BUFFER)
+    buffer_zone_area = geom.buffer(DISSOLVE_INTERPOLATE_AREA_BUFFER).difference(geom)
+
+    dem_schema, dem_table = model_utils.schema_and_table(dem.Dem)
+    reference_schema, reference_dem_table = model_utils.schema_and_table(reference.Dem)
+    preview_schema, preview_table = model_utils.schema_and_table(user.DemPreview)
+
+    return (
+        reader.PostgisReader(
+            dem_schema, dem_table, primary_session, primary_dem_area.wkt
+        )
+        | core.Zip(
+            reader.PostgisReader(
+                reference_schema,
+                reference_dem_table,
+                job_session,
+                reference_dem_area.wkt,
+            )
+        )
+        | filters.RasterUnion()
+        | filters.RasterInterpolate(buffer_zone_area.wkt)
+        | _generate_overview_stages(
+            preview_schema, preview_table, job_session, staging_tables=0, mode="update"
+        )
+        | writer.RasterPostgisWriter(
+            preview_schema, preview_table, job_session, mode="update"
+        )
+    )
+
+
 def postgis_to_postgis(  # noqa: PLR0913
     from_session: Session,
     from_schema: str,
@@ -200,6 +254,7 @@ def _generate_overview_stages(
     table_name: str,
     session: Session,
     staging_tables: int,
+    mode: writer.WriterMode = "insert",
 ) -> core.Stage:
     return functools.reduce(
         operator.or_,
@@ -213,6 +268,7 @@ def _generate_overview_stages(
                     ),
                     session,
                     staging_tables,
+                    mode,
                 )
             )
             for level in raster.DEFAULT_OVERVIEW_LEVELS
@@ -220,13 +276,14 @@ def _generate_overview_stages(
     )
 
 
-def _overview_to_postgis(
+def _overview_to_postgis(  # noqa: PLR0913
     factor: int,
     schema: str,
     table_name: str,
     session: Session,
     staging_tables: int,
+    mode: writer.WriterMode = "insert",
 ) -> core.Pipeline:
     return filters.DownsampleOverview(factor) | writer.RasterPostgisWriter(
-        schema, table_name, session, staging_tables
+        schema, table_name, session, staging_tables, mode=mode
     )
