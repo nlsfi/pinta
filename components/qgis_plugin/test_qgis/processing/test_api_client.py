@@ -197,6 +197,42 @@ def test_start_reference_dem_workflow_http_error_without_response_uses_fallback_
     assert exc_info.value.bar_msg["details"] == "Check log for more details"
 
 
+def test_start_dissolve_update_areas_workflow_posts_workflow_payload(
+    client: api_client.PintaAPIClient,
+    mock_post: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(api_client, "MsgBar", autospec=True)
+
+    client.start_dissolve_update_areas_workflow("area-1")
+
+    expected_url = (
+        f"http://example.test/workflows/{constants.DAG_ID_DISSOLVE_UPDATE_AREAS}"
+    )
+    mock_post.assert_called_once_with(
+        expected_url,
+        json={
+            "parameters": {"id": "area-1"},
+            "production_area_id": "area-1",
+        },
+        timeout=10,
+    )
+    mock_post.return_value.raise_for_status.assert_called_once_with()
+
+
+def test_start_dissolve_update_areas_workflow_shows_success_message(
+    client: api_client.PintaAPIClient,
+    mock_post: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mock_msg_bar = mocker.patch.object(api_client, "MsgBar", autospec=True)
+
+    client.start_dissolve_update_areas_workflow("area-1")
+
+    mock_msg_bar.info.assert_called_once()
+    assert mock_msg_bar.info.call_args.kwargs == {"success": True}
+
+
 def test_get_api_client_is_cached() -> None:
     api_client.get_api_client.cache_clear()
     try:

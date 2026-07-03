@@ -106,6 +106,19 @@ class PintaAPIClient(QObject):
             tr("Reference DEM workflow task created successfully"), success=True
         )
 
+    @handle_api_errors(ApiEndpoint.workflows)
+    def start_dissolve_update_areas_workflow(self, production_area_id: str) -> None:
+        """Starts a dissolve update areas workflow for the given production area."""
+        self._start_workflow(
+            constants.DAG_ID_DISSOLVE_UPDATE_AREAS,
+            {"id": production_area_id},
+            production_area_id=production_area_id,
+        )
+        MsgBar.info(
+            tr("Dissolve update areas workflow task created successfully"),
+            success=True,
+        )
+
     def _start_workflow(
         self,
         dag_tag: str,
