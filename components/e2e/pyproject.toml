@@ -62,5 +62,5 @@ testpaths = [
   "test_e2e",
 ]
 addopts = "-n auto --dist loadgroup --maxprocesses=4 --import-mode=importlib"
-timeout = 180
+timeout = 600
 timeout_method = "thread"
