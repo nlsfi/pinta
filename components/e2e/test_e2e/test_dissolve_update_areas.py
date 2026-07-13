@@ -49,8 +49,18 @@ def _dem_preview_mean(database_name: str, area_ewkt: str) -> float:
         ).scalar_one()
 
 
+def _update_area_dirty(database_name: str) -> bool:
+    """Return the ``dirty`` flag of the single update area in the job database."""
+    credentials = db_utils.get_job_admin_credentials(database_name)
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        return connection.execute(
+            sqlmodel.text("SELECT dirty FROM user_data.update_area")
+        ).scalar_one()
+
+
 @pytest.fixture
 def dissolve_update_area_setup(
+    request: "pytest.FixtureRequest",
     seeded_processing_dem: int,
     created_db: str,
     db: "Session",
@@ -62,7 +72,11 @@ def dissolve_update_area_setup(
     primary DEM into ``user_data.dem_preview``, seeds a distinct constant-valued
     ``reference.dem`` and creates an update area polygon. Returns the update area
     geometry as EWKT so the test can probe the preview inside it.
+
+    The update area is seeded ``dirty`` by default; parametrize the fixture
+    indirectly with ``False`` to seed a clean area that the dissolve DAG must skip.
     """
+    dirty = getattr(request, "param", True)
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert production_area is not None
 
@@ -118,8 +132,8 @@ def dissolve_update_area_setup(
         job_connection.execute(
             sqlmodel.text(
                 "INSERT INTO user_data.update_area (id, geom, dirty) "
-                "VALUES (gen_random_uuid(), ST_GeomFromEWKT(:geom), true)"
-            ).bindparams(geom=area_ewkt)
+                "VALUES (gen_random_uuid(), ST_GeomFromEWKT(:geom), :dirty)"
+            ).bindparams(geom=area_ewkt, dirty=dirty)
         )
 
     return area_ewkt
@@ -179,8 +193,67 @@ def test_dissolve_update_areas_workflow(
     assert mean_after == pytest.approx(REFERENCE_DEM_VALUE, abs=50)
     assert abs(mean_after - mean_before) > 100
 
+    # The worker clears the dirty flag once the area is dissolved, and the dirty
+    # trigger leaves the worker's own update alone, so the area ends up clean.
+    assert _update_area_dirty(database_name) is False
+
     # The workflow stamps the production area processing status COMPLETED on success.
     db.expire_all()
     completed_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert completed_area is not None
     assert completed_area.processing_status == ProcessingStatus.COMPLETED
+
+
+@pytest.mark.xdist_group("airflow")
+@pytest.mark.parametrize("dissolve_update_area_setup", [False], indirect=True)
+def test_dissolve_skips_clean_update_areas(
+    qgis_plugin: "Plugin",
+    qtbot: "QtBot",
+    m_error_dialog: "MagicMock",
+    airflow_client: "AirflowClient",
+    db: "Session",
+    dissolve_update_area_setup: str,
+) -> None:
+    # Importing here to avoid wrong DB name in environment
+    from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
+    from pinta_qgis_plugin.project.groups import (  # noqa: PLC0415
+        management_layer_collection,
+    )
+
+    area_ewkt = dissolve_update_area_setup
+    production_area = db.exec(sqlmodel.select(ProductionArea)).first()
+    assert production_area is not None
+    database_name = production_area.database_name
+    assert database_name is not None
+
+    # The single update area is seeded clean, so the DAG must dissolve nothing and
+    # leave the preview at the original DEM elevations.
+    mean_before = _dem_preview_mean(database_name, area_ewkt)
+    assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
+
+    production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
+    action = layers.find_layer_action(
+        production_area_layer,
+        management_layer_collection.ACTION_TITLE_START_DISSOLVE_UPDATE_AREAS,
+    )
+    feature = next(production_area_layer.getFeatures())
+
+    client = api_client.get_api_client()
+    with qtbot.waitSignal(client.workflow_started, timeout=10000) as blocker:
+        layers.run_layer_action(production_area_layer, action, feature)
+        dag_id, dag_run_id = blocker.args
+
+    m_error_dialog.assert_not_called()
+    dag_run = DagRun(id=dag_id, run_id=dag_run_id)
+
+    state = airflow_client.wait_for_dag_run(dag_run, timeout=WORKFLOW_TIMEOUT_S)
+    assert state == "success", (
+        f"DAG run finished with state={state}\n"
+        f"{airflow_client.describe_failed_run(dag_run)}"
+    )
+
+    # No dirty areas means no dissolve ran: the preview is untouched and the clean
+    # area stays clean.
+    mean_after = _dem_preview_mean(database_name, area_ewkt)
+    assert mean_after == pytest.approx(mean_before, abs=1)
+    assert _update_area_dirty(database_name) is False

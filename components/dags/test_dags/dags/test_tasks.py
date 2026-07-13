@@ -101,6 +101,46 @@ def test_find_production_area_tile_geometries_missing_area_returns_empty(
     assert result == []
 
 
+def test_find_dirty_update_areas_returns_id_and_geom(
+    mock_session: MagicMock, mocker: "MockerFixture"
+) -> None:
+    mocker.patch(
+        "geoalchemy2.shape.to_shape",
+        side_effect=[MagicMock(wkt="POLYGON ((0 0, 0 1, 1 1, 0 0))")],
+    )
+    area = MagicMock(geom=MagicMock())
+    area.id = "area-1"
+    mock_session.exec.return_value.all.return_value = [area]
+
+    result = tasks.find_dirty_update_areas.function("postgres://mock/db")
+
+    assert result == [
+        {"update_area_id": "area-1", "geom_wkt": "POLYGON ((0 0, 0 1, 1 1, 0 0))"}
+    ]
+
+
+def test_find_dirty_update_areas_filters_on_dirty(mock_session: MagicMock) -> None:
+    mock_session.exec.return_value.all.return_value = []
+
+    tasks.find_dirty_update_areas.function("postgres://mock/db")
+
+    # The query must only select dirty rows so clean areas are never re-dissolved.
+    statement = mock_session.exec.call_args.args[0]
+    compiled = str(statement.compile(compile_kwargs={"literal_binds": True}))
+    assert "dirty" in compiled.lower()
+    assert "is true" in compiled.lower()
+
+
+def test_find_dirty_update_areas_no_dirty_areas_returns_empty(
+    mock_session: MagicMock,
+) -> None:
+    mock_session.exec.return_value.all.return_value = []
+
+    result = tasks.find_dirty_update_areas.function("postgres://mock/db")
+
+    assert result == []
+
+
 def test_build_job_connection_uri_task_replaces_database_name() -> None:
     result = tasks.build_job_connection_uri_task.function(
         base_uri="postgresql://user:pass@host:1234/template_db",
