@@ -79,10 +79,10 @@ def find_production_area_tile_geometries(
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-def find_update_area_geometries(
+def find_dirty_update_areas(
     connection_uri: str,
-) -> list[str]:
-    """Return the geometries (as WKT) of all update areas in the job database."""
+) -> list[dict[str, str]]:
+    """Return the id and geometry (as WKT) of every dirty update area."""
     import sqlalchemy
     import sqlmodel
     from geoalchemy2.shape import to_shape
@@ -90,8 +90,13 @@ def find_update_area_geometries(
 
     engine = sqlalchemy.create_engine(connection_uri)
     with sqlmodel.Session(engine) as session:
-        update_areas = session.exec(sqlmodel.select(UpdateArea)).all()
-        return [to_shape(area.geom).wkt for area in update_areas]
+        update_areas = session.exec(
+            sqlmodel.select(UpdateArea).where(sqlmodel.col(UpdateArea.dirty).is_(True))
+        ).all()
+        return [
+            {"update_area_id": str(area.id), "geom_wkt": to_shape(area.geom).wkt}
+            for area in update_areas
+        ]
 
 
 @task

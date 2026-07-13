@@ -48,7 +48,7 @@ def test_dissolve_update_areas_all_tasks() -> None:
         "set_processing_status_started",
         "get_database_name",
         "build_job_connection_uri_task",
-        "find_update_area_geometries",
+        "find_dirty_update_areas",
         "dissolve_update_area",
         "set_processing_status_completed",
         "set_processing_status_failed",
@@ -62,16 +62,16 @@ def test_dependencies() -> None:
     status_started = dag.get_task("set_processing_status_started")
     get_database_name = dag.get_task("get_database_name")
     build_job_connection_uri_task = dag.get_task("build_job_connection_uri_task")
-    find_update_area_geometries = dag.get_task("find_update_area_geometries")
+    find_dirty_update_areas = dag.get_task("find_dirty_update_areas")
     dissolve_update_area = dag.get_task("dissolve_update_area")
 
     assert status_started.task_id in get_database_name.upstream_task_ids
     assert get_database_name.task_id in build_job_connection_uri_task.upstream_task_ids
     assert (
         build_job_connection_uri_task.task_id
-        in find_update_area_geometries.upstream_task_ids
+        in find_dirty_update_areas.upstream_task_ids
     )
-    assert find_update_area_geometries.task_id in dissolve_update_area.upstream_task_ids
+    assert find_dirty_update_areas.task_id in dissolve_update_area.upstream_task_ids
 
 
 def test_processing_status_tasks() -> None:
@@ -86,7 +86,7 @@ def test_processing_status_tasks() -> None:
         "set_processing_status_started",
         "get_database_name",
         "build_job_connection_uri_task",
-        "find_update_area_geometries",
+        "find_dirty_update_areas",
         "dissolve_update_area",
     }
     assert expected_upstream <= status_completed.upstream_task_ids
@@ -143,6 +143,7 @@ def test_dissolve_update_area_builds_and_executes_pipeline(
     dissolve_update_area(
         primary_connection_uri="postgres://primary",
         job_connection_uri="postgres://job",
+        update_area_id="00000000-0000-0000-0000-000000000000",
         geom_wkt="POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
     )
 
@@ -152,3 +153,34 @@ def test_dissolve_update_area_builds_and_executes_pipeline(
     assert "primary_session" in kwargs
     assert "job_session" in kwargs
     mock_pipeline.execute.assert_called_once_with()
+
+
+def test_dissolve_update_area_clears_dirty_flag(mocker: "MockerFixture") -> None:
+    mocker.patch("sqlalchemy.create_engine")
+    session = MagicMock()
+    session_ctx = mocker.patch("sqlmodel.Session")
+    session_ctx.return_value.__enter__.return_value = session
+
+    update_area = MagicMock(dirty=True)
+    session.exec.return_value.first.return_value = update_area
+
+    mock_pipelines_module = MagicMock()
+    mocker.patch.dict(
+        "sys.modules",
+        {"pinta_processing.pipelines": mock_pipelines_module},
+    )
+
+    dag = create_dag_to_test()
+    dissolve_update_area = dag.get_task("dissolve_update_area").python_callable
+
+    dissolve_update_area(
+        primary_connection_uri="postgres://primary",
+        job_connection_uri="postgres://job",
+        update_area_id="00000000-0000-0000-0000-000000000000",
+        geom_wkt="POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+    )
+
+    # After a successful dissolve the worker marks the area clean and commits it.
+    assert update_area.dirty is False
+    session.add.assert_called_once_with(update_area)
+    session.commit.assert_called_once_with()

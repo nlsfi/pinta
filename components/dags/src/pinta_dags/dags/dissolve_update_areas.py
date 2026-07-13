@@ -13,7 +13,7 @@ from pinta_dags import config
 from pinta_dags.config import AirflowVariable
 from pinta_dags.tasks import (
     build_job_connection_uri_task,
-    find_update_area_geometries,
+    find_dirty_update_areas,
     get_database_name,
     set_processing_status_completed,
     set_processing_status_failed,
@@ -64,10 +64,12 @@ def create_dissolve_update_areas_dag(
         def dissolve_update_area(
             primary_connection_uri: str,
             job_connection_uri: str,
+            update_area_id: str,
             geom_wkt: str,
         ) -> None:
             import sqlalchemy
             import sqlmodel
+            from pinta_db.job_db.models.user import UpdateArea
             from pinta_processing import pipelines
 
             with (
@@ -84,6 +86,14 @@ def create_dissolve_update_areas_dag(
                     geom_wkt=geom_wkt,
                 )
                 pipeline.execute()
+
+                update_area = job_session.exec(
+                    sqlmodel.select(UpdateArea).where(UpdateArea.id == update_area_id)
+                ).first()
+                if update_area is not None:
+                    update_area.dirty = False
+                    job_session.add(update_area)
+                    job_session.commit()
 
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
@@ -103,12 +113,12 @@ def create_dissolve_update_areas_dag(
                 database_name=database_name,
             ),
         )
-        geom_wkt_list = find_update_area_geometries(job_db_uri)
+        dirty_update_areas = find_dirty_update_areas(job_db_uri)
 
         dissolved_areas = dissolve_update_area.partial(
             primary_connection_uri=primary_connection_uri,
             job_connection_uri=job_db_uri,
-        ).expand(geom_wkt=geom_wkt_list)
+        ).expand_kwargs(dirty_update_areas)
 
         status_completed = set_processing_status_completed(
             primary_connection_uri, prod_area_id
@@ -119,7 +129,7 @@ def create_dissolve_update_areas_dag(
 
         # Stamp STARTED before any work, then run the dissolve chain.
         status_started >> database_name
-        geom_wkt_list >> dissolved_areas
+        dirty_update_areas >> dissolved_areas
 
         # Resolve the final status off every task that can fail (each is a direct
         # upstream, so ONE_FAILED still fires when an early step fails and the
@@ -128,7 +138,7 @@ def create_dissolve_update_areas_dag(
             status_started,
             database_name,
             job_db_uri,
-            geom_wkt_list,
+            dirty_update_areas,
             dissolved_areas,
         ]
         processing_steps >> status_completed
