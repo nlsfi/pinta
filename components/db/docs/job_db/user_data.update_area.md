@@ -6,6 +6,7 @@
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
 | id | uuid |  | false |  |  |  |
 | geom | geometry(Polygon,3067) |  | false |  |  |  |
+| dirty | boolean | true | false |  |  |  |
 
 ## Constraints
 
@@ -29,6 +30,7 @@ erDiagram
 "user_data.update_area" {
   uuid id
   geometry_Polygon_3067_ geom
+  boolean dirty
 }
 ```
 
