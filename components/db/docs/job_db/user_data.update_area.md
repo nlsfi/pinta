@@ -21,6 +21,12 @@
 | update_area_pkey | CREATE UNIQUE INDEX update_area_pkey ON user_data.update_area USING btree (id) |
 | idx_update_area_geom | CREATE INDEX idx_update_area_geom ON user_data.update_area USING gist (geom) |
 
+## Triggers
+
+| Name | Definition |
+| ---- | ---------- |
+| set_update_area_dirty_trigger | CREATE TRIGGER set_update_area_dirty_trigger BEFORE UPDATE ON user_data.update_area FOR EACH ROW EXECUTE FUNCTION user_data.set_update_area_dirty() |
+
 ## Relations
 
 ```mermaid
