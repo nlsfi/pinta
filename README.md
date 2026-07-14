@@ -3,6 +3,12 @@
 > [!CAUTION]
 > Under active development!
 
+## Development instructions
+
+Check [component](./components) related instructions in each component's README.md.
+
+Detailed documentation of the raster data processing: the pipeline architecture, parallel DEM ingestion with staging tables, and dissolving update areas into the preview DEM can be found in the [processing component's README](components/processing/README.md).
+
 ## Development environment
 
 * Copy .env.example to .env and adjust settings
@@ -43,10 +49,6 @@ If you make any changes to some of the pyproject.toml files, synchronize depende
 
 If you want to update locked package versions, run:
 `uv lock --upgrade`
-
-## Development instructions
-
-Check [component](./components) related instructions in each component's README.md.
 
 ### Commit messages
 
