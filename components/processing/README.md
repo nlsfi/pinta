@@ -149,6 +149,8 @@ result.array
 
 The `reader` module handles loading raster or vector data for various sources.
 
+`PostgisReader` clips a raster table with a WKT geometry. The intersecting tiles are clipped and streamed out of the database **one row at a time** and mosaicked client-side. The backend never materializes the full clipped raster. Unioning the tiles server-side instead would build the whole clipped raster in backend memory as a single value, which for large clip geometries leads to backend out-of-memory failures.
+
 #### Filter
 
 The `filters` module contains data transformation stages that modify data while preserving metadata.
