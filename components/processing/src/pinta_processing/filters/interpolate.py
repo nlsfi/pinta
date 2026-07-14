@@ -13,7 +13,8 @@ from shapely.geometry.base import BaseGeometry
 from pinta_processing import core, exceptions
 
 _MIN_KNOWN_POINTS = 4
-_SAMPLING_MARGIN = 5
+# Width in pixels of the band around the target polygon sampled for known points.
+SAMPLING_MARGIN = 5
 
 
 class RasterInterpolate(core.Stage):
@@ -116,5 +117,5 @@ class RasterInterpolate(core.Stage):
         """Return the band of pixels around the polygon used for sampling."""
         structure = generate_binary_structure(2, 2)
         return binary_dilation(
-            target_mask, structure=structure, iterations=_SAMPLING_MARGIN
+            target_mask, structure=structure, iterations=SAMPLING_MARGIN
         )

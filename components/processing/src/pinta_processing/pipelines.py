@@ -17,12 +17,21 @@ from shapely import wkt as shapely_wkt
 from sqlmodel import Session
 
 from pinta_processing import core, filters, reader, writer
+from pinta_processing.filters.interpolate import SAMPLING_MARGIN
 from pinta_processing.scripts import find_intersecting_tiles
 from pinta_processing.utils import tm35_map_sheet_utils
 
 DEFAULT_BUFFERED = 300
-DISSOLVE_PRIMARY_DEM_BUFFER = 50  # Read dem from primary db around the update area
 DISSOLVE_INTERPOLATE_AREA_BUFFER = 4  # Interpolate zone around the update area
+# Extra margin in meters on top of what the seam interpolation strictly needs
+# when reading the primary DEM around the update area.
+DISSOLVE_PRIMARY_DEM_MARGIN = 10
+# Read the primary DEM buffered by this
+DISSOLVE_PRIMARY_DEM_BUFFER = (
+    DISSOLVE_INTERPOLATE_AREA_BUFFER
+    + SAMPLING_MARGIN * Settings.DB_DEM_PIXEL_SIZE
+    + DISSOLVE_PRIMARY_DEM_MARGIN
+)
 DEFAULT_LASTOOLS_PARAMS = {
     "buffered": DEFAULT_BUFFERED,
     "kill": 300,
@@ -182,7 +191,8 @@ def dissolve_update_area(
 ) -> core.Pipeline:
     """Merge the primary and reference DEM and smooth the update area seam.
 
-    - Read primary DEM buffered by DISSOLVE_PRIMARY_DEM_BUFFER around update area.
+    - Read primary DEM as a DISSOLVE_PRIMARY_DEM_BUFFER wide ring around the update
+      area, the interior is clipped out since the reference DEM wins there anyway.
     - Read reference DEM clipped to the update area.
     - Union the DEMs, reference dem has priority.
     - Interpolate DISSOLVE_INTERPOLATE_AREA_BUFFER meters wide donut outside the update
@@ -195,7 +205,7 @@ def dissolve_update_area(
     tile-level merge guarantees.
     """
     geom = shapely_wkt.loads(geom_wkt)
-    primary_dem_area = geom.buffer(DISSOLVE_PRIMARY_DEM_BUFFER)
+    primary_dem_area = geom.buffer(DISSOLVE_PRIMARY_DEM_BUFFER).difference(geom)
     buffer_zone_area = geom.buffer(DISSOLVE_INTERPOLATE_AREA_BUFFER).difference(geom)
 
     dem_schema, dem_table = model_utils.schema_and_table(dem.Dem)
