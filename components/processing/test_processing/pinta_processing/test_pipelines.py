@@ -104,7 +104,7 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
         geom_wkt=geom_wkt,
     )
 
-    # Two readers: primary DEM (50 m buffer) and reference DEM (4 m buffer).
+    # Two readers: primary DEM (50 m buffer) and reference DEM (update area).
     assert postgis_reader.call_count == 2
     primary_call, reference_call = postgis_reader.call_args_list
     assert primary_call.args[2] is primary_session
@@ -115,9 +115,7 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
     _assert_geometries_match(
         primary_wkt, geom.buffer(pipelines.DISSOLVE_PRIMARY_DEM_BUFFER)
     )
-    _assert_geometries_match(
-        reference_wkt, geom.buffer(pipelines.DISSOLVE_INTERPOLATE_AREA_BUFFER)
-    )
+    _assert_geometries_match(reference_wkt, geom)
 
     # The two DEMs are unioned before the seam is interpolated.
     union.assert_called_once_with()

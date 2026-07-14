@@ -182,8 +182,8 @@ def dissolve_update_area(
 ) -> core.Pipeline:
     """Merge the primary and reference DEM and smooth the update area seam.
 
-    - Read primary DEM buffered by DISSOLVE_PRIMARY_DEM_BUFFER around udpate area.
-    - Read reference DEM buffered by DISSOLVE_INTERPOLATE_AREA_BUFFER around udpate area
+    - Read primary DEM buffered by DISSOLVE_PRIMARY_DEM_BUFFER around update area.
+    - Read reference DEM clipped to the update area.
     - Union the DEMs, reference dem has priority.
     - Interpolate DISSOLVE_INTERPOLATE_AREA_BUFFER meters wide donut outside the update
       area to smooth the seam.
@@ -196,7 +196,6 @@ def dissolve_update_area(
     """
     geom = shapely_wkt.loads(geom_wkt)
     primary_dem_area = geom.buffer(DISSOLVE_PRIMARY_DEM_BUFFER)
-    reference_dem_area = geom.buffer(DISSOLVE_INTERPOLATE_AREA_BUFFER)
     buffer_zone_area = geom.buffer(DISSOLVE_INTERPOLATE_AREA_BUFFER).difference(geom)
 
     dem_schema, dem_table = model_utils.schema_and_table(dem.Dem)
@@ -212,7 +211,7 @@ def dissolve_update_area(
                 reference_schema,
                 reference_dem_table,
                 job_session,
-                reference_dem_area.wkt,
+                geom.wkt,
             )
         )
         | filters.RasterUnion()
