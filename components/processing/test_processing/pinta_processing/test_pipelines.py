@@ -104,7 +104,7 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
         geom_wkt=geom_wkt,
     )
 
-    # Two readers: primary DEM (50 m buffer) and reference DEM (update area).
+    # Two readers: primary DEM (seam read buffer) and reference DEM (update area).
     assert postgis_reader.call_count == 2
     primary_call, reference_call = postgis_reader.call_args_list
     assert primary_call.args[2] is primary_session
@@ -113,8 +113,12 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
     primary_wkt = shapely_wkt.loads(primary_call.args[3])
     reference_wkt = shapely_wkt.loads(reference_call.args[3])
     _assert_geometries_match(
-        primary_wkt, geom.buffer(pipelines.DISSOLVE_PRIMARY_DEM_BUFFER)
+        primary_wkt,
+        geom.buffer(pipelines.DISSOLVE_PRIMARY_DEM_BUFFER).difference(geom),
     )
+    # The primary DEM read is a ring: the update area interior is clipped out
+    # because the reference DEM wins there in the union anyway.
+    assert len(primary_wkt.interiors) == 1
     _assert_geometries_match(reference_wkt, geom)
 
     # The two DEMs are unioned before the seam is interpolated.

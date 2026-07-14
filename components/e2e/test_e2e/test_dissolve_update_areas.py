@@ -30,7 +30,7 @@ WORKFLOW_TIMEOUT_S = 240.0
 REFERENCE_DEM_VALUE = 1000.0
 
 # Radius (m) of the update area probe polygon around the DEM centroid. Kept small
-# so the primary DEM read (buffered 50 m) stays inside the seeded coverage.
+# so the buffered primary DEM read stays inside the seeded coverage.
 UPDATE_AREA_RADIUS_M = 15
 
 
