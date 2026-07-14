@@ -24,6 +24,12 @@
 | [user_data.o_8_dem_preview](user_data.o_8_dem_preview.md) | 2 |  | BASE TABLE |
 | [user_data.o_128_dem_preview](user_data.o_128_dem_preview.md) | 2 |  | BASE TABLE |
 
+## Stored procedures and functions
+
+| Name | ReturnType | Arguments | Type |
+| ---- | ------- | ------- | ---- |
+| user_data.set_update_area_dirty | trigger |  | FUNCTION |
+
 ## Relations
 
 ```mermaid
