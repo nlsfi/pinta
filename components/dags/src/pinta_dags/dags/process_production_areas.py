@@ -25,6 +25,7 @@ def create_process_production_areas_dag(
         tags=[dag_id],
         dag_display_name="Process production areas",
         schedule=datetime.timedelta(minutes=5),
+        max_active_runs=1,
         is_paused_upon_creation=False,
     )
     def process_production_areas_dag() -> None:
