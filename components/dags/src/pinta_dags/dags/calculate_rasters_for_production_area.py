@@ -13,9 +13,6 @@ from pinta_common import constants
 
 from pinta_dags import config
 
-# How often each triggered child DAG is polled for completion.
-_TRIGGER_POKE_INTERVAL_SECONDS = 5
-
 
 def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
     *,
@@ -113,7 +110,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
             trigger_dag_id=constants.DAG_ID_CALCULATE_REFERENCE_DEM,
             conf={"id": "{{ params.id }}"},
             wait_for_completion=True,
-            poke_interval=_TRIGGER_POKE_INTERVAL_SECONDS,
+            poke_interval=config.TRIGGER_POKE_INTERVAL_SECONDS,
         )
 
         trigger_calculate_dem_diff = TriggerDagRunOperator(
@@ -124,7 +121,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
                 "cluster": "{{ params.cluster_diff_polygons }}",
             },
             wait_for_completion=True,
-            poke_interval=_TRIGGER_POKE_INTERVAL_SECONDS,
+            poke_interval=config.TRIGGER_POKE_INTERVAL_SECONDS,
         )
 
         trigger_initialize_dem_preview = TriggerDagRunOperator(
@@ -132,7 +129,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
             trigger_dag_id=constants.DAG_ID_INITIALIZE_DEM_PREVIEW,
             conf={"id": "{{ params.id }}"},
             wait_for_completion=True,
-            poke_interval=_TRIGGER_POKE_INTERVAL_SECONDS,
+            poke_interval=config.TRIGGER_POKE_INTERVAL_SECONDS,
         )
 
         @task.docker(

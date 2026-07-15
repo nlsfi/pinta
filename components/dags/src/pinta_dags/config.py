@@ -41,6 +41,15 @@ class AirflowVariable(enum.StrEnum):
         "pinta_dissolve_update_areas_max_parallel_pipelines"
     )
 
+    # Maximum number of update area register pipelines running in parallel.
+    REGISTER_UPDATE_AREAS_MAX_PARALLEL_PIPELINES = (
+        "pinta_register_update_areas_max_parallel_pipelines"
+    )
+
+
+# How often a triggered child DAG is polled for completion.
+TRIGGER_POKE_INTERVAL_SECONDS = 5
+
 
 def connection_uri_template(conn_id: str) -> str:
     """Jinja template for a connection's SQLAlchemy URI with the psycopg3 driver."""
