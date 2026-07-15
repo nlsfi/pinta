@@ -32,6 +32,13 @@ DISSOLVE_PRIMARY_DEM_BUFFER = (
     + SAMPLING_MARGIN * Settings.DB_DEM_PIXEL_SIZE
     + DISSOLVE_PRIMARY_DEM_MARGIN
 )
+# The dissolve rewrites dem_preview inside the update area, in the interpolated
+# seam donut around it, and in edge pixels the reference DEM clip only touches.
+# Buffer the register read by the interpolate zone plus one pixel so every
+# pixel the dissolve may have changed is copied back to the primary DEM.
+REGISTER_UPDATE_AREA_BUFFER = (
+    DISSOLVE_INTERPOLATE_AREA_BUFFER + Settings.DB_DEM_PIXEL_SIZE
+)
 DEFAULT_LASTOOLS_PARAMS = {
     "buffered": DEFAULT_BUFFERED,
     "kill": 300,
@@ -244,6 +251,7 @@ def postgis_to_postgis(  # noqa: PLR0913
     to_table: str,
     tile_wkt: str,
     staging_tables: int = 0,
+    mode: writer.WriterMode = "insert",
 ) -> core.Pipeline:
     """Read raster from Postgis, write to Postgis."""
     return (
@@ -253,8 +261,12 @@ def postgis_to_postgis(  # noqa: PLR0913
             from_session,
             tile_wkt,
         )
-        | _generate_overview_stages(to_schema, to_table, to_session, staging_tables)
-        | writer.RasterPostgisWriter(to_schema, to_table, to_session, staging_tables)
+        | _generate_overview_stages(
+            to_schema, to_table, to_session, staging_tables, mode
+        )
+        | writer.RasterPostgisWriter(
+            to_schema, to_table, to_session, staging_tables, mode=mode
+        )
     )
 
 
