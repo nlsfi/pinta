@@ -99,6 +99,22 @@ def find_dirty_update_areas(
         ]
 
 
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def find_update_area_geometries(
+    connection_uri: str,
+) -> list[str]:
+    """Return the geometry (as WKT) of every update area."""
+    import sqlalchemy
+    import sqlmodel
+    from geoalchemy2.shape import to_shape
+    from pinta_db.job_db.models.user import UpdateArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        update_areas = session.exec(sqlmodel.select(UpdateArea)).all()
+        return [to_shape(area.geom).wkt for area in update_areas]
+
+
 @task
 def build_job_connection_uri_task(
     base_uri: str,
