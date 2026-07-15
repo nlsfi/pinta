@@ -24,3 +24,9 @@ from pinta_qgis_plugin.utils import messages
 def start_dissolve_update_areas_workflow(production_area_id: str) -> None:
     """Starts a dissolve update areas workflow for the given production area."""
     api_client.get_api_client().start_dissolve_update_areas_workflow(production_area_id)
+
+
+@messages.popup_if_fails
+def start_register_update_areas_workflow(production_area_id: str) -> None:
+    """Starts a register update areas workflow for the given production area."""
+    api_client.get_api_client().start_register_update_areas_workflow(production_area_id)

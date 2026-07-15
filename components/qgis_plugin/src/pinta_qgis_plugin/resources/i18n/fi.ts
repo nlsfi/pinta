@@ -14,7 +14,7 @@
         <translation>Tunniste</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="70"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="72"/>
         <source>Add production area related layers to map</source>
         <translation>Lisää tuotantoalueen tasot karttalle</translation>
     </message>
@@ -139,17 +139,17 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="152"/>
+        <location filename="../../api/api_client.py" line="165"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="168"/>
+        <location filename="../../api/api_client.py" line="181"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="85"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="87"/>
         <source>Start reference DEM workflow for production area</source>
         <translation>Käynnistä vertausmallin työnkulku tuotantoalueelle</translation>
     </message>
@@ -219,7 +219,7 @@
         <translation>Päivitä tuloskorkeusmalli</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="100"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="102"/>
         <source>Start dissolve update areas workflow for production area</source>
         <translation>Käynnistä tuloskorkeusmallin päivityksen työnkulku tuotantoalueelle</translation>
     </message>
@@ -227,6 +227,21 @@
         <location filename="../../project/config/job_layers.py" line="94"/>
         <source>Dirty</source>
         <translation>Päivittämättä</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="130"/>
+        <source>Register update areas workflow task created successfully</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="40"/>
+        <source>Register update areas</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="117"/>
+        <source>Start register update areas workflow for production area</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

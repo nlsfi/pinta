@@ -119,6 +119,19 @@ class PintaAPIClient(QObject):
             success=True,
         )
 
+    @handle_api_errors(ApiEndpoint.workflows)
+    def start_register_update_areas_workflow(self, production_area_id: str) -> None:
+        """Starts a register update areas workflow for the given production area."""
+        self._start_workflow(
+            constants.DAG_ID_REGISTER_UPDATE_AREAS,
+            {"id": production_area_id},
+            production_area_id=production_area_id,
+        )
+        MsgBar.info(
+            tr("Register update areas workflow task created successfully"),
+            success=True,
+        )
+
     def _start_workflow(
         self,
         dag_tag: str,
