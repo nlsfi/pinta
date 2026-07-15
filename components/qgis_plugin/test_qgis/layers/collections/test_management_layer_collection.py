@@ -98,12 +98,18 @@ def test_add_to_project_adds_actions_to_production_area_layer(
         "_add_start_dissolve_update_areas_action",
         autospec=True,
     )
+    mock_add_register_action = mocker.patch.object(
+        management_layer_collection,
+        "_add_start_register_update_areas_action",
+        autospec=True,
+    )
 
     layer_collection.add_to_project()
 
     mock_add_open_action.assert_called_once_with(production_area_layer)
     mock_add_dem_update_action.assert_called_once_with(production_area_layer)
     mock_add_dissolve_action.assert_called_once_with(production_area_layer)
+    mock_add_register_action.assert_called_once_with(production_area_layer)
 
 
 def test_add_open_production_area_layers_delegates_to_layer_utils(
@@ -180,6 +186,32 @@ def test_add_start_dissolve_update_areas_action_delegates_to_layer_utils(
     command = call.kwargs["command"]
     assert "from pinta_qgis_plugin.workflows import update_area" in command
     assert "update_area.start_dissolve_update_areas_workflow(job_id)" in command
+    assert "[%id%]" in command
+
+
+def test_add_start_register_update_areas_action_delegates_to_layer_utils(
+    mocker: MockerFixture,
+):
+    layer = mocker.MagicMock()
+    mock_add_action = mocker.patch.object(
+        management_layer_collection.layer_utils,
+        "add_action_to_vector_layer",
+        autospec=True,
+    )
+
+    management_layer_collection._add_start_register_update_areas_action(layer)
+
+    mock_add_action.assert_called_once()
+    call = mock_add_action.call_args
+    assert call.args == (layer,)
+    assert (
+        call.kwargs["description"]
+        == "Start register update areas workflow for production area"
+    )
+    assert call.kwargs["short_title"] == "Register update areas"
+    command = call.kwargs["command"]
+    assert "from pinta_qgis_plugin.workflows import update_area" in command
+    assert "update_area.start_register_update_areas_workflow(job_id)" in command
     assert "[%id%]" in command
 
 
