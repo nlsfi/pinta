@@ -142,6 +142,38 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
     )
 
 
+def test_postgis_to_postgis_update_mode_propagates_to_writers(
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch(
+        "pinta_processing.reader.PostgisReader",
+        return_value=MagicMock(),
+    )
+    postgis_writer = mocker.patch(
+        "pinta_processing.writer.RasterPostgisWriter",
+        return_value=MagicMock(),
+    )
+
+    pipelines.postgis_to_postgis(
+        from_session=MagicMock(),
+        from_schema="user_data",
+        from_table="dem_preview",
+        to_session=MagicMock(),
+        to_schema="dem",
+        to_table="dem",
+        tile_wkt="POINT (0 0)",
+        staging_tables=0,
+        mode="update",
+    )
+
+    # The base writer and every overview writer merge into existing tiles.
+    levels = raster.DEFAULT_OVERVIEW_LEVELS
+    assert postgis_writer.call_count == 1 + len(levels)
+    assert all(
+        call.kwargs["mode"] == "update" for call in postgis_writer.call_args_list
+    )
+
+
 def test_postgis_to_postgis(
     mocker: MockerFixture,
 ) -> None:
@@ -173,7 +205,7 @@ def test_postgis_to_postgis(
     # The final writer targets the destination table/session with staging tables.
     # (Overview writers also use RasterPostgisWriter, so assert on the last call.)
     assert (
-        mocker.call("user_data", "dem_preview", to_session, 2)
+        mocker.call("user_data", "dem_preview", to_session, 2, mode="insert")
         in postgis_writer.call_args_list
     )
 
