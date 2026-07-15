@@ -100,6 +100,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         key_column="id",
         wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
         srid=Settings.DB_SRID,
+        style_path=_STYLES_PATH / "update_area.qml",
         aliases={
             **config.COMMON_ALIASES,
             "elevation": tr("Elevation"),
