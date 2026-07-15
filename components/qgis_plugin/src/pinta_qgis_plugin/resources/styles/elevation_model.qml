@@ -123,7 +123,7 @@
     <provider>
       <resampling enabled="false" maxOversampling="2" zoomedInResamplingMethod="nearestNeighbour" zoomedOutResamplingMethod="nearestNeighbour"/>
     </provider>
-    <rasterrenderer alphaBand="-1" angle="45" azimuth="315" band="1" multidirection="0" nodataColor="255,255,255,0" opacity="0.8" type="hillshade" zfactor="1">
+    <rasterrenderer alphaBand="-1" angle="45" azimuth="315" band="1" multidirection="0" nodataColor="255,255,255,0" opacity="1" type="hillshade" zfactor="1">
       <rasterTransparency/>
       <minMaxOrigin>
         <limits>None</limits>
