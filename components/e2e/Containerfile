@@ -9,9 +9,10 @@ ENV HTTP_PROXY=$HTTP_PROXY
 ENV HTTPS_PROXY=$HTTPS_PROXY
 ENV NO_PROXY=$NO_PROXY
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir --break-system-packages uv && \
+    UV_PYTHON=/usr/bin/python3 uv venv --system-site-packages /venv
 
-RUN UV_PYTHON=/usr/bin/python3 uv venv --system-site-packages /venv
 ENV VIRTUAL_ENV=/venv
 ENV PATH="/venv/bin:$PATH"
 
