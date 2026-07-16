@@ -14,6 +14,7 @@ from airflow.sdk import Variable, task
 from pinta_dags.dags import process_production_areas
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from unittest.mock import MagicMock
 
     from airflow.sdk import DAG
@@ -62,6 +63,7 @@ def test_process_production_areas_dag_runs_workflow(
     tmp_path: Path,
     monkeypatch: "pytest.MonkeyPatch",
     mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
     area_dir = tmp_path / "2025" / "production_area_1"
     area_dir.mkdir(parents=True)
@@ -70,16 +72,14 @@ def test_process_production_areas_dag_runs_workflow(
     monkeypatch.setenv("AIRFLOW_VAR_PINTA_POINT_CLOUD_BASE_PATH", str(tmp_path))
     monkeypatch.setenv("AIRFLOW_VAR_PINTA_CONTAINER_TARGET_BASE_PATH", str(tmp_path))
 
-    mock_process_metadata_module = mocker.MagicMock()
     mock_variable_set = mocker.patch.object(Variable, "set")
 
     # Create the DAG before patching to avoid interfering with Airflow DB (also uses sqlalchemy)
     dag = create_dag_to_test()
 
     # Patch only the processing module — do NOT mock sqlalchemy globally as Airflow uses it
-    mocker.patch.dict(
-        "sys.modules",
-        {"pinta_processing.scripts.process_metadata": mock_process_metadata_module},
+    mock_process_metadata_module = mock_submodule(
+        "pinta_processing.scripts.process_metadata"
     )
 
     dag.test()

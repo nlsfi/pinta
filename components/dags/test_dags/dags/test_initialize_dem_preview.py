@@ -13,6 +13,8 @@ from airflow.models import DagBag, dagbag
 from pinta_dags.dags import initialize_dem_preview
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from airflow.sdk import DAG
     from pytest_mock import MockerFixture
 
@@ -109,20 +111,16 @@ def test_get_staging_tables_rejects_negative(
 
 def test_copy_dem_preview_builds_and_executes_pipeline(
     mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
     mocker.patch("sqlalchemy.create_engine")
     mocker.patch("sqlmodel.Session")
     # Inject a mock pipelines module so the task body's ``from pinta_processing
     # import pipelines`` resolves to the mock instead of importing the real
-    # module (which would load heavy DB modules and leak into the sys.modules
-    # patching other DAG tests rely on).
+    # (heavy) module.
     mock_pipeline = MagicMock()
-    mock_pipelines_module = MagicMock()
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
     mock_pipelines_module.postgis_to_postgis.return_value = mock_pipeline
-    mocker.patch.dict(
-        "sys.modules",
-        {"pinta_processing.pipelines": mock_pipelines_module},
-    )
 
     dag = create_dag_to_test()
     copy_dem_preview = dag.get_task("copy_dem_preview").python_callable
