@@ -14,6 +14,8 @@ from pinta_common import constants
 from pinta_dags.dags import register_update_areas
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from airflow.sdk import DAG
     from pytest_mock import MockerFixture
 
@@ -130,10 +132,7 @@ def test_should_dissolve_gates_on_dirty_areas() -> None:
     assert (
         should_dissolve(
             dirty_update_areas=[
-                {
-                    "update_area_id": "00000000-0000-0000-0000-000000000000",
-                    "geom_wkt": "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
-                }
+                {"update_area_id": "00000000-0000-0000-0000-000000000000"}
             ]
         )
         is True
@@ -142,6 +141,7 @@ def test_should_dissolve_gates_on_dirty_areas() -> None:
 
 def test_register_update_area_builds_and_executes_pipeline(
     mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
     from shapely import wkt as shapely_wkt
 
@@ -149,16 +149,11 @@ def test_register_update_area_builds_and_executes_pipeline(
     mocker.patch("sqlmodel.Session")
     # Inject a mock pipelines module so the task body's ``from pinta_processing
     # import pipelines`` resolves to the mock instead of importing the real
-    # module (which would load heavy DB modules and leak into the sys.modules
-    # patching other DAG tests rely on).
+    # (heavy) module.
     mock_pipeline = MagicMock()
-    mock_pipelines_module = MagicMock()
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
     mock_pipelines_module.REGISTER_UPDATE_AREA_BUFFER = 6
     mock_pipelines_module.postgis_to_postgis.return_value = mock_pipeline
-    mocker.patch.dict(
-        "sys.modules",
-        {"pinta_processing.pipelines": mock_pipelines_module},
-    )
 
     dag = create_dag_to_test()
     register_update_area = dag.get_task("register_update_area").python_callable

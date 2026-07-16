@@ -13,6 +13,8 @@ from airflow.models import DagBag, dagbag
 from pinta_dags.dags import dissolve_update_areas
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from airflow.sdk import DAG
     from pytest_mock import MockerFixture
 
@@ -122,40 +124,8 @@ def test_get_max_parallel_pipelines_defaults_when_unset(
 
 def test_dissolve_update_area_builds_and_executes_pipeline(
     mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
-    mocker.patch("sqlalchemy.create_engine")
-    mocker.patch("sqlmodel.Session")
-    # Inject a mock pipelines module so the task body's ``from pinta_processing
-    # import pipelines`` resolves to the mock instead of importing the real
-    # module (which would load heavy DB modules and leak into the sys.modules
-    # patching other DAG tests rely on).
-    mock_pipeline = MagicMock()
-    mock_pipelines_module = MagicMock()
-    mock_pipelines_module.dissolve_update_area.return_value = mock_pipeline
-    mocker.patch.dict(
-        "sys.modules",
-        {"pinta_processing.pipelines": mock_pipelines_module},
-    )
-
-    dag = create_dag_to_test()
-    dissolve_update_area = dag.get_task("dissolve_update_area").python_callable
-
-    dissolve_update_area(
-        primary_connection_uri="postgres://primary",
-        job_connection_uri="postgres://job",
-        update_area_id="00000000-0000-0000-0000-000000000000",
-        geom_wkt="POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
-    )
-
-    mock_pipelines_module.dissolve_update_area.assert_called_once()
-    kwargs = mock_pipelines_module.dissolve_update_area.call_args.kwargs
-    assert kwargs["geom_wkt"] == "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))"
-    assert "primary_session" in kwargs
-    assert "job_session" in kwargs
-    mock_pipeline.execute.assert_called_once_with()
-
-
-def test_dissolve_update_area_clears_dirty_flag(mocker: "MockerFixture") -> None:
     mocker.patch("sqlalchemy.create_engine")
     session = MagicMock()
     session_ctx = mocker.patch("sqlmodel.Session")
@@ -164,11 +134,12 @@ def test_dissolve_update_area_clears_dirty_flag(mocker: "MockerFixture") -> None
     update_area = MagicMock(dirty=True)
     session.exec.return_value.first.return_value = update_area
 
-    mock_pipelines_module = MagicMock()
-    mocker.patch.dict(
-        "sys.modules",
-        {"pinta_processing.pipelines": mock_pipelines_module},
-    )
+    # Inject a mock pipelines module so the task body's ``from pinta_processing
+    # import pipelines`` resolves to the mock instead of importing the real
+    # (heavy) module.
+    mock_pipeline = MagicMock()
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
+    mock_pipelines_module.dissolve_update_area.return_value = mock_pipeline
 
     dag = create_dag_to_test()
     dissolve_update_area = dag.get_task("dissolve_update_area").python_callable
@@ -177,10 +148,68 @@ def test_dissolve_update_area_clears_dirty_flag(mocker: "MockerFixture") -> None
         primary_connection_uri="postgres://primary",
         job_connection_uri="postgres://job",
         update_area_id="00000000-0000-0000-0000-000000000000",
-        geom_wkt="POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+    )
+
+    mock_pipelines_module.dissolve_update_area.assert_called_once()
+    kwargs = mock_pipelines_module.dissolve_update_area.call_args.kwargs
+    # The pipeline receives the fetched update area model instance itself.
+    assert kwargs["update_area"] is update_area
+    assert "primary_session" in kwargs
+    assert "job_session" in kwargs
+    mock_pipeline.execute.assert_called_once_with()
+
+
+def test_dissolve_update_area_clears_dirty_flag(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    mocker.patch("sqlalchemy.create_engine")
+    session = MagicMock()
+    session_ctx = mocker.patch("sqlmodel.Session")
+    session_ctx.return_value.__enter__.return_value = session
+
+    update_area = MagicMock(dirty=True)
+    session.exec.return_value.first.return_value = update_area
+
+    mock_submodule("pinta_processing.pipelines")
+
+    dag = create_dag_to_test()
+    dissolve_update_area = dag.get_task("dissolve_update_area").python_callable
+
+    dissolve_update_area(
+        primary_connection_uri="postgres://primary",
+        job_connection_uri="postgres://job",
+        update_area_id="00000000-0000-0000-0000-000000000000",
     )
 
     # After a successful dissolve the worker marks the area clean and commits it.
     assert update_area.dirty is False
     session.add.assert_called_once_with(update_area)
     session.commit.assert_called_once_with()
+
+
+def test_dissolve_update_area_skips_deleted_area(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    mocker.patch("sqlalchemy.create_engine")
+    session = MagicMock()
+    session_ctx = mocker.patch("sqlmodel.Session")
+    session_ctx.return_value.__enter__.return_value = session
+
+    session.exec.return_value.first.return_value = None
+
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
+
+    dag = create_dag_to_test()
+    dissolve_update_area = dag.get_task("dissolve_update_area").python_callable
+
+    dissolve_update_area(
+        primary_connection_uri="postgres://primary",
+        job_connection_uri="postgres://job",
+        update_area_id="00000000-0000-0000-0000-000000000000",
+    )
+
+    # An area deleted after it was listed dissolves nothing and commits nothing.
+    mock_pipelines_module.dissolve_update_area.assert_not_called()
+    session.commit.assert_not_called()

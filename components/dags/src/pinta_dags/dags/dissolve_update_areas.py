@@ -65,7 +65,6 @@ def create_dissolve_update_areas_dag(
             primary_connection_uri: str,
             job_connection_uri: str,
             update_area_id: str,
-            geom_wkt: str,
         ) -> None:
             import sqlalchemy
             import sqlmodel
@@ -80,20 +79,23 @@ def create_dissolve_update_areas_dag(
                     sqlalchemy.create_engine(job_connection_uri)
                 ) as job_session,
             ):
-                pipeline = pipelines.dissolve_update_area(
-                    primary_session=primary_session,
-                    job_session=job_session,
-                    geom_wkt=geom_wkt,
-                )
-                pipeline.execute()
-
                 update_area = job_session.exec(
                     sqlmodel.select(UpdateArea).where(UpdateArea.id == update_area_id)
                 ).first()
-                if update_area is not None:
-                    update_area.dirty = False
-                    job_session.add(update_area)
-                    job_session.commit()
+                if update_area is None:
+                    # The area was deleted after it was listed; nothing to dissolve.
+                    return
+
+                pipeline = pipelines.dissolve_update_area(
+                    primary_session=primary_session,
+                    job_session=job_session,
+                    update_area=update_area,
+                )
+                pipeline.execute()
+
+                update_area.dirty = False
+                job_session.add(update_area)
+                job_session.commit()
 
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
