@@ -14,6 +14,7 @@ from airflow.sdk import task
 from pinta_dags.dags import load_dem
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from unittest.mock import MagicMock
 
     from airflow.sdk import DAG
@@ -62,24 +63,18 @@ def test_load_dem_dag_runs_workflow(
     tmp_path: Path,
     monkeypatch: "pytest.MonkeyPatch",
     mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
     (tmp_path / "dem_1.zip").write_text("fake zip data")
     (tmp_path / "dem_2.zip").write_text("fake zip data")
     (tmp_path / "ignored.tif").write_text("fake tif data")
 
-    mock_raster = mocker.MagicMock()
+    mock_raster = mock_submodule("pinta_db_utils.postgis.raster")
     mock_raster.DEFAULT_OVERVIEW_LEVELS = [2, 8]
     mock_raster.OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"
     mock_pipeline = mocker.MagicMock()
-    mock_pipelines_module = mocker.MagicMock()
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
     mock_pipelines_module.rasterio_to_postgis.return_value = mock_pipeline
-    mocker.patch.dict(
-        "sys.modules",
-        {
-            "pinta_db_utils.postgis.raster": mock_raster,
-            "pinta_processing.pipelines": mock_pipelines_module,
-        },
-    )
 
     dag = create_dag_to_test()
     dag.test(run_conf={"folder": str(tmp_path)})
@@ -109,19 +104,12 @@ def test_load_dem_dag_runs_workflow(
 
 def test_load_dem_dag_skips_processing_when_no_files(
     tmp_path: Path,
-    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
     (tmp_path / "ignored.tif").write_text("fake tif data")
 
-    mock_raster = mocker.MagicMock()
-    mock_pipelines_module = mocker.MagicMock()
-    mocker.patch.dict(
-        "sys.modules",
-        {
-            "pinta_db_utils.postgis.raster": mock_raster,
-            "pinta_processing.pipelines": mock_pipelines_module,
-        },
-    )
+    mock_raster = mock_submodule("pinta_db_utils.postgis.raster")
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
 
     dag = create_dag_to_test()
     dag.test(run_conf={"folder": str(tmp_path)})

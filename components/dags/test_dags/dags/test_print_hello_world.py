@@ -15,6 +15,7 @@ from airflow.sdk import task
 from pinta_dags.dags.print_hello_world import create_print_hello_world_dag
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from unittest.mock import MagicMock
 
     from airflow.sdk import DAG
@@ -40,13 +41,9 @@ def mock_airflow_settings(monkeypatch: "pytest.MonkeyPatch") -> None:
 
 @pytest.fixture
 def mock_log_hello_world(
-    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
 ) -> "MagicMock":
-    mock_hello_world_module = mocker.MagicMock()
-    mocker.patch.dict(
-        "sys.modules", {"pinta_processing.scripts.hello_world": mock_hello_world_module}
-    )
-    return mock_hello_world_module.log_hello_world
+    return mock_submodule("pinta_processing.scripts.hello_world").log_hello_world
 
 
 @pytest.fixture
