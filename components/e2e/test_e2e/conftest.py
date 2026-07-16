@@ -13,6 +13,7 @@ import sqlmodel
 from pinta_db.primary_db.models.management import ProductionArea
 from pinta_db_test_utils import db_utils
 from pinta_db_utils import engine_utils
+from pinta_db_utils.postgis import raster
 from pinta_e2e_utils import constants
 from pinta_e2e_utils.airflow_client import AirflowClient
 from pinta_qgis_plugin.utils import messages
@@ -206,13 +207,21 @@ def seeded_processing_dem(
     """Seed the cloned DEM schema with tiles overlapping the production area.
 
     The clone is truncated on creation, but calculating a DEM diff needs an
-    existing DEM to compare the freshly computed reference DEM against, so copy
-    the relevant tiles from the source primary database. Returns the number of
-    seeded tiles.
+    existing DEM to compare the freshly computed reference DEM against, and the
+    dissolve copies missing preview tiles (base and overviews) from the primary
+    DEM, so copy the relevant tiles of every DEM table from the source primary
+    database. Returns the number of seeded base tiles.
     """
     source_db = created_db.rsplit("_test_", 1)[0]
     source = db_utils.get_primary_admin_credentials(source_db)
     destination = db_utils.get_primary_admin_credentials(created_db)
+    dem_tables = [
+        "dem",
+        *(
+            raster.OVERVIEW_TABLE_NAME.format(level=level, table_name="dem")
+            for level in raster.DEFAULT_OVERVIEW_LEVELS
+        ),
+    ]
     with (
         engine_utils.get_autocommit_connection(source) as source_connection,
         engine_utils.get_autocommit_connection(destination) as destination_connection,
@@ -223,21 +232,25 @@ def seeded_processing_dem(
                 "FROM management.production_area LIMIT 1"
             )
         ).scalar_one()
-        tiles = (
-            source_connection.execute(
-                sqlmodel.text(
-                    "SELECT rast::text FROM dem.dem "
-                    "WHERE ST_Intersects(rast::geometry, ST_GeomFromEWKT(:area))"
-                ).bindparams(area=area_ewkt)
+        seeded_tiles = {}
+        for table in dem_tables:
+            tiles = (
+                source_connection.execute(
+                    sqlmodel.text(
+                        f"SELECT rast::text FROM dem.{table} "
+                        "WHERE ST_Intersects(rast::geometry, ST_GeomFromEWKT(:area))"
+                    ).bindparams(area=area_ewkt)
+                )
+                .scalars()
+                .all()
             )
-            .scalars()
-            .all()
-        )
-        for tile in tiles:
-            destination_connection.execute(
-                sqlmodel.text(
-                    "INSERT INTO dem.dem (rast) VALUES (CAST(:rast AS raster))"
-                ).bindparams(rast=tile)
-            )
-    assert tiles, "No source DEM tiles overlap the production area"
-    return len(tiles)
+            for tile in tiles:
+                destination_connection.execute(
+                    sqlmodel.text(
+                        f"INSERT INTO dem.{table} (rast) VALUES (CAST(:rast AS raster))"
+                    ).bindparams(rast=tile)
+                )
+            seeded_tiles[table] = len(tiles)
+    for table in dem_tables:
+        assert seeded_tiles[table], f"No source dem.{table} tiles overlap the area"
+    return seeded_tiles["dem"]

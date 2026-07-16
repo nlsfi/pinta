@@ -143,6 +143,7 @@ def test_register_update_area_builds_and_executes_pipeline(
     mocker: "MockerFixture",
     mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
+    from pinta_processing.writer import WriterMode
     from shapely import wkt as shapely_wkt
 
     mocker.patch("sqlalchemy.create_engine")
@@ -176,7 +177,7 @@ def test_register_update_area_builds_and_executes_pipeline(
     assert kwargs["to_schema"] == "dem"
     assert kwargs["to_table"] == "dem"
     assert kwargs["staging_tables"] == 0
-    assert kwargs["mode"] == "update"
+    assert kwargs["mode"] is WriterMode.UPDATE
     assert "from_session" in kwargs
     assert "to_session" in kwargs
 

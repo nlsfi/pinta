@@ -30,7 +30,7 @@ def _get_max_parallel_pipelines() -> int:
     return max_parallel
 
 
-def create_dissolve_update_areas_dag(
+def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
     *,
     dag_id: str,
 ) -> DAG:
@@ -49,9 +49,120 @@ def create_dissolve_update_areas_dag(
         },
         is_paused_upon_creation=False,
     )
-    def dissolve_update_areas_dag() -> None:
+    def dissolve_update_areas_dag() -> None:  # noqa: PLR0915
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
+
+        @task.docker(
+            **config.PINTA_CONTAINER_TASK_ARGS,
+            max_active_tis_per_dag=_get_max_parallel_pipelines(),
+            # Parallel tasks can race to insert the same shared overview tile;
+            # the spatial uniqueness constraint fails the loser, and a retry
+            # then sees the tile in place and skips it.
+            retries=3,
+            retry_delay=datetime.timedelta(seconds=10),
+        )
+        def ensure_dem_preview_coverage(
+            primary_connection_uri: str,
+            job_connection_uri: str,
+            update_area_id: str,
+        ) -> None:
+            """Make sure dem_preview has all required raster tiles.
+
+            If update area spans outside of production area (e.g. waterbody) we need to
+            copy missing tiles to dem preview for the dissolve to work. Fully missing
+            tiles are inserted as new rows. Tiles at the production area boundary
+            exist but are padded by nodata outside of production area. This is a no-op
+            if the tiles are already fully populated.
+            """
+            import sqlalchemy
+            import sqlmodel
+            from pinta_common import Settings
+            from pinta_db.job_db.models.user import DemPreview, UpdateArea
+            from pinta_db.primary_db.models.dem import Dem
+            from pinta_db_utils import model_utils
+            from pinta_db_utils.postgis import raster
+            from pinta_processing import pipelines, reader, writer
+            from pinta_processing.utils import tiles
+            from shapely import wkt as shapely_wkt
+
+            levels = (1, *raster.DEFAULT_OVERVIEW_LEVELS)
+
+            def tables_at_levels(table_name: str) -> list[str]:
+                return [
+                    table_name
+                    if level == 1
+                    else raster.OVERVIEW_TABLE_NAME.format(
+                        level=level, table_name=table_name
+                    )
+                    for level in levels
+                ]
+
+            with (
+                sqlmodel.Session(
+                    sqlalchemy.create_engine(primary_connection_uri)
+                ) as primary_session,
+                sqlmodel.Session(
+                    sqlalchemy.create_engine(job_connection_uri)
+                ) as job_session,
+            ):
+                update_area = job_session.exec(
+                    sqlmodel.select(UpdateArea).where(UpdateArea.id == update_area_id)
+                ).first()
+                if update_area is None:
+                    # The area was deleted after it was listed
+                    return
+
+                geom = shapely_wkt.loads(update_area.geom_wkt)
+                footprint = geom.buffer(pipelines.DISSOLVE_PRIMARY_DEM_BUFFER)
+                dem_schema, dem_table = model_utils.schema_and_table(Dem)
+                preview_schema, preview_table = model_utils.schema_and_table(DemPreview)
+
+                for level, source_table, target_table in zip(
+                    levels,
+                    tables_at_levels(dem_table),
+                    tables_at_levels(preview_table),
+                    strict=True,
+                ):
+                    envelopes = tiles.tile_envelopes(
+                        footprint,
+                        pixel_size=float(Settings.DB_DEM_PIXEL_SIZE) * level,
+                        tile_size=Settings.DB_DEFAULT_TILE_SIZE,
+                    )
+                    for envelope in envelopes:
+                        if tiles.tile_exists(
+                            job_session,
+                            preview_schema,
+                            target_table,
+                            envelope,
+                            mode=tiles.TileExistsMode.ALL_PIXELS_HAVE_DATA,
+                        ):
+                            continue
+                        if not tiles.tile_exists(
+                            primary_session, dem_schema, source_table, envelope
+                        ):
+                            msg = (
+                                f"Update area {update_area_id} cannot be "
+                                f"processed: tile {envelope.bounds} is not fully "
+                                f"covered in {preview_schema}.{target_table} and "
+                                f"is missing from {dem_schema}.{source_table}. "
+                                "Update area extends beyond the DEM coverage"
+                            )
+                            raise ValueError(msg)
+                        preview_tile_exists = tiles.tile_exists(
+                            job_session, preview_schema, target_table, envelope
+                        )
+                        pipeline = reader.PostgisReader(
+                            dem_schema, source_table, primary_session, envelope.wkt
+                        ) | writer.RasterPostgisWriter(
+                            preview_schema,
+                            target_table,
+                            job_session,
+                            mode=writer.WriterMode.UPDATE
+                            if preview_tile_exists
+                            else writer.WriterMode.INSERT,
+                        )
+                        pipeline.execute()
 
         @task.docker(
             **config.PINTA_CONTAINER_TASK_ARGS,
@@ -117,6 +228,11 @@ def create_dissolve_update_areas_dag(
         )
         dirty_update_areas = find_dirty_update_areas(job_db_uri)
 
+        ensured_areas = ensure_dem_preview_coverage.partial(
+            primary_connection_uri=primary_connection_uri,
+            job_connection_uri=job_db_uri,
+        ).expand_kwargs(dirty_update_areas)
+
         dissolved_areas = dissolve_update_area.partial(
             primary_connection_uri=primary_connection_uri,
             job_connection_uri=job_db_uri,
@@ -129,9 +245,11 @@ def create_dissolve_update_areas_dag(
             primary_connection_uri, prod_area_id
         )
 
-        # Stamp STARTED before any work, then run the dissolve chain.
+        # Stamp STARTED before any work, then run the dissolve chain. The
+        # areas may extend outside the initialized dem_preview coverage, so
+        # the missing tiles are copied in before any area is dissolved.
         status_started >> database_name
-        dirty_update_areas >> dissolved_areas
+        dirty_update_areas >> ensured_areas >> dissolved_areas
 
         # Resolve the final status off every task that can fail (each is a direct
         # upstream, so ONE_FAILED still fires when an early step fails and the
@@ -141,6 +259,7 @@ def create_dissolve_update_areas_dag(
             database_name,
             job_db_uri,
             dirty_update_areas,
+            ensured_areas,
             dissolved_areas,
         ]
         processing_steps >> status_completed

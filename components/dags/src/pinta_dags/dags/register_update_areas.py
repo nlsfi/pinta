@@ -91,7 +91,7 @@ def create_register_update_areas_dag(
         ) -> None:
             import sqlalchemy
             import sqlmodel
-            from pinta_processing import pipelines
+            from pinta_processing import pipelines, writer
             from shapely import wkt as shapely_wkt
 
             # Read the preview buffered past the seam the dissolve interpolated
@@ -117,7 +117,7 @@ def create_register_update_areas_dag(
                     to_table=to_table,
                     tile_wkt=read_area.wkt,
                     staging_tables=0,
-                    mode="update",
+                    mode=writer.WriterMode.UPDATE,
                 )
                 pipeline.execute()
 
