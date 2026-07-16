@@ -116,9 +116,9 @@ def test_calculate_rasters_for_production_area_workflow(
     # The DEM preview copy runs in parallel and populates user_data.dem_preview.
     assert _count_rows(completed_feature["database_name"], "user_data.dem_preview") > 0
 
-    cluster_layer = layers.get_vector_layer_by_model(reference.DiffPolygonCluster)
-    assert cluster_layer.setSubsetString("")
-    assert cluster_layer.featureCount() > 0
+    suggestion_layer = layers.get_vector_layer_by_model(reference.UpdateAreaSuggestion)
+    assert suggestion_layer.setSubsetString("")
+    assert suggestion_layer.featureCount() > 0
 
 
 @pytest.mark.xdist_group("airflow")

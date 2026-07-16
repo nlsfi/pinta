@@ -75,8 +75,8 @@ class DiffPolygon(ReferenceBase, table=True):  # type: ignore[call-arg]
     )
 
 
-class DiffPolygonCluster(ReferenceBase, table=True):  # type: ignore[call-arg]
-    """Cluster of Difference polygons."""
+class UpdateAreaSuggestion(ReferenceBase, table=True):  # type: ignore[call-arg]
+    """Update area suggestion clustered from difference polygons."""
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     energy_sum: float | None = Field(sa_column=Column(Float, nullable=True))
