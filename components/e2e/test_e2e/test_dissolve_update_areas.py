@@ -44,6 +44,38 @@ UPDATE_AREA_ELEVATION = 500.0
 ELEVATION_AREA_OFFSET_M = 100
 
 
+# Minimum distance (m) the edge update area must keep from the two centroid
+# areas so their buffered dissolve reads and writes never touch the same tiles.
+EDGE_AREA_MIN_SEPARATION_M = 60
+
+# Offset (m) of the coverage gap probe west of the deleted preview tile's east
+# edge: far enough that the dissolve seam never writes there, so the probe sees
+# pixels that can only come from the dynamically copied primary DEM tile.
+GAP_PROBE_OFFSET_M = 80
+
+# Radius (m) of the coverage gap probe polygon.
+GAP_PROBE_RADIUS_M = 10
+
+
+class DissolveSetup(typing.NamedTuple):
+    """Geometries (EWKT) and expectations seeded for the dissolve tests."""
+
+    area_ewkt: str
+    elevation_area_ewkt: str
+    # Update area straddling the edge of the initialized preview coverage: its
+    # west half lies on a preview tile deleted from the fixture.
+    edge_area_ewkt: str
+    # Probe inside the deleted preview tile but outside the dissolve seam.
+    gap_probe_ewkt: str
+    # Primary DEM mean over the probe, the value a verbatim tile copy restores.
+    gap_probe_primary_mean: float
+    # Probe inside a nodata pocket punched into an existing preview tile under
+    # the edge area, the way partially initialized boundary tiles look.
+    pocket_probe_ewkt: str
+    # Primary DEM mean over the pocket, the value the fill upsert restores.
+    pocket_probe_primary_mean: float
+
+
 def _dem_preview_mean(database_name: str, area_ewkt: str) -> float:
     """Return the mean of the job DEM preview clipped to ``area_ewkt``."""
     credentials = db_utils.get_job_admin_credentials(database_name)
@@ -54,6 +86,18 @@ def _dem_preview_mean(database_name: str, area_ewkt: str) -> float:
                 "  ST_Clip(rast, ST_GeomFromEWKT(:area), true)"
                 "))).mean "
                 "FROM user_data.dem_preview "
+                "WHERE ST_Intersects(rast, ST_GeomFromEWKT(:area))"
+            ).bindparams(area=area_ewkt)
+        ).scalar_one()
+
+
+def _dem_preview_tile_count(database_name: str, area_ewkt: str) -> int:
+    """Return the number of job DEM preview tiles intersecting ``area_ewkt``."""
+    credentials = db_utils.get_job_admin_credentials(database_name)
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        return connection.execute(
+            sqlmodel.text(
+                "SELECT count(*) FROM user_data.dem_preview "
                 "WHERE ST_Intersects(rast, ST_GeomFromEWKT(:area))"
             ).bindparams(area=area_ewkt)
         ).scalar_one()
@@ -77,17 +121,21 @@ def dissolve_update_area_setup(
     seeded_processing_dem: int,
     created_db: str,
     db: "Session",
-) -> tuple[str, str]:
+) -> DissolveSetup:
     """Provision the job database for a dissolve run without the DEM workflow.
 
     ``seeded_processing_dem`` populates the primary ``dem.dem`` table. This fixture
     then provisions a job database the way the orchestrator DAG would, copies the
     primary DEM into ``user_data.dem_preview``, seeds a distinct constant-valued
-    ``reference.dem`` and creates two update area polygons: one over the DEM
-    centroid that dissolves from the reference DEM, and one
-    ELEVATION_AREA_OFFSET_M east of it with a constant elevation set that the
-    dissolve must mask flat without reading the reference DEM. Returns both
-    update area geometries as EWKT so the test can probe the preview inside them.
+    ``reference.dem`` and creates three update area polygons: one over the DEM
+    centroid that dissolves from the reference DEM, one ELEVATION_AREA_OFFSET_M
+    east of it with a constant elevation set that the dissolve must mask flat
+    without reading the reference DEM, and one straddling a preview coverage
+    gap: the westernmost preview tile under it is deleted again, the way an
+    update area reaching outside the production area lands on preview tiles
+    that were never initialized. Returns the update area geometries as EWKT
+    plus a probe polygon (and its expected primary DEM mean) inside the gap so
+    the test can verify the dissolve copies the missing tile back in.
 
     The update areas are seeded ``dirty`` by default; parametrize the fixture
     indirectly with ``False`` to seed clean areas that the dissolve DAG must skip.
@@ -171,7 +219,144 @@ def dissolve_update_area_setup(
             )
         )
 
-    return area_ewkt, elevation_area_ewkt
+        # Pick the gap tile to delete from the preview: the westernmost tile
+        # column, vertically closest to the coverage centre. Its east edge
+        # midpoint becomes the centre of the edge update area, so the area
+        # straddles the deleted tile and its still-initialized east neighbor.
+        gap_ulx, gap_uly, gap_span = job_connection.execute(
+            sqlmodel.text(
+                "SELECT ST_UpperLeftX(rast), ST_UpperLeftY(rast), "
+                "ST_ScaleX(rast) * ST_Width(rast) "
+                "FROM user_data.dem_preview "
+                "ORDER BY ST_UpperLeftX(rast), ABS(ST_UpperLeftY(rast) - ("
+                "  SELECT ST_Y(ST_Centroid(ST_Union(rast::geometry))) "
+                "  FROM user_data.dem_preview)) "
+                "LIMIT 1"
+            )
+        ).one()
+
+        east_neighbor_exists = job_connection.execute(
+            sqlmodel.text(
+                "SELECT EXISTS (SELECT 1 FROM user_data.dem_preview "
+                "WHERE ST_UpperLeftX(rast) = :x AND ST_UpperLeftY(rast) = :y)"
+            ).bindparams(x=gap_ulx + gap_span, y=gap_uly)
+        ).scalar_one()
+        assert east_neighbor_exists, (
+            "Seeded DEM coverage is only one tile column wide; the edge update "
+            "area cannot straddle the preview coverage gap"
+        )
+
+        edge_area_ewkt = job_connection.execute(
+            sqlmodel.text(
+                "SELECT ST_AsEWKT(ST_Buffer(ST_SetSRID("
+                "ST_MakePoint(:x, :y), ST_SRID(rast)), :radius)) "
+                "FROM user_data.dem_preview LIMIT 1"
+            ).bindparams(
+                x=gap_ulx + gap_span,
+                y=gap_uly - gap_span / 2,
+                radius=UPDATE_AREA_RADIUS_M,
+            )
+        ).scalar_one()
+        gap_probe_ewkt = job_connection.execute(
+            sqlmodel.text(
+                "SELECT ST_AsEWKT(ST_Buffer(ST_SetSRID("
+                "ST_MakePoint(:x, :y), ST_SRID(rast)), :radius)) "
+                "FROM user_data.dem_preview LIMIT 1"
+            ).bindparams(
+                x=gap_ulx + gap_span - GAP_PROBE_OFFSET_M,
+                y=gap_uly - gap_span / 2,
+                radius=GAP_PROBE_RADIUS_M,
+            )
+        ).scalar_one()
+
+        # A nodata pocket punched into the east neighbor tile, inside the
+        # dissolve footprint's tile but away from the seam: this is how a
+        # partially initialized tile at the production area boundary looks.
+        pocket_probe_ewkt = job_connection.execute(
+            sqlmodel.text(
+                "SELECT ST_AsEWKT(ST_Buffer(ST_SetSRID("
+                "ST_MakePoint(:x, :y), ST_SRID(rast)), :radius)) "
+                "FROM user_data.dem_preview LIMIT 1"
+            ).bindparams(
+                x=gap_ulx + 2 * gap_span - GAP_PROBE_OFFSET_M,
+                y=gap_uly - gap_span / 2,
+                radius=GAP_PROBE_RADIUS_M,
+            )
+        ).scalar_one()
+
+        # The gap tile and the nodata pocket must be far enough from the other
+        # two update areas that they cannot disturb their preview probes or
+        # dissolve reads.
+        for other_ewkt in (area_ewkt, elevation_area_ewkt):
+            for probe_ewkt in (edge_area_ewkt, pocket_probe_ewkt):
+                separation = job_connection.execute(
+                    sqlmodel.text(
+                        "SELECT ST_Distance("
+                        "ST_GeomFromEWKT(:probe), ST_GeomFromEWKT(:other))"
+                    ).bindparams(probe=probe_ewkt, other=other_ewkt)
+                ).scalar_one()
+                assert separation > EDGE_AREA_MIN_SEPARATION_M, (
+                    "The edge update area or its nodata pocket is too close "
+                    "to the centroid update areas"
+                )
+
+        # The means the copy and the fill upsert must restore under the probes.
+        def primary_dem_mean(area_ewkt: str) -> float:
+            return primary_connection.execute(
+                sqlmodel.text(
+                    "SELECT (ST_SummaryStats(ST_Union("
+                    "  ST_Clip(rast, ST_GeomFromEWKT(:area), true)"
+                    "))).mean "
+                    "FROM dem.dem WHERE ST_Intersects(rast, ST_GeomFromEWKT(:area))"
+                ).bindparams(area=area_ewkt)
+            ).scalar_one()
+
+        gap_probe_primary_mean = primary_dem_mean(gap_probe_ewkt)
+        assert gap_probe_primary_mean is not None, (
+            "The seeded primary DEM has no data under the coverage gap probe"
+        )
+        pocket_probe_primary_mean = primary_dem_mean(pocket_probe_ewkt)
+        assert pocket_probe_primary_mean is not None, (
+            "The seeded primary DEM has no data under the nodata pocket probe"
+        )
+
+        job_connection.execute(
+            sqlmodel.text(
+                "DELETE FROM user_data.dem_preview "
+                "WHERE ST_UpperLeftX(rast) = :x AND ST_UpperLeftY(rast) = :y"
+            ).bindparams(x=gap_ulx, y=gap_uly)
+        )
+        # Punch the nodata pocket into the east neighbor tile: keep the tile
+        # extent but blank the pixels inside the pocket.
+        job_connection.execute(
+            sqlmodel.text(
+                "UPDATE user_data.dem_preview "
+                "SET rast = ST_Clip(rast, "
+                "  ST_Difference(rast::geometry, ST_GeomFromEWKT(:pocket)), "
+                "  ST_BandNoDataValue(rast, 1), false) "
+                "WHERE ST_UpperLeftX(rast) = :x AND ST_UpperLeftY(rast) = :y"
+            ).bindparams(
+                pocket=pocket_probe_ewkt,
+                x=gap_ulx + gap_span,
+                y=gap_uly,
+            )
+        )
+        job_connection.execute(
+            sqlmodel.text(
+                "INSERT INTO user_data.update_area (id, geom, dirty) "
+                "VALUES (gen_random_uuid(), ST_GeomFromEWKT(:geom), :dirty)"
+            ).bindparams(geom=edge_area_ewkt, dirty=dirty)
+        )
+
+    return DissolveSetup(
+        area_ewkt=area_ewkt,
+        elevation_area_ewkt=elevation_area_ewkt,
+        edge_area_ewkt=edge_area_ewkt,
+        gap_probe_ewkt=gap_probe_ewkt,
+        gap_probe_primary_mean=gap_probe_primary_mean,
+        pocket_probe_ewkt=pocket_probe_ewkt,
+        pocket_probe_primary_mean=pocket_probe_primary_mean,
+    )
 
 
 @pytest.mark.xdist_group("airflow")
@@ -181,7 +366,7 @@ def test_dissolve_update_areas_workflow(
     m_error_dialog: "MagicMock",
     airflow_client: "AirflowClient",
     db: "Session",
-    dissolve_update_area_setup: tuple[str, str],
+    dissolve_update_area_setup: DissolveSetup,
 ) -> None:
     # Importing here to avoid wrong DB name in environment
     from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
@@ -189,7 +374,10 @@ def test_dissolve_update_areas_workflow(
         management_layer_collection,
     )
 
-    area_ewkt, elevation_area_ewkt = dissolve_update_area_setup
+    area_ewkt = dissolve_update_area_setup.area_ewkt
+    elevation_area_ewkt = dissolve_update_area_setup.elevation_area_ewkt
+    edge_area_ewkt = dissolve_update_area_setup.edge_area_ewkt
+    gap_probe_ewkt = dissolve_update_area_setup.gap_probe_ewkt
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert production_area is not None
     database_name = production_area.database_name
@@ -201,6 +389,16 @@ def test_dissolve_update_areas_workflow(
     assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
     elevation_mean_before = _dem_preview_mean(database_name, elevation_area_ewkt)
     assert elevation_mean_before != pytest.approx(UPDATE_AREA_ELEVATION, abs=100)
+
+    # The edge area's west half sits on a preview coverage gap: no tile at all.
+    assert _dem_preview_tile_count(database_name, gap_probe_ewkt) == 0
+
+    # The east neighbor tile exists but its nodata pocket holds no values, the
+    # way a partially initialized tile at the production area boundary looks.
+    assert (
+        _dem_preview_mean(database_name, dissolve_update_area_setup.pocket_probe_ewkt)
+        is None
+    )
 
     production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
     assert production_area_layer.featureCount() == 1
@@ -237,10 +435,32 @@ def test_dissolve_update_areas_workflow(
     assert elevation_mean_after == pytest.approx(UPDATE_AREA_ELEVATION, abs=50)
     assert abs(elevation_mean_after - elevation_mean_before) > 100
 
+    # The dissolve copied the missing preview tile from the primary DEM before
+    # merging, so the edge area dissolves to the reference surface on both
+    # halves and the rest of the copied tile carries the primary elevations
+    # verbatim instead of staying a nodata hole.
+    edge_mean_after = _dem_preview_mean(database_name, edge_area_ewkt)
+    assert edge_mean_after == pytest.approx(REFERENCE_DEM_VALUE, abs=50)
+    assert _dem_preview_tile_count(database_name, gap_probe_ewkt) == 1
+    gap_probe_mean = _dem_preview_mean(database_name, gap_probe_ewkt)
+    assert gap_probe_mean == pytest.approx(
+        dissolve_update_area_setup.gap_probe_primary_mean, abs=0.01
+    )
+
+    # The partially filled east neighbor tile was upserted in fill mode: the
+    # nodata pocket now carries the primary DEM values.
+    pocket_probe_mean = _dem_preview_mean(
+        database_name, dissolve_update_area_setup.pocket_probe_ewkt
+    )
+    assert pocket_probe_mean == pytest.approx(
+        dissolve_update_area_setup.pocket_probe_primary_mean, abs=0.01
+    )
+
     # The worker clears the dirty flags once the areas are dissolved, and the
-    # dirty trigger leaves the worker's own update alone, so both end up clean.
+    # dirty trigger leaves the worker's own update alone, so all end up clean.
     assert _update_area_dirty(database_name, area_ewkt) is False
     assert _update_area_dirty(database_name, elevation_area_ewkt) is False
+    assert _update_area_dirty(database_name, edge_area_ewkt) is False
 
     # The workflow stamps the production area processing status COMPLETED on success.
     db.expire_all()
@@ -257,7 +477,7 @@ def test_dissolve_skips_clean_update_areas(
     m_error_dialog: "MagicMock",
     airflow_client: "AirflowClient",
     db: "Session",
-    dissolve_update_area_setup: tuple[str, str],
+    dissolve_update_area_setup: DissolveSetup,
 ) -> None:
     # Importing here to avoid wrong DB name in environment
     from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
@@ -265,7 +485,8 @@ def test_dissolve_skips_clean_update_areas(
         management_layer_collection,
     )
 
-    area_ewkt, elevation_area_ewkt = dissolve_update_area_setup
+    area_ewkt = dissolve_update_area_setup.area_ewkt
+    elevation_area_ewkt = dissolve_update_area_setup.elevation_area_ewkt
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert production_area is not None
     database_name = production_area.database_name
@@ -306,3 +527,19 @@ def test_dissolve_skips_clean_update_areas(
     assert elevation_mean_after == pytest.approx(elevation_mean_before, abs=1)
     assert _update_area_dirty(database_name, area_ewkt) is False
     assert _update_area_dirty(database_name, elevation_area_ewkt) is False
+
+    # The preview coverage gap is only filled when an area is dissolved, so
+    # skipping the clean edge area must leave the gap empty.
+
+    # The preview coverage gap and the nodata pocket are only filled when an
+    # area is dissolved, so skipping the clean edge area must leave both as is.
+    assert (
+        _dem_preview_tile_count(
+            database_name, dissolve_update_area_setup.gap_probe_ewkt
+        )
+        == 0
+    )
+    assert (
+        _dem_preview_mean(database_name, dissolve_update_area_setup.pocket_probe_ewkt)
+        is None
+    )
