@@ -6,7 +6,7 @@
 from typing import Any
 
 from geoalchemy2 import Geometry
-from sqlalchemy import Boolean, Column, true
+from sqlalchemy import Boolean, Column, Float, true
 from sqlmodel import Field
 
 from pinta_common import Settings
@@ -20,6 +20,9 @@ class UpdateArea(job_base.UserVectorBase, table=True):  # type: ignore[call-arg]
 
     geom: Any = Field(
         sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=False))
+    )
+    elevation: float | None = Field(
+        default=None, sa_column=Column(Float, nullable=True)
     )
     dirty: bool = Field(
         default=True,
