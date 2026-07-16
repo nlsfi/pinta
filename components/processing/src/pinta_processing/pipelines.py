@@ -194,13 +194,15 @@ def calculate_diff_models(
 def dissolve_update_area(
     primary_session: Session,
     job_session: Session,
-    geom_wkt: str,
+    update_area: user.UpdateArea,
 ) -> core.Pipeline:
     """Merge the primary and reference DEM and smooth the update area seam.
 
     - Read primary DEM as a DISSOLVE_PRIMARY_DEM_BUFFER wide ring around the update
       area, the interior is clipped out since the reference DEM wins there anyway.
-    - Read reference DEM clipped to the update area.
+    - Read reference DEM clipped to the update area. When the update area has a
+      constant elevation set, the reference DEM is not read at all: a flat raster
+      at that elevation is built from scratch with RasterMask instead.
     - Union the DEMs, reference dem has priority.
     - Interpolate DISSOLVE_INTERPOLATE_AREA_BUFFER meters wide donut outside the update
       area to smooth the seam.
@@ -211,26 +213,33 @@ def dissolve_update_area(
     Only dem_preview needs to be eventually consistent, which the
     tile-level merge guarantees.
     """
-    geom = shapely_wkt.loads(geom_wkt)
+    geom = shapely_wkt.loads(update_area.geom_wkt)
     primary_dem_area = geom.buffer(DISSOLVE_PRIMARY_DEM_BUFFER).difference(geom)
     buffer_zone_area = geom.buffer(DISSOLVE_INTERPOLATE_AREA_BUFFER).difference(geom)
 
     dem_schema, dem_table = model_utils.schema_and_table(dem.Dem)
-    reference_schema, reference_dem_table = model_utils.schema_and_table(reference.Dem)
     preview_schema, preview_table = model_utils.schema_and_table(user.DemPreview)
+
+    if update_area.elevation is not None:
+        update_area_reader_or_mask: core.Stage = filters.RasterMask(
+            geom.wkt, update_area.elevation
+        )
+    else:
+        reference_schema, reference_dem_table = model_utils.schema_and_table(
+            reference.Dem
+        )
+        update_area_reader_or_mask = reader.PostgisReader(
+            reference_schema,
+            reference_dem_table,
+            job_session,
+            geom.wkt,
+        )
 
     return (
         reader.PostgisReader(
             dem_schema, dem_table, primary_session, primary_dem_area.wkt
         )
-        | core.Zip(
-            reader.PostgisReader(
-                reference_schema,
-                reference_dem_table,
-                job_session,
-                geom.wkt,
-            )
-        )
+        | core.Zip(update_area_reader_or_mask)
         | filters.RasterUnion()
         | filters.RasterInterpolate(buffer_zone_area.wkt)
         | _generate_overview_stages(

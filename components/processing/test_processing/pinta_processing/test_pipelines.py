@@ -6,6 +6,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from pinta_db.job_db.models import user
 from pinta_db_utils.postgis import raster
 from pytest_mock import MockerFixture
 from shapely import wkt as shapely_wkt
@@ -101,14 +102,15 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
     pipelines.dissolve_update_area(
         primary_session=primary_session,
         job_session=job_session,
-        geom_wkt=geom_wkt,
+        update_area=user.UpdateArea(geom=geom_wkt),
     )
 
-    # Two readers: primary DEM (seam read buffer) and reference DEM (update area).
+    # Two readers: primary DEM (seam read buffer) and reference DEM (update
+    # area), identified by session since construction order does not matter.
     assert postgis_reader.call_count == 2
-    primary_call, reference_call = postgis_reader.call_args_list
-    assert primary_call.args[2] is primary_session
-    assert reference_call.args[2] is job_session
+    calls_by_session = {call.args[2]: call for call in postgis_reader.call_args_list}
+    primary_call = calls_by_session[primary_session]
+    reference_call = calls_by_session[job_session]
 
     primary_wkt = shapely_wkt.loads(primary_call.args[3])
     reference_wkt = shapely_wkt.loads(reference_call.args[3])
@@ -140,6 +142,59 @@ def test_dissolve_update_area_unions_and_interpolates_donut(
     assert all(
         call.kwargs["mode"] == "update" for call in postgis_writer.call_args_list
     )
+
+
+def test_dissolve_update_area_with_elevation_masks_instead_of_reading_reference(
+    mocker: MockerFixture,
+) -> None:
+    postgis_reader = mocker.patch(
+        "pinta_processing.reader.PostgisReader",
+        return_value=MagicMock(),
+    )
+    mask = mocker.patch(
+        "pinta_processing.filters.RasterMask",
+        return_value=MagicMock(),
+    )
+    union = mocker.patch(
+        "pinta_processing.filters.RasterUnion",
+        return_value=MagicMock(),
+    )
+    mocker.patch(
+        "pinta_processing.filters.RasterInterpolate",
+        return_value=MagicMock(),
+    )
+    mocker.patch(
+        "pinta_processing.filters.DownsampleOverview",
+        return_value=MagicMock(),
+    )
+    mocker.patch(
+        "pinta_processing.writer.RasterPostgisWriter",
+        return_value=MagicMock(),
+    )
+    geom_wkt = "POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))"
+    geom = shapely_wkt.loads(geom_wkt)
+
+    pipelines.dissolve_update_area(
+        primary_session=MagicMock(),
+        job_session=MagicMock(),
+        update_area=user.UpdateArea(geom=geom_wkt, elevation=123.5),
+    )
+
+    # The reference DEM is never read: the only reader is the primary DEM ring.
+    postgis_reader.assert_called_once()
+    primary_wkt = shapely_wkt.loads(postgis_reader.call_args.args[3])
+    _assert_geometries_match(
+        primary_wkt,
+        geom.buffer(pipelines.DISSOLVE_PRIMARY_DEM_BUFFER).difference(geom),
+    )
+
+    # A flat raster at the update area elevation replaces the reference DEM read
+    # and is still unioned with the primary DEM.
+    mask.assert_called_once()
+    mask_wkt, mask_elevation = mask.call_args.args
+    _assert_geometries_match(shapely_wkt.loads(mask_wkt), geom)
+    assert mask_elevation == 123.5
+    union.assert_called_once_with()
 
 
 def test_postgis_to_postgis_update_mode_propagates_to_writers(
