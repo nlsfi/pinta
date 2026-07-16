@@ -23,6 +23,7 @@ from pinta_common import Settings
 from rasterio.windows import Window, from_bounds
 
 from pinta_processing import core, exceptions
+from pinta_processing.utils import tiles
 
 LOGGER = logging.getLogger(__name__)
 
@@ -196,8 +197,8 @@ class RasterPostgisWriter(core.Stage):
     def _generate_tiles(
         self,
         data: core.RasterDataset,
-        x0: float = 500000,
-        y0: float = 6570000,
+        x0: float = tiles.GRID_ORIGIN_X,
+        y0: float = tiles.GRID_ORIGIN_Y,
     ) -> list[core.RasterDataset]:
         """Generate tiles from a RasterDataset.
 
