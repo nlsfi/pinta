@@ -7,6 +7,7 @@
 | id | uuid |  | false |  |  |  |
 | geom | geometry(Polygon,3067) |  | false |  |  |  |
 | dirty | boolean | true | false |  |  |  |
+| elevation | double precision |  | true |  |  |  |
 
 ## Constraints
 
@@ -37,6 +38,7 @@ erDiagram
   uuid id
   geometry_Polygon_3067_ geom
   boolean dirty
+  double_precision elevation
 }
 ```
 
