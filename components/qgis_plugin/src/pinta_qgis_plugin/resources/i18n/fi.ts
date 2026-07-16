@@ -194,12 +194,12 @@
         <translation>Klusterin pinta-ala</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="94"/>
+        <location filename="../../project/config/job_layers.py" line="100"/>
         <source>Update area</source>
         <translation>Muutosalue</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="94"/>
+        <location filename="../../project/config/job_layers.py" line="100"/>
         <source>Elevation</source>
         <translation>Korkeus</translation>
     </message>
@@ -224,24 +224,24 @@
         <translation>Käynnistä tuloskorkeusmallin päivityksen työnkulku tuotantoalueelle</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="94"/>
+        <location filename="../../project/config/job_layers.py" line="100"/>
         <source>Dirty</source>
         <translation>Päivittämättä</translation>
     </message>
     <message>
         <location filename="../../api/api_client.py" line="130"/>
         <source>Register update areas workflow task created successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>Muutosalueiden rekisteröinnin työnkulku käynnistettiin onnistuneesti</translation>
     </message>
     <message>
         <location filename="../../project/groups/management_layer_collection.py" line="40"/>
         <source>Register update areas</source>
-        <translation type="unfinished"></translation>
+        <translation>Rekisteröi muutosalueet</translation>
     </message>
     <message>
         <location filename="../../project/groups/management_layer_collection.py" line="117"/>
         <source>Start register update areas workflow for production area</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistä muutosalueiden rekisteröinnin työnkulku tuotantoalueelle</translation>
     </message>
 </context>
 </TS>
