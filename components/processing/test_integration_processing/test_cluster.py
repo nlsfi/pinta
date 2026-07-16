@@ -49,8 +49,8 @@ def _add_polygon(
     )
 
 
-def _clusters(session: "Session") -> list[reference.DiffPolygonCluster]:
-    return list(session.exec(select(reference.DiffPolygonCluster)).all())
+def _clusters(session: "Session") -> list[reference.UpdateAreaSuggestion]:
+    return list(session.exec(select(reference.UpdateAreaSuggestion)).all())
 
 
 def test_clusters_adjacent_polygons_and_sums_energy(
@@ -169,7 +169,7 @@ def test_replaces_existing_clusters(
 ) -> None:
     """Running the clustering truncates previously stored clusters."""
     processing_worker_session.add(
-        reference.DiffPolygonCluster(
+        reference.UpdateAreaSuggestion(
             energy_sum=1.0,
             energy_distribution=1.0,
             cluster_area=1.0,

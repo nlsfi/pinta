@@ -75,7 +75,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
     ),
     config.VectorLayerConfig(
         schema="reference",
-        table_name="diff_polygon_cluster",
+        table_name="update_area_suggestion",
         layer_name=tr("Modification area suggestions"),
         layer_id="modification_area_suggestions",
         geom_column="geom",

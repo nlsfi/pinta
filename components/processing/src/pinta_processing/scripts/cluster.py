@@ -15,9 +15,9 @@ CLUSTER_SQL_PATH = pathlib.Path(__file__).parent / "cluster_all.sql"
 
 
 def cluster_diff_polygons(session: Session) -> None:
-    """Cluster difference polygons into reference.diff_polygon_cluster.
+    """Cluster difference polygons into reference.update_area_suggestion.
 
-    Runs the clustering SQL, replacing any existing clusters. The cluster energy
+    Runs the clustering SQL, replacing any existing suggestions. The cluster energy
     density is scaled by the DEM pixel area (pixel size squared) so that the
     per-polygon energy sums are weighted by the area a raster pixel covers.
     """
@@ -26,7 +26,7 @@ def cluster_diff_polygons(session: Session) -> None:
 
     sql = CLUSTER_SQL_PATH.read_text()
     session.exec(  # type: ignore[call-overload]
-        sqlalchemy.text("TRUNCATE TABLE reference.diff_polygon_cluster")
+        sqlalchemy.text("TRUNCATE TABLE reference.update_area_suggestion")
     )
     session.exec(  # type: ignore[call-overload]
         sqlalchemy.text(sql).bindparams(pixel_area=pixel_area)

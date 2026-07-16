@@ -1,4 +1,4 @@
-INSERT INTO reference.diff_polygon_cluster (
+INSERT INTO reference.update_area_suggestion (
     id,
     energy_sum,
     energy_distribution,
