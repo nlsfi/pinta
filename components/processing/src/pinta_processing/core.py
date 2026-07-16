@@ -5,6 +5,7 @@
 
 import copy
 import dataclasses
+import math
 
 import affine
 import geopandas
@@ -45,6 +46,34 @@ class RasterDataset:
             transform=src.transform,
             crs=src.crs.to_string() if src.crs else None,
             nodata=src.nodata,
+        )
+
+    @staticmethod
+    def empty(
+        bounds: tuple[float, float, float, float],
+        pixel_size: float,
+        crs: str | None,
+        nodata: float,
+    ) -> "RasterDataset":
+        """Construct an all-nodata dataset covering given bounds.
+
+        The grid is snapped outward to the pixel lattice anchored at the map
+        origin, so it aligns with other rasters using the same pixel size.
+        """
+        bounds_left, bounds_bottom, bounds_right, bounds_top = bounds
+        left = math.floor(bounds_left / pixel_size) * pixel_size
+        right = math.ceil(bounds_right / pixel_size) * pixel_size
+        bottom = math.floor(bounds_bottom / pixel_size) * pixel_size
+        top = math.ceil(bounds_top / pixel_size) * pixel_size
+
+        transform = affine.Affine(pixel_size, 0.0, left, 0.0, -pixel_size, top)
+        width = round((right - left) / pixel_size)
+        height = round((top - bottom) / pixel_size)
+        return RasterDataset(
+            array=np.full((height, width), nodata, dtype=np.float32),
+            transform=transform,
+            crs=crs,
+            nodata=nodata,
         )
 
 

@@ -6,6 +6,7 @@
 from pinta_processing.filters.diff import RasterDiff
 from pinta_processing.filters.filter import RasterFilter
 from pinta_processing.filters.interpolate import RasterInterpolate
+from pinta_processing.filters.mask import RasterMask
 from pinta_processing.filters.multiply import MultiplyValues
 from pinta_processing.filters.overview import DownsampleOverview
 from pinta_processing.filters.union import RasterUnion
@@ -17,6 +18,7 @@ __all__ = [
     "RasterDiff",
     "RasterFilter",
     "RasterInterpolate",
+    "RasterMask",
     "RasterUnion",
     "VectorizeRaster",
 ]
