@@ -8,8 +8,8 @@
 | [reference.diff_gt_threshold](reference.diff_gt_threshold.md) | 2 |  | BASE TABLE |
 | [reference.diff_lte_threshold](reference.diff_lte_threshold.md) | 2 |  | BASE TABLE |
 | [reference.diff_polygon](reference.diff_polygon.md) | 4 |  | BASE TABLE |
-| [reference.diff_polygon_cluster](reference.diff_polygon_cluster.md) | 5 |  | BASE TABLE |
-| [user_data.update_area](user_data.update_area.md) | 3 |  | BASE TABLE |
+| [reference.update_area_suggestion](reference.update_area_suggestion.md) | 6 |  | BASE TABLE |
+| [user_data.update_area](user_data.update_area.md) | 4 |  | BASE TABLE |
 | [reference.o_2_dem](reference.o_2_dem.md) | 2 |  | BASE TABLE |
 | [reference.o_8_dem](reference.o_8_dem.md) | 2 |  | BASE TABLE |
 | [reference.o_128_dem](reference.o_128_dem.md) | 2 |  | BASE TABLE |
@@ -54,17 +54,19 @@ erDiagram
   geometry_Polygon_3067_ geom
   double_precision energy_sum
 }
-"reference.diff_polygon_cluster" {
+"reference.update_area_suggestion" {
   uuid id
   double_precision energy_sum
   double_precision energy_distribution
   double_precision cluster_area
   geometry_Polygon_3067_ geom
+  double_precision elevation
 }
 "user_data.update_area" {
   uuid id
   geometry_Polygon_3067_ geom
   boolean dirty
+  double_precision elevation
 }
 "reference.o_2_dem" {
   bigint rid

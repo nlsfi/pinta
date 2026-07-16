@@ -1,4 +1,4 @@
-# reference.diff_polygon_cluster
+# reference.update_area_suggestion
 
 ## Columns
 
@@ -9,19 +9,20 @@
 | energy_distribution | double precision |  | true |  |  |  |
 | cluster_area | double precision |  | true |  |  |  |
 | geom | geometry(Polygon,3067) |  | false |  |  |  |
+| elevation | double precision |  | true |  |  |  |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| diff_polygon_cluster_pkey | PRIMARY KEY | PRIMARY KEY (id) |
+| update_area_suggestion_pkey | PRIMARY KEY | PRIMARY KEY (id) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| diff_polygon_cluster_pkey | CREATE UNIQUE INDEX diff_polygon_cluster_pkey ON reference.diff_polygon_cluster USING btree (id) |
-| idx_diff_polygon_cluster_geom | CREATE INDEX idx_diff_polygon_cluster_geom ON reference.diff_polygon_cluster USING gist (geom) |
+| update_area_suggestion_pkey | CREATE UNIQUE INDEX update_area_suggestion_pkey ON reference.update_area_suggestion USING btree (id) |
+| idx_update_area_suggestion_geom | CREATE INDEX idx_update_area_suggestion_geom ON reference.update_area_suggestion USING gist (geom) |
 
 ## Relations
 
@@ -29,12 +30,13 @@
 erDiagram
 
 
-"reference.diff_polygon_cluster" {
+"reference.update_area_suggestion" {
   uuid id
   double_precision energy_sum
   double_precision energy_distribution
   double_precision cluster_area
   geometry_Polygon_3067_ geom
+  double_precision elevation
 }
 ```
 
