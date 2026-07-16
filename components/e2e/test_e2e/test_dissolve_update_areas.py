@@ -33,6 +33,16 @@ REFERENCE_DEM_VALUE = 1000.0
 # so the buffered primary DEM read stays inside the seeded coverage.
 UPDATE_AREA_RADIUS_M = 15
 
+# Constant elevation set on the second update area. Distinct from both the real
+# DEM range and REFERENCE_DEM_VALUE, so a mean over the area tells a preview
+# masked to the elevation apart from one dissolved from the reference DEM.
+UPDATE_AREA_ELEVATION = 500.0
+
+# Offset (m) of the elevation update area east of the DEM centroid, far enough
+# that the two areas and their buffered dissolve reads do not overlap while
+# staying inside the seeded coverage.
+ELEVATION_AREA_OFFSET_M = 100
+
 
 def _dem_preview_mean(database_name: str, area_ewkt: str) -> float:
     """Return the mean of the job DEM preview clipped to ``area_ewkt``."""
@@ -49,12 +59,15 @@ def _dem_preview_mean(database_name: str, area_ewkt: str) -> float:
         ).scalar_one()
 
 
-def _update_area_dirty(database_name: str) -> bool:
-    """Return the ``dirty`` flag of the single update area in the job database."""
+def _update_area_dirty(database_name: str, area_ewkt: str) -> bool:
+    """Return the ``dirty`` flag of the update area with the given geometry."""
     credentials = db_utils.get_job_admin_credentials(database_name)
     with engine_utils.get_autocommit_connection(credentials) as connection:
         return connection.execute(
-            sqlmodel.text("SELECT dirty FROM user_data.update_area")
+            sqlmodel.text(
+                "SELECT dirty FROM user_data.update_area "
+                "WHERE ST_Equals(geom, ST_GeomFromEWKT(:area))"
+            ).bindparams(area=area_ewkt)
         ).scalar_one()
 
 
@@ -64,17 +77,20 @@ def dissolve_update_area_setup(
     seeded_processing_dem: int,
     created_db: str,
     db: "Session",
-) -> str:
+) -> tuple[str, str]:
     """Provision the job database for a dissolve run without the DEM workflow.
 
     ``seeded_processing_dem`` populates the primary ``dem.dem`` table. This fixture
     then provisions a job database the way the orchestrator DAG would, copies the
     primary DEM into ``user_data.dem_preview``, seeds a distinct constant-valued
-    ``reference.dem`` and creates an update area polygon. Returns the update area
-    geometry as EWKT so the test can probe the preview inside it.
+    ``reference.dem`` and creates two update area polygons: one over the DEM
+    centroid that dissolves from the reference DEM, and one
+    ELEVATION_AREA_OFFSET_M east of it with a constant elevation set that the
+    dissolve must mask flat without reading the reference DEM. Returns both
+    update area geometries as EWKT so the test can probe the preview inside them.
 
-    The update area is seeded ``dirty`` by default; parametrize the fixture
-    indirectly with ``False`` to seed a clean area that the dissolve DAG must skip.
+    The update areas are seeded ``dirty`` by default; parametrize the fixture
+    indirectly with ``False`` to seed clean areas that the dissolve DAG must skip.
     """
     dirty = getattr(request, "param", True)
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
@@ -136,7 +152,26 @@ def dissolve_update_area_setup(
             ).bindparams(geom=area_ewkt, dirty=dirty)
         )
 
-    return area_ewkt
+        elevation_area_ewkt = job_connection.execute(
+            sqlmodel.text(
+                "SELECT ST_AsEWKT(ST_Buffer(ST_Translate("
+                "ST_Centroid(ST_Union(rast::geometry)), :offset, 0), :radius)) "
+                "FROM user_data.dem_preview"
+            ).bindparams(offset=ELEVATION_AREA_OFFSET_M, radius=UPDATE_AREA_RADIUS_M)
+        ).scalar_one()
+        job_connection.execute(
+            sqlmodel.text(
+                "INSERT INTO user_data.update_area (id, geom, elevation, dirty) "
+                "VALUES (gen_random_uuid(), ST_GeomFromEWKT(:geom), :elevation, "
+                ":dirty)"
+            ).bindparams(
+                geom=elevation_area_ewkt,
+                elevation=UPDATE_AREA_ELEVATION,
+                dirty=dirty,
+            )
+        )
+
+    return area_ewkt, elevation_area_ewkt
 
 
 @pytest.mark.xdist_group("airflow")
@@ -146,7 +181,7 @@ def test_dissolve_update_areas_workflow(
     m_error_dialog: "MagicMock",
     airflow_client: "AirflowClient",
     db: "Session",
-    dissolve_update_area_setup: str,
+    dissolve_update_area_setup: tuple[str, str],
 ) -> None:
     # Importing here to avoid wrong DB name in environment
     from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
@@ -154,7 +189,7 @@ def test_dissolve_update_areas_workflow(
         management_layer_collection,
     )
 
-    area_ewkt = dissolve_update_area_setup
+    area_ewkt, elevation_area_ewkt = dissolve_update_area_setup
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert production_area is not None
     database_name = production_area.database_name
@@ -164,6 +199,8 @@ def test_dissolve_update_areas_workflow(
     # below the flat reference surface it should be dissolved to.
     mean_before = _dem_preview_mean(database_name, area_ewkt)
     assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
+    elevation_mean_before = _dem_preview_mean(database_name, elevation_area_ewkt)
+    assert elevation_mean_before != pytest.approx(UPDATE_AREA_ELEVATION, abs=100)
 
     production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
     assert production_area_layer.featureCount() == 1
@@ -193,9 +230,17 @@ def test_dissolve_update_areas_workflow(
     assert mean_after == pytest.approx(REFERENCE_DEM_VALUE, abs=50)
     assert abs(mean_after - mean_before) > 100
 
-    # The worker clears the dirty flag once the area is dissolved, and the dirty
-    # trigger leaves the worker's own update alone, so the area ends up clean.
-    assert _update_area_dirty(database_name) is False
+    # The area with a constant elevation set skips the reference DEM (a flat
+    # surface at REFERENCE_DEM_VALUE, which would fail this check) and is masked
+    # flat to its own elevation instead.
+    elevation_mean_after = _dem_preview_mean(database_name, elevation_area_ewkt)
+    assert elevation_mean_after == pytest.approx(UPDATE_AREA_ELEVATION, abs=50)
+    assert abs(elevation_mean_after - elevation_mean_before) > 100
+
+    # The worker clears the dirty flags once the areas are dissolved, and the
+    # dirty trigger leaves the worker's own update alone, so both end up clean.
+    assert _update_area_dirty(database_name, area_ewkt) is False
+    assert _update_area_dirty(database_name, elevation_area_ewkt) is False
 
     # The workflow stamps the production area processing status COMPLETED on success.
     db.expire_all()
@@ -212,7 +257,7 @@ def test_dissolve_skips_clean_update_areas(
     m_error_dialog: "MagicMock",
     airflow_client: "AirflowClient",
     db: "Session",
-    dissolve_update_area_setup: str,
+    dissolve_update_area_setup: tuple[str, str],
 ) -> None:
     # Importing here to avoid wrong DB name in environment
     from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
@@ -220,16 +265,17 @@ def test_dissolve_skips_clean_update_areas(
         management_layer_collection,
     )
 
-    area_ewkt = dissolve_update_area_setup
+    area_ewkt, elevation_area_ewkt = dissolve_update_area_setup
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert production_area is not None
     database_name = production_area.database_name
     assert database_name is not None
 
-    # The single update area is seeded clean, so the DAG must dissolve nothing and
+    # Both update areas are seeded clean, so the DAG must dissolve nothing and
     # leave the preview at the original DEM elevations.
     mean_before = _dem_preview_mean(database_name, area_ewkt)
     assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
+    elevation_mean_before = _dem_preview_mean(database_name, elevation_area_ewkt)
 
     production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
     action = layers.find_layer_action(
@@ -252,8 +298,11 @@ def test_dissolve_skips_clean_update_areas(
         f"{airflow_client.describe_failed_run(dag_run)}"
     )
 
-    # No dirty areas means no dissolve ran: the preview is untouched and the clean
-    # area stays clean.
+    # No dirty areas means no dissolve ran: the preview is untouched (also in
+    # the elevation area) and the clean areas stay clean.
     mean_after = _dem_preview_mean(database_name, area_ewkt)
     assert mean_after == pytest.approx(mean_before, abs=1)
-    assert _update_area_dirty(database_name) is False
+    elevation_mean_after = _dem_preview_mean(database_name, elevation_area_ewkt)
+    assert elevation_mean_after == pytest.approx(elevation_mean_before, abs=1)
+    assert _update_area_dirty(database_name, area_ewkt) is False
+    assert _update_area_dirty(database_name, elevation_area_ewkt) is False
