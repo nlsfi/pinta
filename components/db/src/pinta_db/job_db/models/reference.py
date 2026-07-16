@@ -82,6 +82,9 @@ class UpdateAreaSuggestion(ReferenceBase, table=True):  # type: ignore[call-arg]
     energy_sum: float | None = Field(sa_column=Column(Float, nullable=True))
     energy_distribution: float | None = Field(sa_column=Column(Float, nullable=True))
     cluster_area: float | None = Field(sa_column=Column(Float, nullable=True))
+    elevation: float | None = Field(
+        default=None, sa_column=Column(Float, nullable=True)
+    )
     geom: Any = Field(
         sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=False))
     )
