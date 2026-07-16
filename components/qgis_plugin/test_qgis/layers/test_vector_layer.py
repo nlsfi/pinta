@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Pinta QGIS Plugin.  If not, see <https://www.gnu.org/licenses/>.
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -201,6 +202,54 @@ def test_create_layer_sets_default_value_expressions(
 
     default_value = layer.defaultValueDefinition(layer.fields().lookupField("id"))
     assert default_value.expression() == "uuid('WithoutBraces')"
+
+
+def test_create_layer_field_configuration_wins_over_qml_style(
+    mocker: MockerFixture, mock_uri: MagicMock
+):
+    """Field configuration set in code must survive the QML style load.
+
+    loadNamedStyle resets the style categories missing from the QML file (field
+    defaults, form config, ...), so the style must be applied before any field
+    configuration set in code.
+    """
+    layer = QgsVectorLayer(
+        "MultiPolygon?field=id:string&field=dirty:boolean", "", "memory"
+    )
+    mocker.patch.object(
+        vector_layer,
+        "_create_qgs_vector_layer",
+        autospec=True,
+        return_value=layer,
+    )
+    style_path = (
+        Path(vector_layer.__file__).parent.parent
+        / "resources"
+        / "styles"
+        / "update_area.qml"
+    )
+    assert style_path.exists()
+    layer_config = config.VectorLayerConfig(
+        schema="user_data",
+        table_name="update_area",
+        layer_name="Update area",
+        layer_id="update_area",
+        key_column="id",
+        wkb_type=management_layers.PRODUCTION_AREA.wkb_type,
+        style_path=style_path,
+        read_only_fields=["dirty"],
+        default_expressions={"id": "uuid('WithoutBraces')"},
+    )
+
+    vector_layer.create_vector_layer(layer_config, PROVIDER, mock_uri)
+
+    fields = layer.fields()
+    id_index = fields.lookupField("id")
+    default_value = layer.defaultValueDefinition(id_index)
+    assert default_value.expression() == "uuid('WithoutBraces')"
+    form_config = layer.editFormConfig()
+    assert form_config.readOnly(id_index)
+    assert form_config.readOnly(fields.lookupField("dirty"))
 
 
 def test_create_layer_with_invalid_layer_raises_exception(
