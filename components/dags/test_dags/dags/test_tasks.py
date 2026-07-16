@@ -101,22 +101,14 @@ def test_find_production_area_tile_geometries_missing_area_returns_empty(
     assert result == []
 
 
-def test_find_dirty_update_areas_returns_id_and_geom(
-    mock_session: MagicMock, mocker: "MockerFixture"
-) -> None:
-    mocker.patch(
-        "geoalchemy2.shape.to_shape",
-        side_effect=[MagicMock(wkt="POLYGON ((0 0, 0 1, 1 1, 0 0))")],
-    )
-    area = MagicMock(geom=MagicMock())
+def test_find_dirty_update_areas_returns_ids(mock_session: MagicMock) -> None:
+    area = MagicMock()
     area.id = "area-1"
     mock_session.exec.return_value.all.return_value = [area]
 
     result = tasks.find_dirty_update_areas.function("postgres://mock/db")
 
-    assert result == [
-        {"update_area_id": "area-1", "geom_wkt": "POLYGON ((0 0, 0 1, 1 1, 0 0))"}
-    ]
+    assert result == [{"update_area_id": "area-1"}]
 
 
 def test_find_dirty_update_areas_filters_on_dirty(mock_session: MagicMock) -> None:

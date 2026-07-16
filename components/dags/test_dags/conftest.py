@@ -6,6 +6,7 @@
 import os
 import shutil
 import sqlite3
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from tempfile import mkdtemp
@@ -44,6 +45,28 @@ def pytest_configure(config: pytest.Config):
         os.environ["AIRFLOW_HOME"] = str(
             airflow_home_dir / f".{worker_id}-airflow-test"
         )
+
+
+@pytest.fixture
+def mock_submodule(mocker: "MockerFixture") -> Callable[[str], "MagicMock"]:
+    """Mock a submodule so a task body's ``from pkg import mod`` gets the mock.
+
+    Patching ``sys.modules`` alone is not enough: ``from pkg import mod``
+    resolves through the parent package attribute, which still points at the
+    real submodule when another test in the same process has already imported
+    it. Patch both so the mock always wins.
+    """
+
+    def _mock_submodule(dotted_name: str) -> "MagicMock":
+        parent_name, _, attribute = dotted_name.rpartition(".")
+        module_mock = mocker.MagicMock()
+        mocker.patch.dict("sys.modules", {dotted_name: module_mock})
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            mocker.patch.object(parent, attribute, module_mock, create=True)
+        return module_mock
+
+    return _mock_submodule
 
 
 @pytest.fixture(autouse=True)
