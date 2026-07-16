@@ -64,3 +64,13 @@ if [ -f ~/.make-targets-completion.bash ]; then
 fi
 EOF
 fi
+
+if ! grep -q "# devcontainer aliases" ~/.bashrc; then
+  cat >> ~/.bashrc <<'EOF'
+
+# devcontainer aliases
+alias ur='uv run'
+alias d='docker'
+alias dc='docker compose'
+EOF
+fi
