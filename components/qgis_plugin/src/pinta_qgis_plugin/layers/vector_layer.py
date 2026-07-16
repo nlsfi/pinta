@@ -56,13 +56,16 @@ def create_vector_layer(
     ):
         raise LayerCreationError(config.layer_name)
 
+    # Apply the QML before any field configuration: loadNamedStyle resets the
+    # style categories missing from the file (field defaults, form config, ...),
+    # so everything configured in code must come after it to win over the style.
+    if config.style_path is not None:
+        styles.apply_style(layer, config.style_path)
+
     layer.setReadOnly(config.read_only)
     utils.set_field_aliases(layer, config.aliases)
     utils.set_read_only_fields(layer, [LAYER_ID_COLUMN, *config.read_only_fields])
     utils.set_default_value_expressions(layer, config.default_expressions)
-
-    if config.style_path is not None:
-        styles.apply_style(layer, config.style_path)
 
     layer.setCustomProperty(PINTA_LAYER_ID, config.layer_id)
 
