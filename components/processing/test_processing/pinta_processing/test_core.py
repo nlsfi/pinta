@@ -95,6 +95,34 @@ def test_raster_dataset_bounds():
     assert dataset.bounds == (10.0, 17.0, 14.0, 20.0)
 
 
+def test_raster_dataset_empty_is_filled_with_nodata():
+    dataset = core.RasterDataset.empty(
+        bounds=(10.0, 16.0, 14.0, 20.0),
+        pixel_size=2.0,
+        crs=constants.DEFAULT_CRS,
+        nodata=constants.DEFAULT_NODATA,
+    )
+
+    assert dataset.array.shape == (2, 2)
+    assert np.all(dataset.array == constants.DEFAULT_NODATA)
+    assert dataset.crs == constants.DEFAULT_CRS
+    assert dataset.nodata == constants.DEFAULT_NODATA
+
+
+def test_raster_dataset_empty_snaps_bounds_outward_to_pixel_lattice():
+    # Bounds offset from the 2 m lattice must snap outward to it.
+    dataset = core.RasterDataset.empty(
+        bounds=(10.5, 16.5, 13.5, 19.5),
+        pixel_size=2.0,
+        crs=constants.DEFAULT_CRS,
+        nodata=constants.DEFAULT_NODATA,
+    )
+
+    assert dataset.bounds == (10.0, 16.0, 14.0, 20.0)
+    assert dataset.transform.a == 2.0
+    assert dataset.transform.e == -2.0
+
+
 def test_pipeline_executes_all_stages(mocker: pytest_mock.MockerFixture):
     pipeline = DummyStage() | DummyStage() | DummyStage()
 
