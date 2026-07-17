@@ -9,12 +9,12 @@ See more details from wkb raster format rfc docs:
 https://trac.osgeo.org/postgis/wiki/WKTRaster/RFC/RFC2_V0WKBFormat
 """
 
+import enum
 import hashlib
 import logging
 import math
 import struct
 from dataclasses import dataclass
-from typing import Literal
 
 import numpy as np
 import sqlmodel
@@ -27,7 +27,19 @@ from pinta_processing.utils import tiles
 
 LOGGER = logging.getLogger(__name__)
 
-WriterMode = Literal["insert", "update"]
+
+class WriterMode(enum.Enum):
+    """How tiles are written to the target table.
+
+    New tiles are inserted using COPY FROM stdin, existing tiles are updated
+    using ST_MapAlgebra. Therefore upsert op is not supported at the moment.
+    It is responsibility of the caller to ensure should a tile be inserted or
+    updated.
+    """
+
+    INSERT = enum.auto()
+    UPDATE = enum.auto()
+
 
 # Output pixel type for merged tiles, matching the float32 DEM band.
 _MERGE_PIXEL_TYPE = "32BF"
@@ -69,10 +81,10 @@ class RasterPostgisWriter(core.Stage):
         session: sqlmodel.Session,
         staging_tables: int = 0,
         tile_size: int | None = None,
-        mode: WriterMode = "insert",
+        mode: WriterMode = WriterMode.INSERT,
     ) -> None:
         super().__init__()
-        if mode == "update" and staging_tables != 0:
+        if mode is WriterMode.UPDATE and staging_tables != 0:
             msg = "update mode requires staging_tables=0"
             raise ValueError(msg)
         self.schema = schema
@@ -97,7 +109,7 @@ class RasterPostgisWriter(core.Stage):
             msg = "CRS is required for writing to PostGIS. "
             raise ValueError(msg)
 
-        if self.mode == "update":
+        if self.mode is WriterMode.UPDATE:
             return self._update_to_postgis(data)
         if self.staging_tables == 0:
             return self._write_to_postgis(data, self.table_name)
