@@ -12,7 +12,7 @@ from shapely.geometry import Point
 
 from pinta_processing import core, exceptions
 from pinta_processing.filters import DownsampleOverview
-from pinta_processing.writer import RasterPostgisWriter, VectorPostgisWriter
+from pinta_processing.writer import RasterPostgisWriter, VectorPostgisWriter, WriterMode
 
 
 @pytest.fixture
@@ -194,7 +194,7 @@ def test_update_mode_skips_raster_downsampled_below_one_pixel(
     assert downsampled.array.size == 0  # 2x2 // 128 -> 0x0
 
     stage = RasterPostgisWriter(
-        "myschema", "mytable", session, staging_tables=0, mode="update"
+        "myschema", "mytable", session, staging_tables=0, mode=WriterMode.UPDATE
     )
     stage.process(downsampled)
 
@@ -206,7 +206,9 @@ def test_update_mode_skips_raster_downsampled_below_one_pixel(
 def test_update_mode_rejects_staging_tables():
     """Update mode is only supported with staging_tables=0."""
     with pytest.raises(ValueError, match="staging_tables"):
-        RasterPostgisWriter("foo", "bar", None, staging_tables=1, mode="update")  # type: ignore[arg-type]
+        RasterPostgisWriter(
+            "foo", "bar", None, staging_tables=1, mode=WriterMode.UPDATE
+        )  # type: ignore[arg-type]
 
 
 def test_update_mode_merges_and_commits(
@@ -216,7 +218,12 @@ def test_update_mode_merges_and_commits(
     session, raw_connection, cursor = _mock_update_session(mocker)
 
     stage = RasterPostgisWriter(
-        "myschema", "mytable", session, staging_tables=0, tile_size=4, mode="update"
+        "myschema",
+        "mytable",
+        session,
+        staging_tables=0,
+        tile_size=4,
+        mode=WriterMode.UPDATE,
     )
     stage.process(dataset)
 
@@ -242,7 +249,12 @@ def test_update_mode_skips_all_nodata_data(
     )
 
     stage = RasterPostgisWriter(
-        "myschema", "mytable", session, staging_tables=0, tile_size=4, mode="update"
+        "myschema",
+        "mytable",
+        session,
+        staging_tables=0,
+        tile_size=4,
+        mode=WriterMode.UPDATE,
     )
     stage.process(nodata_dataset)
 
@@ -259,7 +271,12 @@ def test_update_mode_rolls_back_on_failure(
     cursor.execute.side_effect = [None, RuntimeError("merge failed")]
 
     stage = RasterPostgisWriter(
-        "myschema", "mytable", session, staging_tables=0, tile_size=4, mode="update"
+        "myschema",
+        "mytable",
+        session,
+        staging_tables=0,
+        tile_size=4,
+        mode=WriterMode.UPDATE,
     )
 
     with pytest.raises(RuntimeError, match="merge failed"):

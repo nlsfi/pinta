@@ -243,10 +243,14 @@ def dissolve_update_area(
         | filters.RasterUnion()
         | filters.RasterInterpolate(buffer_zone_area.wkt)
         | _generate_overview_stages(
-            preview_schema, preview_table, job_session, staging_tables=0, mode="update"
+            preview_schema,
+            preview_table,
+            job_session,
+            staging_tables=0,
+            mode=writer.WriterMode.UPDATE,
         )
         | writer.RasterPostgisWriter(
-            preview_schema, preview_table, job_session, mode="update"
+            preview_schema, preview_table, job_session, mode=writer.WriterMode.UPDATE
         )
     )
 
@@ -260,7 +264,7 @@ def postgis_to_postgis(  # noqa: PLR0913
     to_table: str,
     tile_wkt: str,
     staging_tables: int = 0,
-    mode: writer.WriterMode = "insert",
+    mode: writer.WriterMode = writer.WriterMode.INSERT,
 ) -> core.Pipeline:
     """Read raster from Postgis, write to Postgis."""
     return (
@@ -284,7 +288,7 @@ def _generate_overview_stages(
     table_name: str,
     session: Session,
     staging_tables: int,
-    mode: writer.WriterMode = "insert",
+    mode: writer.WriterMode = writer.WriterMode.INSERT,
 ) -> core.Stage:
     return functools.reduce(
         operator.or_,
@@ -312,7 +316,7 @@ def _overview_to_postgis(  # noqa: PLR0913
     table_name: str,
     session: Session,
     staging_tables: int,
-    mode: writer.WriterMode = "insert",
+    mode: writer.WriterMode = writer.WriterMode.INSERT,
 ) -> core.Pipeline:
     return filters.DownsampleOverview(factor) | writer.RasterPostgisWriter(
         schema, table_name, session, staging_tables, mode=mode
