@@ -71,9 +71,29 @@ def _set_env_variables(
     monkeypatch.setenv("PINTA_INITIAL_PROJECT_EXTENT", "67734,6570084,843161,7879314")
 
 
-@pytest.fixture
-def created_db(worker_id: str) -> str:
+@pytest.fixture(scope="session")
+def _primary_db(worker_id: str) -> str:
+    """Clone the primary db once per worker."""
     return db_utils.create_primary_db(worker_id)
+
+
+@pytest.fixture(scope="session")
+def _provisioned_job_dbs(_primary_db: str) -> Iterator[set[str]]:
+    """Drop the job databases provisioned during the run when the session ends."""
+    job_dbs: set[str] = set()
+    try:
+        yield job_dbs
+    finally:
+        job_dbs.update(db_utils.get_job_database_names(_primary_db))
+        db_utils.drop_job_databases(job_dbs)
+
+
+@pytest.fixture
+def created_db(_primary_db: str, _provisioned_job_dbs: set[str]) -> str:
+    """Return the worker's primary db clone, emptied for this test."""
+    _provisioned_job_dbs.update(db_utils.get_job_database_names(_primary_db))
+    db_utils.reset_primary_db(_primary_db)
+    return _primary_db
 
 
 @pytest.fixture
@@ -88,7 +108,6 @@ def db(created_db: str) -> Iterator["Session"]:
         db_utils.get_primary_writer_credentials(created_db)
     ) as session:
         yield session
-        session.close()
 
 
 @pytest.fixture
