@@ -37,6 +37,7 @@ def primary_db_session(
     )
     engine = sqlalchemy.create_engine(uri)
     try:
-        yield sqlmodel.Session(engine)
+        with sqlmodel.Session(engine) as session:
+            yield session
     finally:
         engine.dispose()
