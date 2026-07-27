@@ -30,9 +30,16 @@ parser.add_argument(
     type=str,
     help="Postgres connection string",
 )
+parser.add_argument(
+    "-g",
+    "--glob",
+    type=str,
+    default="*.asc",
+    help="Glob pattern for input files, empty value matches all files",
+)
 
 
-def run(connection_string: str, test_data_dir: str) -> None:
+def run(connection_string: str, test_data_dir: str, file_glob: str = "*.asc") -> None:
     """Load rasterio compatible data into db."""
     engine = sqlalchemy.create_engine(connection_string)
     folder = pathlib.Path(test_data_dir)
@@ -42,7 +49,9 @@ def run(connection_string: str, test_data_dir: str) -> None:
         # overviews exists, just init staging table for each overview
         raster.initialize_overview_tables(session, "dem", "dem")
 
-        for file_path in folder.glob("*.asc"):
+        for file_path in sorted(folder.glob(file_glob or "*")):
+            if not file_path.is_file():
+                continue
             LOGGER.info("Processing file %s", file_path)
             pipeline = pipelines.rasterio_to_postgis(
                 session=session, input_path=file_path, schema="dem", table_name="dem"
@@ -60,4 +69,4 @@ def run(connection_string: str, test_data_dir: str) -> None:
 if __name__ == "__main__":
     args = parser.parse_args()
     LOGGER.info("Loading data from %s", args.input_dir)
-    run(args.db_connection, args.input_dir)
+    run(args.db_connection, args.input_dir, args.glob)
