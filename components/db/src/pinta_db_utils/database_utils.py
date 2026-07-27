@@ -29,6 +29,13 @@ def _database_exists(connection: Connection, db_name: str) -> bool:
     return result is not None
 
 
+def drop_database(connection: Connection, db_name: str) -> None:
+    """Drop db when it exists, terminating sessions still attached."""
+    connection.execute(
+        text(f"DROP DATABASE IF EXISTS {_quote_identifier(db_name)} WITH (FORCE)")
+    )
+
+
 def initialize_db_from_template(
     connection: Connection,
     db_name: str,

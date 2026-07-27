@@ -57,7 +57,8 @@ def get_session(credentials: Credentials) -> Generator[Session, Any, None]:
     """Get SQLModel Session."""
     engine = sqlalchemy.create_engine(credentials.get_connection_string())
     try:
-        yield Session(engine)
+        with Session(engine) as session:
+            yield session
     finally:
         engine.dispose()
 

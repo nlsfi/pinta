@@ -4,6 +4,7 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import os
+from collections.abc import Iterable
 
 import sqlmodel
 from sqlalchemy import bindparam
@@ -42,6 +43,11 @@ def _truncate_pinta_schemas(credentials: engine_utils.Credentials) -> None:
                     f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"
                 )
             )
+
+
+def reset_primary_db(db_name: str) -> None:
+    """Empty the pinta-managed schemas of an existing primary database clone."""
+    _truncate_pinta_schemas(get_primary_admin_credentials(db_name))
 
 
 def get_primary_admin_credentials(
@@ -104,7 +110,7 @@ def create_primary_db(worker_id: str) -> str:
         os.environ["DB_PRIMARY_NAME"],
         get_primary_admin_credentials("postgres"),
     )
-    _truncate_pinta_schemas(get_primary_admin_credentials(db_name))
+    reset_primary_db(db_name)
     return db_name
 
 
@@ -118,3 +124,32 @@ def create_job_db(worker_id: str) -> str:
     )
     _truncate_pinta_schemas(get_job_admin_credentials(db_name))
     return db_name
+
+
+def get_job_database_names(primary_db_name: str) -> set[str]:
+    """Return the job databases referenced by a primary database's areas."""
+    with engine_utils.get_autocommit_connection(
+        get_primary_admin_credentials(primary_db_name)
+    ) as connection:
+        return set(
+            connection.execute(
+                sqlmodel.text(
+                    "SELECT database_name FROM management.production_area "
+                    "WHERE database_name IS NOT NULL"
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+
+def drop_job_databases(db_names: Iterable[str]) -> None:
+    """Drop the given job databases, never the shared job template."""
+    targets = sorted(set(db_names) - {os.environ["DB_JOB_TEMPLATE_NAME"]})
+    if not targets:
+        return
+    with engine_utils.get_autocommit_connection(
+        get_job_admin_credentials("postgres")
+    ) as connection:
+        for db_name in targets:
+            database_utils.drop_database(connection, db_name)
