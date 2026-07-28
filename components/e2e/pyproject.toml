@@ -64,3 +64,6 @@ testpaths = [
 addopts = "-n auto --dist loadgroup --maxprocesses=4 --import-mode=importlib"
 timeout = 600
 timeout_method = "thread"
+markers = [
+  "smoke: subset of e2e tests covering the critical workflows",
+]

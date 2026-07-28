@@ -52,6 +52,7 @@ def _count_diff_rasters(database_name: str) -> int:
     )
 
 
+@pytest.mark.smoke
 @pytest.mark.xdist_group("airflow")
 @pytest.mark.usefixtures("seeded_processing_dem")
 def test_calculate_rasters_for_production_area_workflow(

@@ -190,6 +190,7 @@ def _run_register_workflow(
     )
 
 
+@pytest.mark.smoke
 @pytest.mark.xdist_group("airflow")
 def test_register_update_areas_writes_preview_to_primary_dem(
     qgis_plugin: "Plugin",

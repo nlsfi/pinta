@@ -359,6 +359,7 @@ def dissolve_update_area_setup(
     )
 
 
+@pytest.mark.smoke
 @pytest.mark.xdist_group("airflow")
 def test_dissolve_update_areas_workflow(
     qgis_plugin: "Plugin",
