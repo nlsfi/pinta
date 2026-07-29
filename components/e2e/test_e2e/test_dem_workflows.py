@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
 
 # The orchestration runs the reference DEM and DEM diff DAGs sequentially, each
 # spinning up several short-lived task containers, so allow a generous budget.
-PROCESSING_STATUS_TIMEOUT_MS = 240000
+PROCESSING_STATUS_TIMEOUT_MS = 600000  # 10 minutes
 WORKFLOW_TIMEOUT_S = 240.0
 
 
