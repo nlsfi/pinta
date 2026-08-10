@@ -9,6 +9,10 @@ from pinta_common import exceptions
 
 TRUTHY_STRINGS = ("1", "true", "yes", "t")
 
+# Every environment variable with this prefix holds one vector mask source,
+# read by the processing component.
+MASK_OGR_ENV_PREFIX = "PINTA_PROCESSING_MASK_OGR_"
+
 
 def _require(name: str) -> str:
     """Return the environment variable `name` or raise if it is unset."""
