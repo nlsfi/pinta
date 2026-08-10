@@ -17,6 +17,9 @@ LOGGER = logging.getLogger(__name__)
 
 GEOMETRY_COLUMN = "geom"
 
+# Records the layer each row was read from.
+SOURCE_LAYER_NAME_COLUMN = "source_layer"
+
 
 @dataclasses.dataclass(frozen=True)
 class OgrSource:
@@ -52,7 +55,8 @@ def read_ogr_geodataframe(
 
     Each source is reprojected into the project CRS (unless
     `crs` argument overrides it) and the sources are stacked into
-    one frame holding the union of all their attributes.
+    one frame holding the union of all their attributes. Every row records the
+    layer it came from.
     """
     target_crs = crs if crs is not None else f"EPSG:{Settings.DB_SRID}"
 
@@ -125,13 +129,27 @@ def _read_layer(
                 "collides with the geometry column of the combined frame"
             ),
         )
-    return frame.rename_geometry(GEOMETRY_COLUMN)
+    if SOURCE_LAYER_NAME_COLUMN in frame.columns:
+        raise exceptions.OgrSourceError(
+            source=label,
+            reason=(
+                f"source has an attribute named {SOURCE_LAYER_NAME_COLUMN!r}, which "
+                "collides with the layer column of the combined frame"
+            ),
+        )
+
+    frame = frame.rename_geometry(GEOMETRY_COLUMN)
+    frame[SOURCE_LAYER_NAME_COLUMN] = layer
+    return frame
 
 
 def _empty_geodataframe(crs: str) -> geopandas.GeoDataFrame:
-    """Return an empty frame holding only the geometry column."""
+    """Return an empty frame holding the columns every read produces."""
     return geopandas.GeoDataFrame(
-        {GEOMETRY_COLUMN: geopandas.GeoSeries([], crs=crs)},
+        {
+            GEOMETRY_COLUMN: geopandas.GeoSeries([], crs=crs),
+            SOURCE_LAYER_NAME_COLUMN: pd.Series([], dtype="str"),
+        },
         geometry=GEOMETRY_COLUMN,
         crs=crs,
     )

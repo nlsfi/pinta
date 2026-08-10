@@ -89,7 +89,13 @@ def test_combines_attributes_of_all_sources(tmp_path: pathlib.Path):
     result = ogr.read_ogr_geodataframe([quarries, lakes])
 
     assert len(result) == 2
-    assert set(result.columns) == {"name", "depth", "shore", ogr.GEOMETRY_COLUMN}
+    assert set(result.columns) == {
+        "name",
+        "depth",
+        "shore",
+        ogr.GEOMETRY_COLUMN,
+        ogr.SOURCE_LAYER_NAME_COLUMN,
+    }
 
 
 def test_attributes_missing_from_a_source_are_left_empty(tmp_path: pathlib.Path):
@@ -131,12 +137,60 @@ def test_reads_only_the_requested_layer(tmp_path: pathlib.Path):
     assert result["name"].tolist() == ["lake"]
 
 
+def test_each_row_records_the_layer_it_came_from(tmp_path: pathlib.Path):
+    """Rows stay identifiable once several layers are concatenated."""
+    path = tmp_path / "masks.gpkg"
+    _write(path, _frame([_SQUARE], name=["quarry"]), layer="quarries")
+    source = _write(path, _frame([_OTHER_SQUARE], name=["lake"]), layer="lakes")
+
+    result = ogr.read_ogr_geodataframe([source])
+
+    by_name = dict(
+        zip(result["name"], result[ogr.SOURCE_LAYER_NAME_COLUMN], strict=True)
+    )
+    assert by_name == {"quarry": "quarries", "lake": "lakes"}
+
+
+def test_layer_column_of_an_explicitly_named_layer(tmp_path: pathlib.Path):
+    path = tmp_path / "masks.gpkg"
+    _write(path, _frame([_SQUARE], name=["quarry"]), layer="quarries")
+    _write(path, _frame([_OTHER_SQUARE], name=["lake"]), layer="lakes")
+
+    result = ogr.read_ogr_geodataframe([ogr.OgrSource(str(path), "lakes")])
+
+    assert result[ogr.SOURCE_LAYER_NAME_COLUMN].tolist() == ["lakes"]
+
+
+def test_layer_column_distinguishes_rows_of_different_sources(tmp_path: pathlib.Path):
+    """Two files whose layers are named differently stay apart."""
+    quarries = _write(tmp_path / "a.gpkg", _frame([_SQUARE]), layer="quarries")
+    lakes = _write(tmp_path / "b.gpkg", _frame([_OTHER_SQUARE]), layer="lakes")
+
+    result = ogr.read_ogr_geodataframe([quarries, lakes])
+
+    assert result[ogr.SOURCE_LAYER_NAME_COLUMN].tolist() == ["quarries", "lakes"]
+
+
+def test_rejects_a_source_with_a_colliding_source_layer_attribute(
+    tmp_path: pathlib.Path,
+):
+    source = _write(
+        tmp_path / "masks.gpkg",
+        _frame([_SQUARE], "EPSG:3067", **{ogr.SOURCE_LAYER_NAME_COLUMN: ["collides"]}),
+    )
+
+    with pytest.raises(exceptions.OgrSourceError, match="collides with the layer"):
+        ogr.read_ogr_geodataframe([source])
+
+
 def test_returns_an_empty_frame_without_sources():
     result = ogr.read_ogr_geodataframe([])
 
     assert result.empty
     assert result.crs == f"EPSG:{Settings.DB_SRID}"
     assert result.geometry.name == ogr.GEOMETRY_COLUMN
+    # The columns every read produces, so consumers see a stable schema.
+    assert ogr.SOURCE_LAYER_NAME_COLUMN in result.columns
 
 
 def _write_attribute_table(path: pathlib.Path, layer: str) -> None:
