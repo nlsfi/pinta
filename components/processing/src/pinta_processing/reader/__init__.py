@@ -4,6 +4,14 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from pinta_processing.reader.lastools import Blast2DemReader
+from pinta_processing.reader.ogr import OgrReader, OgrSource, read_ogr_geodataframe
 from pinta_processing.reader.readers import PostgisReader, RasterioReader
 
-__all__ = ["Blast2DemReader", "PostgisReader", "RasterioReader"]
+__all__ = [
+    "Blast2DemReader",
+    "OgrReader",
+    "OgrSource",
+    "PostgisReader",
+    "RasterioReader",
+    "read_ogr_geodataframe",
+]

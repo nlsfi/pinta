@@ -14,6 +14,15 @@ class InvalidStageInputError(Exception):
         super().__init__(f"{stage_name} expected {expected_type}, got {received_type}")
 
 
+class OgrSourceError(Exception):
+    """Raised when an OGR vector data source fails to read."""
+
+    def __init__(self, source: str, reason: str) -> None:
+        self.source = source
+        self.reason = reason
+        super().__init__(f"Could not read OGR source {source!r}: {reason}")
+
+
 class LasToolsError(Exception):
     """Raised when an error occurs in LasTools."""
 

@@ -3,15 +3,18 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import os
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+from pinta_common import MASK_OGR_ENV_PREFIX
 from pinta_db.job_db.models import user
 from pinta_db_utils.postgis import raster
 from pytest_mock import MockerFixture
 from shapely import wkt as shapely_wkt
 
-from pinta_processing import pipelines
+from pinta_processing import exceptions, pipelines, reader
 from pinta_processing.writer import WriterMode
 
 
@@ -271,3 +274,110 @@ def test_postgis_to_postgis(
 def _assert_geometries_match(actual: object, expected: object) -> None:
     # WKT round-tripping perturbs vertices slightly, so compare with tolerance.
     assert actual.symmetric_difference(expected).area < 1e-6  # type: ignore[attr-defined]
+
+
+@pytest.fixture(autouse=True)
+def _clear_mask_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep mask sources from the developer's environment out of the tests."""
+    for variable in list(os.environ):
+        if variable.startswith(MASK_OGR_ENV_PREFIX):
+            monkeypatch.delenv(variable)
+
+
+def _set_mask_source(monkeypatch: pytest.MonkeyPatch, name: str, value: str) -> None:
+    monkeypatch.setenv(f"{MASK_OGR_ENV_PREFIX}{name}", value)
+
+
+def test_parse_ogr_source_splits_off_the_layer_suffix() -> None:
+    parsed = pipelines.parse_ogr_source(
+        f" /input/finland.gpkg{pipelines.LAYER_SEPARATOR}water "
+    )
+
+    assert parsed == reader.OgrSource(data_source="/input/finland.gpkg", layer="water")
+
+
+def test_parse_ogr_source_without_a_layer_suffix_has_no_layer() -> None:
+    assert pipelines.parse_ogr_source("/input/masks.gpkg").layer is None
+
+
+@pytest.mark.parametrize(
+    "data_source",
+    [
+        "OAPIF:https://demo.pygeoapi.io/master",
+        "WFS:https://example.org/wfs?service=WFS&version=2.0.0",
+        "https://example.org/masks.fgb",
+        "/vsizip//input/masks.zip/masks.shp",
+        "/vsicurl/https://example.org/masks.fgb",
+        "GPKG:/input/masks.gpkg",
+        # An OGC API - Features collection URL, which needs no layer suffix,
+        # with the service's own query parameters.
+        "OAPIF:https://example.org/collections/x?bbox=4,52,5,53&limit=1000",
+    ],
+)
+def test_parse_ogr_source_keeps_the_data_source_verbatim(data_source: str) -> None:
+    """GDAL connection strings must survive parsing, unlike filesystem paths."""
+    assert pipelines.parse_ogr_source(data_source) == reader.OgrSource(
+        data_source=data_source, layer=None
+    )
+    assert pipelines.parse_ogr_source(
+        f"{data_source}{pipelines.LAYER_SEPARATOR}masks"
+    ) == reader.OgrSource(data_source=data_source, layer="masks")
+
+
+def test_parse_ogr_source_rejects_an_empty_layer_name() -> None:
+    with pytest.raises(exceptions.OgrSourceError, match="layer name"):
+        pipelines.parse_ogr_source(f"/input/masks.gpkg{pipelines.LAYER_SEPARATOR}")
+
+
+def test_ogr_sources_from_environment_collects_prefixed_variables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_mask_source(monkeypatch, "QUARRIES", "/input/quarries.gpkg")
+    _set_mask_source(monkeypatch, "WATER", "/input/finland.gpkg|layername=water")
+
+    assert pipelines.ogr_sources_from_environment() == [
+        reader.OgrSource(data_source="/input/quarries.gpkg", layer=None),
+        reader.OgrSource(data_source="/input/finland.gpkg", layer="water"),
+    ]
+
+
+def test_ogr_sources_from_environment_is_ordered_by_variable_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_mask_source(monkeypatch, "ZZZ", "/input/last.gpkg")
+    _set_mask_source(monkeypatch, "AAA", "/input/first.gpkg")
+
+    assert [
+        source.data_source for source in pipelines.ogr_sources_from_environment()
+    ] == ["/input/first.gpkg", "/input/last.gpkg"]
+
+
+def test_ogr_sources_from_environment_ignores_other_variables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PINTA_PROCESSING_OTHER_SETTING", "/input/nope.gpkg")
+    monkeypatch.setenv("MASK_OGR_QUARRIES", "/input/nope.gpkg")
+
+    assert pipelines.ogr_sources_from_environment() == []
+
+
+def test_ogr_sources_from_environment_skips_empty_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_mask_source(monkeypatch, "QUARRIES", "/input/quarries.gpkg")
+    _set_mask_source(monkeypatch, "WATER", "   ")
+
+    assert pipelines.ogr_sources_from_environment() == [
+        reader.OgrSource(data_source="/input/quarries.gpkg", layer=None)
+    ]
+
+
+def test_ogr_sources_from_environment_ignores_other_prefixes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_mask_source(monkeypatch, "QUARRIES", "/input/quarries.gpkg")
+    monkeypatch.setenv("PINTA_PROCESSING_CLIP_OGR_AREAS", "/input/clip.gpkg")
+
+    assert pipelines.ogr_sources_from_environment() == [
+        reader.OgrSource(data_source="/input/quarries.gpkg", layer=None)
+    ]
