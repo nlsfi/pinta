@@ -57,6 +57,13 @@ def test_reads_the_named_layer(gpkg_source: ogr.OgrSource) -> None:
     )
 
 
+def test_rows_record_the_layer_they_came_from(gpkg_source: ogr.OgrSource) -> None:
+    """The layer name is discovered from the file, not configured."""
+    result = ogr.read_ogr_geodataframe([gpkg_source])
+
+    assert result[ogr.SOURCE_LAYER_NAME_COLUMN].tolist() == [LAYER] * EXPECTED_ROWS
+
+
 def test_keeps_the_z_coordinate_of_3d_polygons(gpkg_source: ogr.OgrSource) -> None:
     """The polygons are 3D and must not be flattened on the way through."""
     result = ogr.read_ogr_geodataframe([gpkg_source])
