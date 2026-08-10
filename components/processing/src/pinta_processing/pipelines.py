@@ -5,10 +5,11 @@
 import functools
 import logging
 import operator
+import os
 from pathlib import Path
 
 import numpy as np
-from pinta_common import Settings
+from pinta_common import MASK_OGR_ENV_PREFIX, Settings
 from pinta_db.job_db.models import reference, user
 from pinta_db.primary_db.models import dem
 from pinta_db_utils import model_utils
@@ -16,7 +17,7 @@ from pinta_db_utils.postgis import raster
 from shapely import wkt as shapely_wkt
 from sqlmodel import Session
 
-from pinta_processing import core, filters, reader, writer
+from pinta_processing import core, exceptions, filters, reader, writer
 from pinta_processing.filters.interpolate import SAMPLING_MARGIN
 from pinta_processing.scripts import find_intersecting_tiles
 from pinta_processing.utils import tm35_map_sheet_utils
@@ -46,7 +47,38 @@ DEFAULT_LASTOOLS_PARAMS = {
     "nrows": 500,
 }
 
+# QGIS style suffix used in configuration to pick a single layer out of a
+# multi layer source, e.g. `/data/masks.gpkg|layername=buildings`. GDAL has no
+# such convention of its own.
+LAYER_SEPARATOR = "|layername="
+
 LOGGER = logging.getLogger(__name__)
+
+
+def parse_ogr_source(value: str) -> reader.OgrSource:
+    """Split a configured source string into a data source and a layer.
+
+    Everything before `|layername=` is the GDAL/OGR data source and is kept
+    verbatim; the suffix, when present, names a single layer to read.
+    """
+    data_source, separator, layer = value.strip().partition(LAYER_SEPARATOR)
+    if separator and not layer.strip():
+        raise exceptions.OgrSourceError(
+            source=value, reason=f"layer name after {LAYER_SEPARATOR!r} is empty"
+        )
+    return reader.OgrSource(
+        data_source=data_source.strip(),
+        layer=layer.strip() if separator else None,
+    )
+
+
+def ogr_sources_from_environment() -> list[reader.OgrSource]:
+    """Return the vector sources configured in environment variables."""
+    return [
+        parse_ogr_source(value)
+        for variable, value in sorted(os.environ.items())
+        if variable.startswith(MASK_OGR_ENV_PREFIX) and value.strip()
+    ]
 
 
 def rasterio_to_geotiff(

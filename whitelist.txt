@@ -192,3 +192,10 @@ bandnodatavalue
 isempty
 centroid
 ogr
+gpkg
+layername
+reprojected
+concat
+vsizip
+vsicurl
+notna
