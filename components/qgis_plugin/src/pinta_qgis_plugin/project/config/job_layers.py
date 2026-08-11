@@ -95,7 +95,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
             "cluster_area",
             "elevation",
         ],
-        subset_string="energy_distribution >= 1",
+        subset_string="energy_distribution >= 1 OR elevation IS NOT NULL",
     ),
     config.VectorLayerConfig(
         schema="user_data",
