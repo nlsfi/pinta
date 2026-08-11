@@ -154,6 +154,7 @@ AIRFLOW_LOCAL_ENV = set -a && . $(ROOT_DIR)/.env.airflow && set +a && \
 	AIRFLOW_VAR_PINTA_CONTAINER_SOURCE_BASE_PATH=$(REPO_DIR)/test_data/point_clouds \
 	AIRFLOW_VAR_PINTA_DEM_BASE_PATH=$(REPO_DIR)/test_data/dem \
 	AIRFLOW_VAR_PINTA_DATA_BASE_PATH=$(REPO_DIR)/test_data \
+	AIRFLOW_VAR_PINTA_PROCESSING_MASK_OGR_SOURCES='{"LAKE_PARTS": "/input/processing/lake_part.gpkg"}' \
 	AIRFLOW_VAR_PINTA_LASTOOLS_PATH=$(REPO_DIR)/external/LAStools
 
 airflow-start: airflow-write-passwords airflow-migrate
