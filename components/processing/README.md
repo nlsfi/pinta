@@ -10,6 +10,7 @@ Running Python code from processing component:
 * [Parallel raster ingestion and staging tables](#parallel-raster-ingestion-and-staging-tables)
 * [Dissolving update areas into the preview DEM](#dissolving-update-areas-into-the-preview-dem)
 * [Pipelines](#pipelines)
+* [LAZ processing with LAStools](#laz-processing-with-lastools)
 
 ## Parallel raster ingestion and staging tables
 
@@ -223,3 +224,23 @@ pipeline.execute()
 ```
 
 Consumers such as [`RasterDiff`](src/pinta_processing/filters/diff.py) require the zipped rasters to share an identical shape, CRS, and transform.
+
+## LAZ processing with LAStools
+
+Point cloud (LAS/LAZ) tiles are rasterised into a DEM with [LAStools](https://rapidlasso.de/lastools/). [`Blast2DemReader`](src/pinta_processing/reader/lastools.py) runs the tool as a subprocess, writes a temporary GeoTIFF and hands it back into the pipeline as a normal `RasterDataset`, so LAStools appears as an ordinary reader stage.
+
+**The binaries are not baked into the processing image.** The image build only *verifies* that the shared libraries LAStools needs are present. At run time the binaries come from a bind mount, so the container expects to find lastools executables from configured path.
+
+### Setting up LAStools on a server, with a license
+
+1. Unpack the LAStools distribution somewhere on the Docker host, so that `<dir>/bin/las2dem_new64` exists.
+2. Set the Airflow Variable `pinta_lastools_path` to that host directory. It is bind-mounted read-only into every container task at `/lastools` (see [`config.py`](../dags/src/pinta_dags/config.py)).
+3. Make the license file reachable, in one of two ways:
+   * Place `lastoolslicense.txt` inside the LAStools directory. The default `LAStoolsLicenseFile=/lastools/lastoolslicense.txt` then finds it with no further configuration.
+   * Or set the Airflow Variable `pinta_lastools_license_path` to the host path of the license file. It is mounted at `/lastoolslicense.txt` and `LAStoolsLicenseFile` is repointed there.
+
+### Demo mode for local development
+
+Without a license the binaries only run when invoked with `-demo` flag. When `LASTOOLS_DEMO_MODE` environment variable is truthy lastools will run in [demo mode](https://rapidlasso.de/lastools-test-and-validate-in-demo-mode/).
+
+Locally the flag comes from the Airflow Variable `pinta_lastools_demo_mode`, which is templated into the task container's environment. In the dev stack it is wired through `AIRFLOW_VAR_PINTA_LASTOOLS_DEMO_MODE` in [docker-compose.yml](../../docker-compose.yml) and defaults to `false`, so set it in your `.env` to run unlicensed. Leave it off on a licensed server — the restricted output is only acceptable for development and tests.
