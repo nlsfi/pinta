@@ -164,18 +164,19 @@ def test_scales_energy_distribution_by_pixel_area(
     assert clusters[0].energy_distribution == pytest.approx(100 * 9 / 900)
 
 
-def test_replaces_existing_clusters(
+def test_keeps_existing_suggestions(
     processing_worker_session: "Session",
 ) -> None:
-    """Running the clustering truncates previously stored clusters."""
-    processing_worker_session.add(
-        reference.UpdateAreaSuggestion(
-            energy_sum=1.0,
-            energy_distribution=1.0,
-            cluster_area=1.0,
-            geom=_square(0, 0, 10),
-        )
+    """The suggestion table is append only, so clustering keeps other rows.
+
+    Masked update areas are suggested into the same table while the DEM diff
+    runs, and clearing the table here would drop them.
+    """
+    existing = reference.UpdateAreaSuggestion(
+        elevation=0.12,
+        geom=_square(0, 0, 10),
     )
+    processing_worker_session.add(existing)
     _add_polygon(
         processing_worker_session,
         x0=0,
@@ -196,9 +197,13 @@ def test_replaces_existing_clusters(
 
     cluster.cluster_diff_polygons(processing_worker_session)
 
-    clusters = _clusters(processing_worker_session)
-    assert len(clusters) == 1
-    assert clusters[0].energy_sum == pytest.approx(100)
+    suggestions = _clusters(processing_worker_session)
+    assert len(suggestions) == 2
+    assert existing.id in {suggestion.id for suggestion in suggestions}
+    clustered = [
+        suggestion for suggestion in suggestions if suggestion.id != existing.id
+    ]
+    assert clustered[0].energy_sum == pytest.approx(100)
 
 
 def test_no_polygons_produces_no_clusters(

@@ -199,3 +199,7 @@ concat
 vsizip
 vsicurl
 notna
+iterrows
+isna
+2d
+isin

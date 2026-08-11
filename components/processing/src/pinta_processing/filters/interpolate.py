@@ -40,9 +40,10 @@ class RasterInterpolate(core.Stage):
             message = f"RasterInterpolate polygon WKT could not be parsed: {error}"
             raise ValueError(message) from error
 
-        if geometry.geom_type != "Polygon":
+        if geometry.geom_type not in ("Polygon", "MultiPolygon"):
             message = (
-                f"RasterInterpolate polygon must be a Polygon, got {geometry.geom_type}"
+                "RasterInterpolate polygon must be a Polygon or MultiPolygon, "
+                f"got {geometry.geom_type}"
             )
             raise ValueError(message)
         return geometry

@@ -8,7 +8,8 @@ from typing import Any
 import affine
 import numpy as np
 import pytest
-from shapely.geometry import box
+from shapely import wkt as shapely_wkt
+from shapely.geometry import MultiPolygon, box
 
 from pinta_processing import core, exceptions
 from pinta_processing.filters import RasterInterpolate
@@ -79,6 +80,28 @@ def test_interpolate_preserves_metadata():
     assert result.transform == dataset.transform
     assert result.crs == constants.DEFAULT_CRS
     assert result.nodata == constants.DEFAULT_NODATA
+
+
+def test_interpolate_replaces_pixels_of_every_multipolygon_part():
+    # The seam zone of an update area with holes is multipart: a ring per hole
+    # plus the outer ring.
+    field = _linear_field(9, 9)
+    corrupted = field.copy()
+    corrupted[2, 2] = 999.0
+    corrupted[6, 6] = -999.0
+    dataset = _dataset(corrupted)
+    parts = MultiPolygon(
+        [
+            shapely_wkt.loads(_pixel_box_wkt(2, 2)),
+            shapely_wkt.loads(_pixel_box_wkt(6, 6)),
+        ]
+    )
+    stage = RasterInterpolate(parts.wkt)
+
+    result = stage.process(dataset)
+
+    assert np.isclose(result.array[2, 2], 4.0, atol=1e-3)
+    assert np.isclose(result.array[6, 6], 12.0, atol=1e-3)
 
 
 def test_interpolate_does_not_modify_input():
