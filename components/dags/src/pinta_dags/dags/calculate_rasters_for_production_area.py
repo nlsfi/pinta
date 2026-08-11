@@ -52,6 +52,11 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
                 type="boolean",
                 description="Initialize DEM preview table",
             ),
+            "suggest_masked_update_areas": Param(
+                default=True,
+                type="boolean",
+                description="Trigger masked update area suggestion DAG",
+            ),
         },
         is_paused_upon_creation=False,
     )
@@ -120,6 +125,14 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
                 "id": "{{ params.id }}",
                 "cluster": "{{ params.cluster_diff_polygons }}",
             },
+            wait_for_completion=True,
+            poke_interval=config.TRIGGER_POKE_INTERVAL_SECONDS,
+        )
+
+        trigger_suggest_masked_update_areas = TriggerDagRunOperator(
+            task_id="trigger_suggest_masked_update_areas",
+            trigger_dag_id=constants.DAG_ID_SUGGEST_MASKED_UPDATE_AREAS,
+            conf={"id": "{{ params.id }}"},
             wait_for_completion=True,
             poke_interval=config.TRIGGER_POKE_INTERVAL_SECONDS,
         )
@@ -204,11 +217,18 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
         preview_gate = should_run.override(
             task_id="should_initialize_dem_preview",
         )(requested=cast("bool", "{{ params.initialize_dem_preview }}"))
+        # Resolves after the reference DEM trigger the same way the DEM diff
+        # gate does, so it also runs when the reference DEM was skipped.
+        mask_gate = should_run.override(
+            task_id="should_suggest_masked_update_areas",
+            trigger_rule=TriggerRule.NONE_FAILED,
+        )(requested=cast("bool", "{{ params.suggest_masked_update_areas }}"))
 
         triggers = [
             trigger_calculate_reference_dem,
             trigger_calculate_dem_diff,
             trigger_initialize_dem_preview,
+            trigger_suggest_masked_update_areas,
         ]
         status_completed = set_processing_status_completed(
             primary_connection_uri, prod_area_id
@@ -221,6 +241,12 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
         # DEM so it can compare against freshly computed reference rasters.
         ensure_database >> reference_gate >> trigger_calculate_reference_dem
         trigger_calculate_reference_dem >> diff_gate >> trigger_calculate_dem_diff
+
+        (
+            trigger_calculate_reference_dem
+            >> mask_gate
+            >> trigger_suggest_masked_update_areas
+        )
         # Runs in parallel with the reference DEM -> DEM diff chain.
         ensure_database >> preview_gate >> trigger_initialize_dem_preview
         # Also depend on ensure_database so a failure there (before any trigger
