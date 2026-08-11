@@ -46,6 +46,10 @@ class AirflowVariable(enum.StrEnum):
         "pinta_register_update_areas_max_parallel_pipelines"
     )
 
+    # Vector mask sources as a JSON object of source name to GDAL/OGR data
+    # source, e.g. {"lake_parts": "/input/finland.gpkg|layername=lake_part"}.
+    MASK_OGR_SOURCES = "pinta_processing_mask_ogr_sources"
+
 
 # How often a triggered child DAG is polled for completion.
 TRIGGER_POKE_INTERVAL_SECONDS = 5

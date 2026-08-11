@@ -79,6 +79,30 @@ def find_production_area_tile_geometries(
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def find_production_area_geometry(
+    connection_uri: str,
+    production_area_id: str,
+) -> str:
+    """Return the geometry (as WKT) of the production area itself."""
+    import sqlalchemy
+    import sqlmodel
+    from geoalchemy2.shape import to_shape
+    from pinta_db.primary_db.models.management import ProductionArea
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        area_in_db = session.exec(
+            sqlmodel.select(ProductionArea).where(
+                ProductionArea.id == production_area_id
+            )
+        ).first()
+        if area_in_db is None:
+            msg = f"Production area {production_area_id} not found"
+            raise ValueError(msg)
+        return to_shape(area_in_db.geom).wkt
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
 def find_dirty_update_areas(
     connection_uri: str,
 ) -> list[dict[str, str]]:

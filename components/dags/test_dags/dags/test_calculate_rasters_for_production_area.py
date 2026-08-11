@@ -44,9 +44,11 @@ def test_all_tasks() -> None:
         "should_calculate_reference_dem",
         "should_calculate_dem_diff",
         "should_initialize_dem_preview",
+        "should_suggest_masked_update_areas",
         "trigger_calculate_reference_dem",
         "trigger_calculate_dem_diff",
         "trigger_initialize_dem_preview",
+        "trigger_suggest_masked_update_areas",
         "set_processing_status_completed",
         "set_processing_status_failed",
     }
@@ -75,6 +77,27 @@ def test_dem_preview_runs_in_parallel_off_ensure_database() -> None:
     assert "trigger_calculate_dem_diff" not in trigger_preview.upstream_task_ids
 
 
+def test_masked_update_areas_run_after_reference_dem_parallel_to_the_diff() -> None:
+    # The suggestions read the freshly calculated reference DEM, but nothing
+    # the DEM diff produces, so the two chains run side by side.
+    dag = create_dag_to_test()
+
+    mask_gate = dag.get_task("should_suggest_masked_update_areas")
+    trigger_masks = dag.get_task("trigger_suggest_masked_update_areas")
+
+    assert "trigger_calculate_reference_dem" in mask_gate.upstream_task_ids
+    assert mask_gate.task_id in trigger_masks.upstream_task_ids
+    assert "trigger_calculate_dem_diff" not in trigger_masks.upstream_task_ids
+    # Runs even when the reference DEM trigger was skipped, like the DEM diff.
+    assert mask_gate.trigger_rule == "none_failed"
+
+
+def test_suggest_masked_update_areas_param_defaults_true() -> None:
+    dag = create_dag_to_test()
+
+    assert dag.params["suggest_masked_update_areas"] is True
+
+
 def test_trigger_operators_poll_frequently_for_completion() -> None:
     # The waiting triggers must poll well below the 60 s default, otherwise the
     # orchestration sits idle for up to a minute after each child DAG finishes
@@ -85,6 +108,7 @@ def test_trigger_operators_poll_frequently_for_completion() -> None:
         "trigger_calculate_reference_dem",
         "trigger_calculate_dem_diff",
         "trigger_initialize_dem_preview",
+        "trigger_suggest_masked_update_areas",
     ):
         trigger = dag.get_task(task_id)
         assert trigger.wait_for_completion is True
