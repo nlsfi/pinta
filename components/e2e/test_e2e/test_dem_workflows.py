@@ -52,6 +52,20 @@ def _count_diff_rasters(database_name: str) -> int:
     )
 
 
+def _suggested_elevations(database_name: str) -> list[float]:
+    """Return the elevations of the update area suggestions that carry one."""
+    credentials = db_utils.get_job_admin_credentials(database_name)
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        return list(
+            connection.execute(
+                sqlmodel.text(
+                    "SELECT elevation FROM reference.update_area_suggestion "
+                    "WHERE elevation IS NOT NULL ORDER BY elevation"
+                )
+            ).scalars()
+        )
+
+
 @pytest.mark.smoke
 @pytest.mark.xdist_group("airflow")
 @pytest.mark.usefixtures("seeded_processing_dem")
@@ -121,6 +135,8 @@ def test_calculate_rasters_for_production_area_workflow(
     assert suggestion_layer.setSubsetString("")
     assert suggestion_layer.featureCount() > 0
 
+    assert _suggested_elevations(completed_feature["database_name"]) == [111.3, 126.5]
+
 
 @pytest.mark.xdist_group("airflow")
 @pytest.mark.usefixtures("reduce_point_cloud_tiles")
@@ -139,6 +155,7 @@ def test_calculate_rasters_reference_dem_only(
             "calculate_dem_diff": False,
             "cluster_diff_polygons": False,
             "initialize_dem_preview": False,
+            "suggest_masked_update_areas": False,
         },
     )
     state = airflow_client.wait_for_dag_run(run, timeout=WORKFLOW_TIMEOUT_S)
