@@ -10,7 +10,7 @@ import pytest
 from pinta_common import MASK_OGR_ENV_PREFIX, Settings
 from pinta_test_utils import pinta_utils
 
-from pinta_processing import core, exceptions, pipelines
+from pinta_processing import core, exceptions
 from pinta_processing.reader import ogr
 
 GPKG = "ogr/polygons.gpkg"
@@ -101,7 +101,7 @@ def test_reads_the_geopackage_configured_in_the_environment(
     path = pinta_utils.get_test_data_path(GPKG)
     monkeypatch.setenv(f"{MASK_OGR_ENV_PREFIX}POLYGONS", str(path))
 
-    sources = pipelines.ogr_sources_from_environment()
+    sources = ogr.OgrReader.sources_from_environment()
 
     assert sources == [ogr.OgrSource(data_source=str(path), layer=None)]
     assert len(ogr.read_ogr_geodataframe(sources)) == EXPECTED_ROWS
@@ -114,10 +114,10 @@ def test_reads_the_layer_configured_in_the_environment(
     path = pinta_utils.get_test_data_path(GPKG)
     monkeypatch.setenv(
         f"{MASK_OGR_ENV_PREFIX}POLYGONS",
-        f"{path}{pipelines.LAYER_SEPARATOR}{LAYER}",
+        f"{path}{ogr.LAYER_SEPARATOR}{LAYER}",
     )
 
-    sources = pipelines.ogr_sources_from_environment()
+    sources = ogr.OgrReader.sources_from_environment()
 
     assert sources == [ogr.OgrSource(data_source=str(path), layer=LAYER)]
     assert len(ogr.read_ogr_geodataframe(sources)) == EXPECTED_ROWS

@@ -5,11 +5,12 @@
 
 import dataclasses
 import logging
+import os
 from collections.abc import Sequence
 
 import geopandas
 import pandas as pd
-from pinta_common import Settings
+from pinta_common import MASK_OGR_ENV_PREFIX, Settings
 
 from pinta_processing import core, exceptions
 
@@ -19,6 +20,11 @@ GEOMETRY_COLUMN = "geom"
 
 # Records the layer each row was read from.
 SOURCE_LAYER_NAME_COLUMN = "source_layer"
+
+# QGIS style suffix used in configuration to pick a single layer out of a
+# multi layer source, e.g. `/data/masks.gpkg|layername=buildings`. GDAL has no
+# such convention of its own.
+LAYER_SEPARATOR = "|layername="
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,11 +47,37 @@ class OgrReader(core.Stage):
         self.sources = sources
         self.crs = crs
 
+    @staticmethod
+    def sources_from_environment() -> list[OgrSource]:
+        """Return the vector sources configured in environment variables."""
+        return [
+            parse_ogr_source(value)
+            for variable, value in sorted(os.environ.items())
+            if variable.startswith(MASK_OGR_ENV_PREFIX) and value.strip()
+        ]
+
     def process(self, data: core.StageReturnType) -> core.VectorDataset:  # noqa: ARG002
         """Read the data sources into a VectorDataset."""
         return core.VectorDataset(
             geodataframe=read_ogr_geodataframe(self.sources, crs=self.crs)
         )
+
+
+def parse_ogr_source(value: str) -> OgrSource:
+    """Split a configured source string into a data source and a layer.
+
+    Everything before `|layername=` is the GDAL/OGR data source and is kept
+    verbatim; the suffix, when present, names a single layer to read.
+    """
+    data_source, separator, layer = value.strip().partition(LAYER_SEPARATOR)
+    if separator and not layer.strip():
+        raise exceptions.OgrSourceError(
+            source=value, reason=f"layer name after {LAYER_SEPARATOR!r} is empty"
+        )
+    return OgrSource(
+        data_source=data_source.strip(),
+        layer=layer.strip() if separator else None,
+    )
 
 
 def read_ogr_geodataframe(
