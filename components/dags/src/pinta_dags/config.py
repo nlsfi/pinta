@@ -17,6 +17,9 @@ from docker.types import Mount
 class AirflowVariable(enum.StrEnum):
     """Names of Airflow Variables used across Pinta DAGs."""
 
+    # Default number of retries for Pinta tasks.
+    DEFAULT_TASK_RETRIES = "pinta_default_task_retries"
+
     # Maximum number of DEM files processed concurrently in a single load_dem run
     LOAD_DEM_MAX_PARALLEL_PIPELINES = "pinta_load_dem_max_parallel_pipelines"
     # Number of staging tables used during load_dem to reduce PostGIS write contention
@@ -77,16 +80,23 @@ def build_job_connection_uri(base_uri: str, database_name: str) -> str:
     )
 
 
+def _get_default_retries() -> int:
+    var = AirflowVariable.DEFAULT_TASK_RETRIES
+    retries = int(Variable.get(var, 0))
+    if retries < 0:
+        msg = f"{var} must be at least 0"
+        raise ValueError(msg)
+    return retries
+
+
 PINTA_COMMON_TASK_ARGS: dict[str, Any] = {
-    "retries": 0,  # TODO: Set to something larger in non-local environments
+    "retries": _get_default_retries(),
     "retry_delay": datetime.timedelta(seconds=10),
 }
 
 PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
     "image": "{{ var.value.pinta_processing_image }}",
-    # Always pull the image so workers pick up a freshly pushed processing
-    # image (with the current pinta_common) instead of a stale local copy.
-    "force_pull": True,
+    "force_pull": False,
     # Cannot be templated at the moment
     "docker_url": Variable.get(
         "pinta_docker_socket_url", "unix:///var/run/docker.sock"
