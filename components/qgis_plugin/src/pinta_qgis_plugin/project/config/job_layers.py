@@ -96,6 +96,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
             "elevation",
         ],
         subset_string="energy_distribution >= 1 OR elevation IS NOT NULL",
+        style_path=_STYLES_PATH / "update_area_suggestion.qml",
     ),
     config.VectorLayerConfig(
         schema="user_data",
