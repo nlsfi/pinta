@@ -89,12 +89,7 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
             "cluster_area": tr("Cluster area"),
             "elevation": tr("Elevation"),
         },
-        read_only_fields=[
-            "energy_distribution",
-            "energy_sum",
-            "cluster_area",
-            "elevation",
-        ],
+        read_only=True,
         subset_string="energy_distribution >= 1 OR elevation IS NOT NULL",
         style_path=_STYLES_PATH / "update_area_suggestion.qml",
     ),
