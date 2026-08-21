@@ -6,6 +6,7 @@
 from sqlalchemy import Connection, text
 
 from pinta_common import Settings
+from pinta_db_utils import sql_utils
 
 _CREATE_DB_LOCK_KEY = "pinta-create-db"
 
@@ -15,10 +16,6 @@ _KILL_CONNECTIONS = text(
     "WHERE pg_stat_activity.datname = :db_name "
     "AND pid <> pg_backend_pid()"
 )
-
-
-def _quote_identifier(identifier: str) -> str:
-    return '"' + identifier.replace('"', '""') + '"'
 
 
 def _database_exists(connection: Connection, db_name: str) -> bool:
@@ -31,9 +28,8 @@ def _database_exists(connection: Connection, db_name: str) -> bool:
 
 def drop_database(connection: Connection, db_name: str) -> None:
     """Drop db when it exists, terminating sessions still attached."""
-    connection.execute(
-        text(f"DROP DATABASE IF EXISTS {_quote_identifier(db_name)} WITH (FORCE)")
-    )
+    target = sql_utils.quote_identifier(connection, db_name)
+    connection.execute(text(f"DROP DATABASE IF EXISTS {target} WITH (FORCE)"))
 
 
 def initialize_db_from_template(
@@ -69,8 +65,8 @@ def initialize_db_from_template(
         )
         raise ValueError(msg)
 
-    template = _quote_identifier(template_name)
-    target = _quote_identifier(db_name)
+    template = sql_utils.quote_identifier(connection, template_name)
+    target = sql_utils.quote_identifier(connection, db_name)
 
     connection.execute(
         text("SELECT pg_advisory_lock(hashtext(:key))"),

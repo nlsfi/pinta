@@ -55,6 +55,12 @@ class _Settings:
         return os.environ.get("DB_JOB_TEMPLATE_NAME", "job_template")
 
     @property
+    def DB_JOB_WRITER_ROLE(self) -> str:  # noqa: N802
+        # Group role QGIS editors write through. Same variable the job database
+        # migrations create the role from.
+        return os.environ.get("DB_JOB_WRITER_ROLE", "pinta_writer")
+
+    @property
     def LASTOOLS_DEMO_MODE(self) -> bool:  # noqa: N802
         # When set to a truthy value, LASTools commands are invoked with `-demo`.
         return _is_truthy(os.environ.get("LASTOOLS_DEMO_MODE", ""))
