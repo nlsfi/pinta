@@ -3,7 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-from pinta_processing.reader.lastools import Blast2DemReader
+from pinta_processing.reader.lastools import Las2DemReader
 from pinta_processing.reader.ogr import (
     OgrReader,
     OgrSource,
@@ -13,7 +13,7 @@ from pinta_processing.reader.ogr import (
 from pinta_processing.reader.readers import PostgisReader, RasterioReader
 
 __all__ = [
-    "Blast2DemReader",
+    "Las2DemReader",
     "OgrReader",
     "OgrSource",
     "PostgisReader",

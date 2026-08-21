@@ -95,7 +95,7 @@ class LASToolsReader(core.Stage):
         raise NotImplementedError
 
 
-class Blast2DemReader(LASToolsReader):
+class Las2DemReader(LASToolsReader):
     """Convert LAS files into DEM raster."""
 
     # TODO:  use blast2dem64 when bug mentioned in

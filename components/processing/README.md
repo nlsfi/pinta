@@ -18,7 +18,7 @@ Running Python code from processing component:
 
 ### Overview
 
-Loading a DEM is parallel at the file level: each input file (a `.zip` raster for [`load_dem`](../dags/src/pinta_dags/dags/load_dem.py), or a LAS/LAZ tile rasterised with `blast2dem` for [`calculate_reference_dem`](../dags/src/pinta_dags/dags/calculate_reference_dem.py)) is handled by its own pipeline, and many pipelines run at the same time. Each pipeline reads its input, tiles the raster onto a fixed global grid, and writes those tiles to [PostGIS raster](https://postgis.net/docs/using_raster_dataman.html) storage.
+Loading a DEM is parallel at the file level: each input file (a `.zip` raster for [`load_dem`](../dags/src/pinta_dags/dags/load_dem.py), or a LAS/LAZ tile rasterised with `las2dem` for [`calculate_reference_dem`](../dags/src/pinta_dags/dags/calculate_reference_dem.py)) is handled by its own pipeline, and many pipelines run at the same time. Each pipeline reads its input, tiles the raster onto a fixed global grid, and writes those tiles to [PostGIS raster](https://postgis.net/docs/using_raster_dataman.html) storage.
 
 Having every pipeline write directly into one shared raster table does not scale: concurrent writers serialise on shared, table-level resources (see below). Instead, each logical table (`dem` and its overviews) is backed by a number of short-lived **staging tables**. The parallel pipelines spread their tiles across the staging tables, and once they all finish, a single step **merges** the staging tables into the main table:
 
@@ -227,7 +227,7 @@ Consumers such as [`RasterDiff`](src/pinta_processing/filters/diff.py) require t
 
 ## LAZ processing with LAStools
 
-Point cloud (LAS/LAZ) tiles are rasterised into a DEM with [LAStools](https://rapidlasso.de/lastools/). [`Blast2DemReader`](src/pinta_processing/reader/lastools.py) runs the tool as a subprocess, writes a temporary GeoTIFF and hands it back into the pipeline as a normal `RasterDataset`, so LAStools appears as an ordinary reader stage.
+Point cloud (LAS/LAZ) tiles are rasterised into a DEM with [LAStools](https://rapidlasso.de/lastools/). [`Las2DemReader`](src/pinta_processing/reader/lastools.py) runs the tool as a subprocess, writes a temporary GeoTIFF and hands it back into the pipeline as a normal `RasterDataset`, so LAStools appears as an ordinary reader stage.
 
 **The binaries are not baked into the processing image.** The image build only *verifies* that the shared libraries LAStools needs are present. At run time the binaries come from a bind mount, so the container expects to find lastools executables from configured path.
 

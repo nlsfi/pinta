@@ -76,7 +76,7 @@ def rasterio_to_postgis(  # noqa: PLR0913
     )
 
 
-def blast2dem_to_postgis(  # noqa: PLR0913
+def las2dem_to_postgis(  # noqa: PLR0913
     primary_session: Session,
     job_session: Session,
     input_path: Path,
@@ -86,7 +86,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
     crs: str = f"EPSG:{Settings.DB_SRID}",
     extra_lastools_params: dict | None = None,
 ) -> core.Pipeline:
-    """Read LAS/LAZ with blast2dem and write to PostGIS with overviews."""
+    """Read LAS/LAZ with las2dem and write to PostGIS with overviews."""
     bounds = tm35_map_sheet_utils.calculate_sheet_bounds_for_tile(input_path.stem)
     neighbor_paths = find_intersecting_tiles.find_neighboring_tm35_laz_files(
         input_path, DEFAULT_BUFFERED, primary_session
@@ -105,7 +105,7 @@ def blast2dem_to_postgis(  # noqa: PLR0913
 
     schema, table_name = model_utils.schema_and_table(reference.Dem)
     return (
-        reader.Blast2DemReader(
+        reader.Las2DemReader(
             input_path,
             step=step,
             crs=crs,

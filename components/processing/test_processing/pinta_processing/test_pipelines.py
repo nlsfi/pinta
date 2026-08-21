@@ -15,14 +15,14 @@ from pinta_processing import filters, pipelines
 from pinta_processing.writer import WriterMode
 
 
-def test_blast2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -> None:
+def test_las2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -> None:
 
-    blast2dem_reader = mocker.patch(
-        "pinta_processing.reader.Blast2DemReader",
+    las2dem_reader = mocker.patch(
+        "pinta_processing.reader.Las2DemReader",
         return_value=MagicMock(),
     )
 
-    pipelines.blast2dem_to_postgis(
+    pipelines.las2dem_to_postgis(
         primary_session=MagicMock(),
         job_session=MagicMock(),
         input_path=Path("/tmp/dir/N5122B4_1.laz"),
@@ -30,7 +30,7 @@ def test_blast2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -
         keep_class=[2],
     )
 
-    assert blast2dem_reader.call_args.kwargs["extra_lastools_params"] == {
+    assert las2dem_reader.call_args.kwargs["extra_lastools_params"] == {
         "buffered": 300,
         "kill": 300,
         "ncols": 500,
@@ -39,16 +39,16 @@ def test_blast2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -
     }
 
 
-def test_blast2dem_to_postgis_override_extra_param_defaults(
+def test_las2dem_to_postgis_override_extra_param_defaults(
     mocker: MockerFixture,
 ) -> None:
 
-    blast2dem_reader = mocker.patch(
-        "pinta_processing.reader.Blast2DemReader",
+    las2dem_reader = mocker.patch(
+        "pinta_processing.reader.Las2DemReader",
         return_value=MagicMock(),
     )
 
-    pipelines.blast2dem_to_postgis(
+    pipelines.las2dem_to_postgis(
         primary_session=MagicMock(),
         job_session=MagicMock(),
         input_path=Path("/tmp/dir/N5122B4_1.laz"),
@@ -62,7 +62,7 @@ def test_blast2dem_to_postgis_override_extra_param_defaults(
         },
     )
 
-    assert blast2dem_reader.call_args.kwargs["extra_lastools_params"] == {
+    assert las2dem_reader.call_args.kwargs["extra_lastools_params"] == {
         "buffered": 100,
         "kill": 300,
         "ncols": 200,

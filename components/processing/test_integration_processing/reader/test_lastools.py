@@ -30,8 +30,8 @@ def _ensure_lastools_is_available(lastools_in_path: None) -> None:
 
 
 @pytest.fixture(autouse=True)
-def set_blast2dem_executable(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(lastools.Blast2DemReader, "executable", "las2dem_new64")
+def set_las2dem_executable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(lastools.Las2DemReader, "executable", "las2dem_new64")
 
 
 @pytest.fixture
@@ -45,10 +45,10 @@ def add_tiles_to_db(session: "Session") -> None:
     session.commit()
 
 
-def test_blast2dem_reader_produces_raster_from_laz():
+def test_las2dem_reader_produces_raster_from_laz():
     laz_path = pinta_utils.get_test_data_path(f"{LAZ_DIR}/N5122B4_1.laz")
 
-    stage = lastools.Blast2DemReader(
+    stage = lastools.Las2DemReader(
         input_path=laz_path,
         step=1,
         crs=CRS,
@@ -64,12 +64,12 @@ def test_blast2dem_reader_produces_raster_from_laz():
     assert dataset.transform is not None
 
 
-def test_blast2dem_reader_raises_on_invalid_input():
+def test_las2dem_reader_raises_on_invalid_input():
     missing_path = pinta_utils.get_test_data_path(
         f"{LAZ_DIR}/does_not_exist.laz", check_if_exists=False
     )
 
-    stage = lastools.Blast2DemReader(
+    stage = lastools.Las2DemReader(
         input_path=missing_path,
         step=1,
         crs=CRS,
@@ -79,10 +79,10 @@ def test_blast2dem_reader_raises_on_invalid_input():
         stage.process(None)
 
 
-def test_blast2dem_reader_output_overlaps_input_bounds():
+def test_las2dem_reader_output_overlaps_input_bounds():
     laz_path = pinta_utils.get_test_data_path(f"{LAZ_DIR}/N5122B4_1.laz")
 
-    stage = lastools.Blast2DemReader(
+    stage = lastools.Las2DemReader(
         input_path=laz_path,
         step=1,
         crs=CRS,
@@ -101,7 +101,7 @@ def test_blast2dem_reader_output_overlaps_input_bounds():
 
 
 @pytest.mark.usefixtures("add_tiles_to_db")
-def test_blast2dem_reader_with_sensible_parameters(session: "Session"):
+def test_las2dem_reader_with_sensible_parameters(session: "Session"):
     laz_dir = pinta_utils.get_test_data_path(LAZ_DIR)
 
     target_code = "N5122B4_5"
@@ -115,7 +115,7 @@ def test_blast2dem_reader_with_sensible_parameters(session: "Session"):
     # N5122B4_5 is interior to the H1 sub-sheet, so all 8 neighbors exist
     assert len(neighbor_paths) == 8
 
-    stage = lastools.Blast2DemReader(
+    stage = lastools.Las2DemReader(
         input_path=target_path,
         step=2,
         crs=CRS,

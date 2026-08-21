@@ -12,7 +12,7 @@ from pinta_db_utils.postgis import raster
 from pinta_test_utils import pinta_utils
 
 from pinta_processing import pipelines
-from pinta_processing.reader.lastools import Blast2DemReader
+from pinta_processing.reader.lastools import Las2DemReader
 
 if typing.TYPE_CHECKING:
     from sqlmodel import Session
@@ -28,11 +28,11 @@ def _ensure_lastools_is_available(lastools_in_path: None) -> None:
 
 
 @pytest.fixture(autouse=True)
-def set_blast2dem_executable(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(Blast2DemReader, "executable", "las2dem_new64")
+def set_las2dem_executable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(Las2DemReader, "executable", "las2dem_new64")
 
 
-def test_blast2dem_to_postgis(
+def test_las2dem_to_postgis(
     processing_worker_session: "Session", session: "Session"
 ) -> None:
     table_name = "dem"
@@ -48,7 +48,7 @@ def test_blast2dem_to_postgis(
 
     input_path = pinta_utils.get_test_data_path(_LAZ_FILE)
 
-    pipeline = pipelines.blast2dem_to_postgis(
+    pipeline = pipelines.las2dem_to_postgis(
         primary_session=session,
         job_session=processing_worker_session,
         input_path=input_path,
