@@ -25,7 +25,7 @@ class AirflowVariable(enum.StrEnum):
     # Number of staging tables used during load_dem to reduce PostGIS write contention
     LOAD_DEM_STAGING_TABLES = "pinta_load_dem_staging_tables"
 
-    # Maximum number of blast2dem tile pipelines running in parallel for reference DEM
+    # Maximum number of las2dem tile pipelines running in parallel for reference DEM
     CALCULATE_REFERENCE_DEM_MAX_PARALLEL_PIPELINES = (
         "pinta_calculate_reference_dem_max_parallel_pipelines"
     )
