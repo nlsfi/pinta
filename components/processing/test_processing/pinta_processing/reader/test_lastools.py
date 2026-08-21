@@ -47,7 +47,7 @@ def _make_run_side_effect(
     return side_effect
 
 
-def _make_blast2dem_reader(**overrides: Any) -> lastools.Blast2DemReader:
+def _make_las2dem_reader(**overrides: Any) -> lastools.Las2DemReader:
     params: dict[str, Any] = {
         "input_path": pathlib.Path("/data/input.laz"),
         "step": 2,
@@ -55,7 +55,7 @@ def _make_blast2dem_reader(**overrides: Any) -> lastools.Blast2DemReader:
         "keep_class": [2, 9],
     }
     params.update(overrides)
-    return lastools.Blast2DemReader(**params)
+    return lastools.Las2DemReader(**params)
 
 
 @pytest.fixture
@@ -67,14 +67,14 @@ def mock_rasterio_reader(
     return mock_class
 
 
-def test_blast2dem_reader_builds_command(
+def test_las2dem_reader_builds_command(
     mocker: "MockerFixture", mock_rasterio_reader: "MagicMock"
 ):
     run_mock = mocker.patch.object(
         lastools.subprocess, "run", side_effect=_make_run_side_effect()
     )
 
-    stage = _make_blast2dem_reader()
+    stage = _make_las2dem_reader()
     stage.process(None)
 
     run_mock.assert_called_once()
@@ -87,14 +87,14 @@ def test_blast2dem_reader_builds_command(
     assert command[keep_class_idx + 1 : keep_class_idx + 3] == ["2", "9"]
 
 
-def test_blast2dem_reader_appends_extra_params(
+def test_las2dem_reader_appends_extra_params(
     mocker: "MockerFixture", mock_rasterio_reader: "MagicMock"
 ):
     run_mock = mocker.patch.object(
         lastools.subprocess, "run", side_effect=_make_run_side_effect()
     )
 
-    stage = _make_blast2dem_reader(
+    stage = _make_las2dem_reader(
         extra_lastools_params={"thin_with_grid": 0.5, "elevation": "average"},
     )
     stage.process(None)
@@ -104,14 +104,14 @@ def test_blast2dem_reader_appends_extra_params(
     assert command[command.index("-elevation") + 1] == "average"
 
 
-def test_blast2dem_reader_expands_list_valued_params(
+def test_las2dem_reader_expands_list_valued_params(
     mocker: "MockerFixture", mock_rasterio_reader: "MagicMock"
 ):
     run_mock = mocker.patch.object(
         lastools.subprocess, "run", side_effect=_make_run_side_effect()
     )
 
-    stage = _make_blast2dem_reader(
+    stage = _make_las2dem_reader(
         extra_lastools_params={"neighbors": ["a.laz", "b.laz", "c.laz"]},
     )
     stage.process(None)
@@ -128,7 +128,7 @@ def test_lastools_reader_returns_rasterio_dataset(
 ):
     mocker.patch.object(lastools.subprocess, "run", side_effect=_make_run_side_effect())
 
-    stage = _make_blast2dem_reader()
+    stage = _make_las2dem_reader()
     result = stage.process(None)
 
     assert result is dataset
@@ -147,7 +147,7 @@ def test_lastools_reader_raises_when_command_fails(
         side_effect=_make_run_side_effect(returncode=1, stderr="boom"),
     )
 
-    stage = _make_blast2dem_reader()
+    stage = _make_las2dem_reader()
     with pytest.raises(LasToolsError, match="boom"):
         stage.process(None)
 
@@ -161,7 +161,7 @@ def test_lastools_reader_raises_when_output_file_missing(
         side_effect=_make_run_side_effect(create_output=False),
     )
 
-    stage = _make_blast2dem_reader()
+    stage = _make_las2dem_reader()
     with pytest.raises(LasToolsError, match="was not created"):
         stage.process(None)
 
