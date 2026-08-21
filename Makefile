@@ -127,10 +127,21 @@ qgis-start-no-extras:
 # Airflow targets
 # ===============
 
+AIRFLOW_VERSION ?= 3.3.1
+AIRFLOW_PYTHON_VERSION ?= 3.12
+AIRFLOW_CONSTRAINTS_DIR := $(DAGS_DIR)/.airflow/constraints
+AIRFLOW_MODIFIED_CONSTRAINTS := $(AIRFLOW_CONSTRAINTS_DIR)/constraints-$(AIRFLOW_VERSION)-py$(AIRFLOW_PYTHON_VERSION).txt
+
 AIRFLOW_PASSWORD_FILE := $(AIRFLOW_HOME)simple_auth_manager_passwords.json.generated
 
 airflow-clean:
 	rm -r $(AIRFLOW_HOME)
+
+airflow-prepare-constraints:
+	uv run --directory $(DAGS_DIR) python -m pinta_dags.scripts.prepare_airflow_constraints \
+	  --airflow-version $(AIRFLOW_VERSION) \
+	  --python-version $(AIRFLOW_PYTHON_VERSION) \
+	  --output $(AIRFLOW_MODIFIED_CONSTRAINTS)
 
 # Pre-write deterministic passwords
 airflow-write-passwords:

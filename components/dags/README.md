@@ -44,8 +44,15 @@ If you want to run the load dem DAG, you can place test data inside the repo roo
 
 ## Updating Airflow
 
-* Update the Airflow version with `uv add --optional airflow apache-airflow[postgres,standard]==3.1.8 --constraint https://raw.githubusercontent.com/apache/airflow/constraints-3.1.8/constraints-3.12.txt`
-  * Replace versions with the desired Airflow version and python version.
+`numpy` and `scipy` are pinned in the DAG component because Airflow's upstream constraints file already fixes versions for the whole dependency set, but those two packages need to be kept under explicit control in this repository so the workspace can resolve the Airflow extra consistently across components. Pulling them out of the generated constraints file and pinning them in `pyproject.toml` makes upgrades repeatable and avoids resolution conflicts when `uv add` is run.
+
+* Update the Airflow version in `components/dags/pyproject.toml` manually.
+* Update required AIRFLOW_VERSION and PYTHON_VERSION in Makefile
+* Fetch and normalize the matching constraints file with `make airflow-prepare-constraints`.
+  * The helper downloads the upstream Apache Airflow constraints file for the selected Python version, removes the `numpy` and `scipy` pins, and writes a local modified copy under `components/dags/.airflow/constraints/`.
+  * The helper prints the upstream `numpy` and `scipy` versions. Update the `numpy` and `scipy` pins in `components/dags/pyproject.toml` to match.
+* If the backend Airflow client needs to stay in sync, update the pin in `components/backend/pyproject.toml` as well.
+* Run `uv add --optional airflow apache-airflow[docker,postgres,standard]==<version> --constraint <path-to-modified-constraints>` from `components/dags`.
 * Run tests and test standalone usage; remove warning filters or other workarounds required by the old version if
   necessary.
 
