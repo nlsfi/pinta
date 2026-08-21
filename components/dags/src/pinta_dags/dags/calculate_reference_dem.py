@@ -22,7 +22,7 @@ from pinta_dags.tasks import (
 
 DB_SCHEMA = Schema.REFERENCE.value
 DB_TABLE = Dem.__tablename__
-BLAST2DEM_KEEP_CLASS = [2]
+LASTOOLS_KEEP_CLASS = [2]
 
 
 def _get_max_parallel_pipelines() -> int:
@@ -70,7 +70,7 @@ def create_calculate_reference_dem_dag(
             **config.PINTA_CONTAINER_TASK_ARGS,
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
-        def blast2dem(  # noqa: PLR0913
+        def las2dem(  # noqa: PLR0913
             primary_connection_uri: str,
             job_connection_uri: str,
             input_path: str,
@@ -96,7 +96,7 @@ def create_calculate_reference_dem_dag(
                     sqlalchemy.create_engine(job_connection_uri)
                 ) as job_session,
             ):
-                pipeline = pipelines.blast2dem_to_postgis(
+                pipeline = pipelines.las2dem_to_postgis(
                     primary_session=primary_session,
                     job_session=job_session,
                     input_path=Path(input_path),
@@ -128,18 +128,18 @@ def create_calculate_reference_dem_dag(
         )
 
         pixel_size = "{{ var.value.pinta_db_dem_pixel_size }}"
-        blast2dem_task = blast2dem.partial(
+        las2dem_task = las2dem.partial(
             primary_connection_uri=primary_connection_uri,
             job_connection_uri=job_db_uri,
             step=pixel_size,
-            keep_class=BLAST2DEM_KEEP_CLASS,
+            keep_class=LASTOOLS_KEEP_CLASS,
             staging_tables=_get_staging_tables(),
         )
 
         initialize_task = initialize_dem_tables(
             job_db_uri, DB_SCHEMA, DB_TABLE, _get_staging_tables()
         )
-        processed_files = blast2dem_task.expand(input_path=file_paths)
+        processed_files = las2dem_task.expand(input_path=file_paths)
         (
             file_paths
             >> initialize_task
