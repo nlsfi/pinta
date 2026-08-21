@@ -12,6 +12,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from airflow.sdk import Variable
 from docker.types import Mount
+from pinta_common import Settings
 
 
 class AirflowVariable(enum.StrEnum):
@@ -107,6 +108,7 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
         "DB_SRID": "{{ var.value.pinta_db_srid }}",
         "DB_DEM_PIXEL_SIZE": "{{ var.value.pinta_db_dem_pixel_size }}",
         "DB_DEM_NODATA": "{{ var.value.pinta_db_dem_nodata }}",
+        "DB_JOB_WRITER_ROLE": Settings.DB_JOB_WRITER_ROLE,
         "LAStoolsLicenseFile": "/lastools/lastoolslicense.txt",
         # Resolved per run (empty = off); dev/e2e set it so unlicensed binaries run.
         "LASTOOLS_DEMO_MODE": "{{ var.value.get('pinta_lastools_demo_mode', '') }}",

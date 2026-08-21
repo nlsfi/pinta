@@ -15,6 +15,8 @@ from pinta_dags.tasks import (
     build_job_connection_uri_task,
     find_dirty_update_areas,
     get_database_name,
+    restore_update_area_write_access,
+    revoke_update_area_write_access,
     set_processing_status_completed,
     set_processing_status_failed,
     set_processing_status_started,
@@ -210,6 +212,7 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
 
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
+        job_admin_connection_uri = config.connection_uri_template("pinta_job_db_admin")
 
         prod_area_id = "{{ params.id }}"
 
@@ -226,6 +229,22 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 database_name=database_name,
             ),
         )
+
+        # The editor write privileges were granted by the job database owner,
+        # and Postgres only lets the grantor take them back, so the lock runs on
+        # the admin connection instead of the processing worker one.
+        job_admin_db_uri = cast(
+            "str",
+            build_job_connection_uri_task.override(
+                task_id="build_job_admin_connection_uri"
+            )(
+                base_uri=job_admin_connection_uri,
+                database_name=database_name,
+            ),
+        )
+        revoke_qgis_write_access = revoke_update_area_write_access(job_admin_db_uri)
+        restore_qgis_write_access = restore_update_area_write_access(job_admin_db_uri)
+
         dirty_update_areas = find_dirty_update_areas(job_db_uri)
 
         ensured_areas = ensure_dem_preview_coverage.partial(
@@ -249,7 +268,10 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
         # areas may extend outside the initialized dem_preview coverage, so
         # the missing tiles are copied in before any area is dissolved.
         status_started >> database_name
+
+        job_admin_db_uri >> revoke_qgis_write_access >> dirty_update_areas
         dirty_update_areas >> ensured_areas >> dissolved_areas
+        dissolved_areas >> restore_qgis_write_access
 
         # Resolve the final status off every task that can fail (each is a direct
         # upstream, so ONE_FAILED still fires when an early step fails and the
@@ -258,9 +280,12 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             status_started,
             database_name,
             job_db_uri,
+            job_admin_db_uri,
+            revoke_qgis_write_access,
             dirty_update_areas,
             ensured_areas,
             dissolved_areas,
+            restore_qgis_write_access,
         ]
         processing_steps >> status_completed
         processing_steps >> status_failed
