@@ -135,6 +135,37 @@ def find_update_area_geometries(
         return [to_shape(area.geom).wkt for area in update_areas]
 
 
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def revoke_update_area_write_access(connection_uri: str) -> None:
+    """Lock QGIS editors out of editing update_area."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_common import Settings
+    from pinta_db.job_db import privileges
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        privileges.revoke_update_area_write_access(session, Settings.DB_JOB_WRITER_ROLE)
+
+
+@task.docker(
+    **config.PINTA_CONTAINER_TASK_ARGS,
+    trigger_rule=TriggerRule.ALL_DONE,
+)
+def restore_update_area_write_access(connection_uri: str) -> None:
+    """Give QGIS editors their update_area write access back."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_common import Settings
+    from pinta_db.job_db import privileges
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        privileges.restore_update_area_write_access(
+            session, Settings.DB_JOB_WRITER_ROLE
+        )
+
+
 @task
 def build_job_connection_uri_task(
     base_uri: str,

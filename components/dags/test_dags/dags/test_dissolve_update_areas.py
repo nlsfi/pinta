@@ -9,7 +9,9 @@ from unittest.mock import MagicMock
 
 import pytest
 from airflow.models import DagBag, dagbag
+from pinta_common import Settings
 
+from pinta_dags import config
 from pinta_dags.dags import dissolve_update_areas
 
 if TYPE_CHECKING:
@@ -50,9 +52,12 @@ def test_dissolve_update_areas_all_tasks() -> None:
         "set_processing_status_started",
         "get_database_name",
         "build_job_connection_uri_task",
+        "build_job_admin_connection_uri",
+        "revoke_update_area_write_access",
         "find_dirty_update_areas",
         "ensure_dem_preview_coverage",
         "dissolve_update_area",
+        "restore_update_area_write_access",
         "set_processing_status_completed",
         "set_processing_status_failed",
     }
@@ -68,6 +73,7 @@ def test_dependencies() -> None:
     find_dirty_update_areas = dag.get_task("find_dirty_update_areas")
     ensure_dem_preview_coverage = dag.get_task("ensure_dem_preview_coverage")
     dissolve_update_area = dag.get_task("dissolve_update_area")
+    revoke_write_access = dag.get_task("revoke_update_area_write_access")
 
     assert status_started.task_id in get_database_name.upstream_task_ids
     assert get_database_name.task_id in build_job_connection_uri_task.upstream_task_ids
@@ -75,6 +81,8 @@ def test_dependencies() -> None:
         build_job_connection_uri_task.task_id
         in find_dirty_update_areas.upstream_task_ids
     )
+    # No area is listed before editors have been locked out of update_area.
+    assert revoke_write_access.task_id in find_dirty_update_areas.upstream_task_ids
     # Missing preview tiles are copied in before any area is dissolved.
     assert (
         find_dirty_update_areas.task_id in ensure_dem_preview_coverage.upstream_task_ids
@@ -94,15 +102,45 @@ def test_processing_status_tasks() -> None:
         "set_processing_status_started",
         "get_database_name",
         "build_job_connection_uri_task",
+        "build_job_admin_connection_uri",
+        "revoke_update_area_write_access",
         "find_dirty_update_areas",
         "ensure_dem_preview_coverage",
         "dissolve_update_area",
+        "restore_update_area_write_access",
     }
     assert expected_upstream <= status_completed.upstream_task_ids
     assert expected_upstream <= status_failed.upstream_task_ids
 
     assert status_completed.trigger_rule == "none_failed"
     assert status_failed.trigger_rule == "one_failed"
+
+
+def test_write_access_lock_uses_admin_connection() -> None:
+    dag = create_dag_to_test()
+
+    admin_uri = dag.get_task("build_job_admin_connection_uri")
+    revoke_write_access = dag.get_task("revoke_update_area_write_access")
+    restore_write_access = dag.get_task("restore_update_area_write_access")
+
+    assert "pinta_job_db_admin" in admin_uri.op_kwargs["base_uri"]
+    for task in (revoke_write_access, restore_write_access):
+        assert admin_uri.task_id in task.upstream_task_ids
+
+
+def test_writer_role_is_forwarded_to_container_tasks() -> None:
+    environment = config.PINTA_CONTAINER_TASK_ARGS["environment"]
+
+    assert environment["DB_JOB_WRITER_ROLE"] == Settings.DB_JOB_WRITER_ROLE
+
+
+def test_write_access_is_restored_even_when_dissolve_fails() -> None:
+    dag = create_dag_to_test()
+
+    restore_write_access = dag.get_task("restore_update_area_write_access")
+
+    assert "dissolve_update_area" in restore_write_access.upstream_task_ids
+    assert restore_write_access.trigger_rule == "all_done"
 
 
 def test_get_max_parallel_pipelines_reads_variable() -> None:
