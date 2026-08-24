@@ -3,12 +3,12 @@ name = "pinta_backend"
 version = "0.0.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
   "fastapi",
   "uvicorn",
   "pydantic-settings",
-  "apache-airflow-client==3.1.8",
+  "apache-airflow-client==3.3.1",
   "httpx",
   "jsonschema",
   "pinta-db[psycopg]",

@@ -3,7 +3,7 @@ name = "pinta-e2e"
 version = "0.0.0"
 description = "End to end tests for elevation production system"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
   "requests",
 ]

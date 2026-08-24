@@ -11,8 +11,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from airflow.exceptions import AirflowSkipException
 from airflow.sdk import BaseSensorOperator, Variable
+from airflow.sdk.exceptions import AirflowSkipException
 from airflow.utils.context import Context
 
 

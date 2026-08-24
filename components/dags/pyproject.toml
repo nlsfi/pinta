@@ -3,15 +3,17 @@ name = "pinta-dags"
 version = "0.0.0"
 description = "DAG component of the elevation production system"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
   "pinta-db",
   "pinta-processing",
 ]
 [project.optional-dependencies]
 airflow = [
-  "apache-airflow[docker,postgres,standard]==3.1.8",
+  "apache-airflow[docker,postgres,standard]==3.3.1",
   "pinta-db[psycopg]",
+  "numpy==2.5.1",
+  "scipy==1.18.0",
 ]
 
 [build-system]

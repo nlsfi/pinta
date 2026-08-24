@@ -245,6 +245,7 @@ COVERAGE_DIFF_MIN_LINES := 20
 
 coverage-diff:
 	uvx diff-cover coverage.xml --compare-branch=origin/main \
+		--exclude *prepare_airflow_constraints.py \
 		--format markdown:diff-cover.md,html:diff-cover.html,json:report.json
 	@lines=$$(python3 -c 'import json; print(json.load(open("report.json"))["total_num_lines"])'); \
 	pct=$$(python3 -c 'import json; print(json.load(open("report.json"))["total_percent_covered"])'); \

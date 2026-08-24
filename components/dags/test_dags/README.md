@@ -10,7 +10,7 @@ def create_dag_to_test() -> "DAG":
         dag_id=f"some_id_{uuid.uuid4()}"
     )
 
-    dag_bag = DagBag(include_examples=False)
+    dag_bag = DagBag()
     dag_bag.bag_dag(dag)
     sync_bag_to_db(dag_bag, "mock-dags", None)
 
