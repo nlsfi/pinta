@@ -9,6 +9,7 @@ from collections.abc import Iterable
 import sqlmodel
 from sqlalchemy import bindparam
 
+from pinta_db import constants
 from pinta_db_utils import database_utils, engine_utils
 
 PINTA_MANAGED_SCHEMAS = ("dem", "management", "reference", "user_data")
@@ -144,8 +145,20 @@ def get_job_database_names(primary_db_name: str) -> set[str]:
 
 
 def drop_job_databases(db_names: Iterable[str]) -> None:
-    """Drop the given job databases, never the shared job template."""
-    targets = sorted(set(db_names) - {os.environ["DB_JOB_TEMPLATE_NAME"]})
+    """Drop the given job databases, never the shared job template.
+
+    Names outside the job namespace are skipped: a test may leave an area
+    pointing at a database the DAGs would never provision, and dropping that
+    would take out an unrelated database such as `postgres`. The template
+    carries the `job_` prefix under its default name, so the prefix check
+    alone does not protect it.
+    """
+    template_name = os.environ["DB_JOB_TEMPLATE_NAME"]
+    targets = sorted(
+        name
+        for name in set(db_names)
+        if name.startswith(constants.JOB_DATABASE_NAME_PREFIX) and name != template_name
+    )
     if not targets:
         return
     with engine_utils.get_autocommit_connection(
