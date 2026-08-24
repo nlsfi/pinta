@@ -81,3 +81,10 @@ def open_production_area(database_name: str | None, group_name: str) -> bool:
     collection.set_group_name(group_name)
     collection.add_to_project()
     return True
+
+
+def close_production_area(database_name: str) -> None:
+    """Remove the layers of the production area's job database from the project."""
+    collection = typing.cast("JobLayerCollection", JobLayerCollection.get())
+    collection.set_database_name(database_name)
+    collection.remove_from_project()

@@ -20,6 +20,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from pytest_mock import MockerFixture
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis_plugin_tools.tools.exceptions import QgsPluginException
 
 from pinta_qgis_plugin.utils import messages
@@ -107,3 +108,31 @@ def test_show_error_dialog_creates_message_box(mocker: MockerFixture) -> None:
     mock_box.setWindowTitle.assert_called_once_with("the title")
     mock_box.setText.assert_called_once_with("the body")
     mock_box.exec.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("clicked_button", "expected"),
+    [(QMessageBox.StandardButton.Yes, True), (QMessageBox.StandardButton.No, False)],
+    ids=["yes", "no"],
+)
+def test_ask_confirmation_returns_users_answer(
+    mocker: MockerFixture,
+    clicked_button: int,
+    expected: bool,
+) -> None:
+    mock_iface = mocker.patch.object(messages, "iface", autospec=True)
+    mock_iface.mainWindow.return_value = MagicMock()
+    mock_message_box_class = mocker.patch.object(messages, "QMessageBox")
+    # The button and icon enums are read off the patched class.
+    mock_message_box_class.Yes = QMessageBox.StandardButton.Yes
+    mock_message_box_class.No = QMessageBox.StandardButton.No
+    mock_message_box_class.Icon = QMessageBox.Icon
+    mock_box = mock_message_box_class.return_value
+    mock_box.exec.return_value = clicked_button
+
+    confirmed = messages.ask_confirmation("the title", "the body")
+
+    assert confirmed is expected
+    mock_box.setWindowTitle.assert_called_once_with("the title")
+    mock_box.setText.assert_called_once_with("the body")
+    mock_box.setDefaultButton.assert_called_once_with(QMessageBox.StandardButton.No)

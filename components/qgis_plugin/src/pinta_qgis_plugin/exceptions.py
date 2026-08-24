@@ -53,3 +53,8 @@ class ApiConnectionError(PintaApiError):
 class WorkflowNotStartedError(PintaApiError):
     def __init__(self, message: str, details: str) -> None:
         super().__init__(message, details)
+
+
+class JobDatabaseNotDeletedError(PintaApiError):
+    def __init__(self, message: str, details: str) -> None:
+        super().__init__(message, details)

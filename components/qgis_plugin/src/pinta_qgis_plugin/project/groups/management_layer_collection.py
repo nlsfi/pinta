@@ -38,6 +38,7 @@ ACTION_TITLE_OPEN_PRODUCTION_AREA_LAYERS = tr("Open production area")
 ACTION_TITLE_START_REFERENCE_DEM_WORKFLOW = tr("Start reference DEM workflow")
 ACTION_TITLE_START_DISSOLVE_UPDATE_AREAS = tr("Dissolve update areas")
 ACTION_TITLE_START_REGISTER_UPDATE_AREAS = tr("Register update areas")
+ACTION_TITLE_DELETE_JOB_DATABASE = tr("Delete production area database")
 
 
 class ManagementLayerCollection(BaseLayerCollection):
@@ -57,6 +58,7 @@ class ManagementLayerCollection(BaseLayerCollection):
                 _add_start_reference_dem_workflow_action(layer)
                 _add_start_dissolve_update_areas_action(layer)
                 _add_start_register_update_areas_action(layer)
+                _add_delete_job_database_action(layer)
 
 
 def _add_open_production_area_layers_action(layer: QgsVectorLayer) -> None:
@@ -118,5 +120,23 @@ def _add_start_register_update_areas_action(layer: QgsVectorLayer) -> None:
         layer,
         description=tr("Start register update areas workflow for production area"),
         short_title=ACTION_TITLE_START_REGISTER_UPDATE_AREAS,
+        command=command,
+    )
+
+
+def _add_delete_job_database_action(layer: QgsVectorLayer) -> None:
+    """Add delete job database action to the layer."""
+    command = textwrap.dedent("""
+        from pinta_qgis_plugin.workflows import job_database
+        job_id = \'[%id%]\'
+        db_name = \'[%database_name%]\'
+        job_database.delete_job_database(job_id, db_name)
+    """)
+    layer_utils.add_action_to_vector_layer(
+        layer,
+        description=tr(
+            "Delete the database of the production area and reset its processing status"
+        ),
+        short_title=ACTION_TITLE_DELETE_JOB_DATABASE,
         command=command,
     )
