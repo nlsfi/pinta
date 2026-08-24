@@ -269,6 +269,98 @@ def test_start_register_update_areas_workflow_shows_success_message(
     assert mock_msg_bar.info.call_args.kwargs == {"success": True}
 
 
+@pytest.fixture
+def mock_delete(mocker: MockerFixture, client: api_client.PintaAPIClient) -> MagicMock:
+    return mocker.patch.object(client.session, "delete", autospec=True)
+
+
+def test_delete_job_database_calls_delete_endpoint(
+    client: api_client.PintaAPIClient,
+    mock_delete: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(api_client, "MsgBar", autospec=True)
+
+    client.delete_job_database("area-1")
+
+    mock_delete.assert_called_once_with(
+        "http://example.test/production-areas/area-1/database",
+        timeout=10,
+    )
+    mock_delete.return_value.raise_for_status.assert_called_once_with()
+
+
+def test_delete_job_database_shows_success_message(
+    client: api_client.PintaAPIClient,
+    mock_delete: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mock_msg_bar = mocker.patch.object(api_client, "MsgBar", autospec=True)
+
+    client.delete_job_database("area-1")
+
+    mock_msg_bar.info.assert_called_once()
+    assert mock_msg_bar.info.call_args.kwargs == {"success": True}
+
+
+def test_delete_job_database_emits_job_database_deleted(
+    client: api_client.PintaAPIClient,
+    mock_delete: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(api_client, "MsgBar", autospec=True)
+    received: list[str] = []
+    client.job_database_deleted.connect(received.append)
+
+    client.delete_job_database("area-1")
+
+    assert received == ["area-1"]
+
+
+def test_delete_job_database_connection_error_raises_api_connection_error(
+    client: api_client.PintaAPIClient,
+    mock_delete: MagicMock,
+) -> None:
+    mock_delete.side_effect = requests.exceptions.ConnectionError("boom")
+
+    with pytest.raises(exceptions.ApiConnectionError):
+        client.delete_job_database("area-1")
+
+
+def test_delete_job_database_http_error_raises_job_database_error(
+    client: api_client.PintaAPIClient,
+    mock_delete: MagicMock,
+) -> None:
+    response = MagicMock(spec=requests.Response)
+    response.json.return_value = {"detail": "database is protected"}
+    mock_delete.return_value.raise_for_status.side_effect = (
+        requests.exceptions.HTTPError(response=response)
+    )
+
+    with pytest.raises(exceptions.JobDatabaseNotDeletedError) as exc_info:
+        client.delete_job_database("area-1")
+
+    assert exc_info.value.bar_msg["details"] == "database is protected"
+
+
+def test_delete_job_database_does_not_emit_signal_on_error(
+    client: api_client.PintaAPIClient,
+    mock_delete: MagicMock,
+) -> None:
+    received: list[str] = []
+    client.job_database_deleted.connect(received.append)
+    response = MagicMock(spec=requests.Response)
+    response.json.return_value = {"detail": "boom"}
+    mock_delete.return_value.raise_for_status.side_effect = (
+        requests.exceptions.HTTPError(response=response)
+    )
+
+    with pytest.raises(exceptions.JobDatabaseNotDeletedError):
+        client.delete_job_database("area-1")
+
+    assert received == []
+
+
 def test_get_api_client_is_cached() -> None:
     api_client.get_api_client.cache_clear()
     try:

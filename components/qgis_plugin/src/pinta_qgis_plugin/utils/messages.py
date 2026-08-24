@@ -74,3 +74,20 @@ def show_error_dialog(
     # activate indicates need for input if created while focus is outside qgis
     message_box.activateWindow()
     message_box.exec()
+
+
+def ask_confirmation(
+    title: str,
+    message: str,
+    parent: QWidget | None = None,
+) -> bool:
+    """Ask the user to confirm an action. Return True when confirmed."""
+    message_box = QMessageBox(parent or iface.mainWindow())
+    message_box.setWindowTitle(title)
+    message_box.setText(message)
+    message_box.setIcon(QMessageBox.Icon.Warning)
+    message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    message_box.setDefaultButton(QMessageBox.No)
+    message_box.show()
+    message_box.activateWindow()
+    return message_box.exec() == QMessageBox.Yes

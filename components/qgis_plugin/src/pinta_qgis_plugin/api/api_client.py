@@ -31,7 +31,6 @@ from qgis_plugin_tools.tools.messages import MsgBar
 from requests.exceptions import JSONDecodeError
 
 from pinta_qgis_plugin import env, exceptions
-from pinta_qgis_plugin.exceptions import WorkflowNotStartedError
 
 LOGGER = logging.getLogger(__name__)
 ParamsType = ParamSpec("ParamsType")
@@ -42,6 +41,7 @@ class ApiEndpoint(enum.Enum):
     """Supported Pinta API endpoints."""
 
     workflows = "/workflows"
+    production_areas = "/production-areas"
 
 
 # Create a typed decorator wrapper
@@ -71,6 +71,7 @@ class PintaAPIClient(QObject):
     """API client for Pinta Backend."""
 
     workflow_started = pyqtSignal(str, str)  # (dag_id, dag_run_id)
+    job_database_deleted = pyqtSignal(str)  # (production_area_id)
 
     def __init__(self, base_url: str, timeout: int = 10) -> None:
         super().__init__()
@@ -132,6 +133,22 @@ class PintaAPIClient(QObject):
             success=True,
         )
 
+    @handle_api_errors(ApiEndpoint.production_areas)
+    def delete_job_database(self, production_area_id: str) -> None:
+        """Deletes the job database of the given production area."""
+        LOGGER.info("Deleting job database of production area %s", production_area_id)
+        response = self.session.delete(
+            f"{self.base_url}{ApiEndpoint.production_areas.value}"
+            f"/{production_area_id}/database",
+            timeout=self._timeout,
+        )
+        response.raise_for_status()
+        self.job_database_deleted.emit(production_area_id)
+        MsgBar.info(
+            tr("Production area database deleted successfully"),
+            success=True,
+        )
+
     def _start_workflow(
         self,
         dag_tag: str,
@@ -162,8 +179,12 @@ def get_api_client() -> PintaAPIClient:
 def _raise_api_error(endpoint: ApiEndpoint, detail: str) -> NoReturn:
     match endpoint:
         case ApiEndpoint.workflows:
-            raise WorkflowNotStartedError(
+            raise exceptions.WorkflowNotStartedError(
                 tr("Could not start workflow"), detail
+            ) from None
+        case ApiEndpoint.production_areas:
+            raise exceptions.JobDatabaseNotDeletedError(
+                tr("Could not delete production area database"), detail
             ) from None
 
 

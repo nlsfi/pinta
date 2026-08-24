@@ -14,7 +14,7 @@
         <translation>Tunniste</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="72"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="74"/>
         <source>Add production area related layers to map</source>
         <translation>Lisää tuotantoalueen tasot karttalle</translation>
     </message>
@@ -139,17 +139,17 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="165"/>
+        <location filename="../../api/api_client.py" line="186"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="181"/>
+        <location filename="../../api/api_client.py" line="206"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="87"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="89"/>
         <source>Start reference DEM workflow for production area</source>
         <translation>Käynnistä vertausmallin työnkulku tuotantoalueelle</translation>
     </message>
@@ -159,7 +159,7 @@
         <translation>Käynnistä vertausmallin työnkulku</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="105"/>
+        <location filename="../../api/api_client.py" line="110"/>
         <source>Reference DEM workflow task created successfully</source>
         <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
     </message>
@@ -194,12 +194,12 @@
         <translation>Klusterin pinta-ala</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="100"/>
+        <location filename="../../project/config/job_layers.py" line="96"/>
         <source>Update area</source>
         <translation>Muutosalue</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="100"/>
+        <location filename="../../project/config/job_layers.py" line="96"/>
         <source>Elevation</source>
         <translation>Korkeus</translation>
     </message>
@@ -209,7 +209,7 @@
         <translation>Tuloskorkeusmalli</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="117"/>
+        <location filename="../../api/api_client.py" line="122"/>
         <source>Dissolve update areas workflow task created successfully</source>
         <translation>Tuloskorkeusmallin päivityksen työnkulku käynnistettiin onnistuneesti </translation>
     </message>
@@ -219,17 +219,17 @@
         <translation>Päivitä tuloskorkeusmalli</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="102"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="104"/>
         <source>Start dissolve update areas workflow for production area</source>
         <translation>Käynnistä tuloskorkeusmallin päivityksen työnkulku tuotantoalueelle</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="100"/>
+        <location filename="../../project/config/job_layers.py" line="96"/>
         <source>Dirty</source>
         <translation>Päivittämättä</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="130"/>
+        <location filename="../../api/api_client.py" line="135"/>
         <source>Register update areas workflow task created successfully</source>
         <translation>Muutosalueiden rekisteröinnin työnkulku käynnistettiin onnistuneesti</translation>
     </message>
@@ -239,9 +239,34 @@
         <translation>Rekisteröi muutosalueet</translation>
     </message>
     <message>
-        <location filename="../../project/groups/management_layer_collection.py" line="117"/>
+        <location filename="../../project/groups/management_layer_collection.py" line="119"/>
         <source>Start register update areas workflow for production area</source>
         <translation>Käynnistä muutosalueiden rekisteröinnin työnkulku tuotantoalueelle</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="151"/>
+        <source>Production area database deleted successfully</source>
+        <translation>Tuotantoalueen tietokanta poistettiin onnistuneesti</translation>
+    </message>
+    <message>
+        <location filename="../../api/api_client.py" line="190"/>
+        <source>Could not delete production area database</source>
+        <translation>Tuotantoalueen tietokannan poistaminen epäonnistui</translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="41"/>
+        <source>Delete production area database</source>
+        <translation>Poista tuotantoalueen tietokanta</translation>
+    </message>
+    <message>
+        <location filename="../../workflows/job_database.py" line="26"/>
+        <source>The database of the production area and all data in it are deleted permanently, and the processing status of the production area is reset. Do you want to continue?</source>
+        <translation>Tuotantoalueen tietokanta ja kaikki sen sisältämä data poistetaan pysyvästi, ja tuotantoalueen käsittelyn tila nollataan. Haluatko jatkaa?</translation>
+    </message>
+    <message>
+        <location filename="../../project/groups/management_layer_collection.py" line="135"/>
+        <source>Delete the database of the production area and reset its processing status</source>
+        <translation>Poista tuotantoalueen tietokanta ja nollaa sen käsittelyn tila</translation>
     </message>
 </context>
 </TS>

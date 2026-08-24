@@ -103,6 +103,11 @@ def test_add_to_project_adds_actions_to_production_area_layer(
         "_add_start_register_update_areas_action",
         autospec=True,
     )
+    mock_add_delete_database_action = mocker.patch.object(
+        management_layer_collection,
+        "_add_delete_job_database_action",
+        autospec=True,
+    )
 
     layer_collection.add_to_project()
 
@@ -110,6 +115,7 @@ def test_add_to_project_adds_actions_to_production_area_layer(
     mock_add_dem_update_action.assert_called_once_with(production_area_layer)
     mock_add_dissolve_action.assert_called_once_with(production_area_layer)
     mock_add_register_action.assert_called_once_with(production_area_layer)
+    mock_add_delete_database_action.assert_called_once_with(production_area_layer)
 
 
 def test_add_open_production_area_layers_delegates_to_layer_utils(
@@ -213,6 +219,32 @@ def test_add_start_register_update_areas_action_delegates_to_layer_utils(
     assert "from pinta_qgis_plugin.workflows import update_area" in command
     assert "update_area.start_register_update_areas_workflow(job_id)" in command
     assert "[%id%]" in command
+
+
+def test_add_delete_job_database_action_delegates_to_layer_utils(
+    mocker: MockerFixture,
+):
+    layer = mocker.MagicMock()
+    mock_add_action = mocker.patch.object(
+        management_layer_collection.layer_utils,
+        "add_action_to_vector_layer",
+        autospec=True,
+    )
+
+    management_layer_collection._add_delete_job_database_action(layer)
+
+    mock_add_action.assert_called_once()
+    call = mock_add_action.call_args
+    assert call.args == (layer,)
+    assert call.kwargs["description"] == (
+        "Delete the database of the production area and reset its processing status"
+    )
+    assert call.kwargs["short_title"] == "Delete production area database"
+    command = call.kwargs["command"]
+    assert "from pinta_qgis_plugin.workflows import job_database" in command
+    assert "job_database.delete_job_database(job_id, db_name)" in command
+    assert "[%id%]" in command
+    assert "[%database_name%]" in command
 
 
 def test_remove_layers_removes_all_layers(

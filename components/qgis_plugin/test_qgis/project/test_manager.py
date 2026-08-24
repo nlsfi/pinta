@@ -134,3 +134,14 @@ def test_open_production_area_adds_job_layers(
     )
     mock_job_layer_collection.set_group_name.assert_called_once_with("group_name")
     mock_job_layer_collection.add_to_project.assert_called_once_with()
+
+
+def test_close_production_area_removes_job_layers(
+    mock_job_layer_collection: "MagicMock",
+):
+    manager.close_production_area("production_area_db")
+
+    mock_job_layer_collection.set_database_name.assert_called_once_with(
+        "production_area_db"
+    )
+    mock_job_layer_collection.remove_from_project.assert_called_once_with()
