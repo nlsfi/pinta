@@ -8,8 +8,8 @@ import uuid
 from typing import TYPE_CHECKING
 
 import pytest
+from airflow.dag_processing.dagbag import sync_bag_to_db
 from airflow.models import DagBag
-from airflow.models.dagbag import sync_bag_to_db
 from airflow.sdk import task
 
 from pinta_dags.dags.print_hello_world import create_print_hello_world_dag
@@ -27,7 +27,7 @@ def create_dag_to_test() -> "DAG":
 
     assert str(dag.dag_id).startswith("some_id")
 
-    dag_bag = DagBag(include_examples=False)
+    dag_bag = DagBag()
     dag_bag.bag_dag(dag)
     sync_bag_to_db(dag_bag, "mock-dags", None)
 

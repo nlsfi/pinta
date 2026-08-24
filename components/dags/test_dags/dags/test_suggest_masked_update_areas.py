@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
-from airflow.models import DagBag, dagbag
+from airflow.dag_processing import dagbag
+from airflow.models import DagBag
 from pinta_common import MASK_OGR_ENV_PREFIX
 
 from pinta_dags.dags import suggest_masked_update_areas
@@ -29,7 +30,7 @@ def create_dag_to_test() -> "DAG":
 
     assert str(dag.dag_id).startswith("some_id")
 
-    dag_bag = DagBag(include_examples=False)
+    dag_bag = DagBag()
     dag_bag.bag_dag(dag)
     dagbag.sync_bag_to_db(dag_bag, "mock-dags", None)
 

@@ -101,7 +101,7 @@ def load_dem_dag(
 
         @task
         def require_dem_files(files: list[str]) -> list[str]:
-            from airflow.exceptions import AirflowSkipException
+            from airflow.sdk.exceptions import AirflowSkipException
 
             if not files:
                 msg = "No DEM files found to process."

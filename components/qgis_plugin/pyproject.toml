@@ -1,6 +1,6 @@
 [project]
 name = "pinta-qgis-plugin"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 version = "0.0.0"
 description = "QGIS plugin component of the elevation production system"
 readme = "README.md"

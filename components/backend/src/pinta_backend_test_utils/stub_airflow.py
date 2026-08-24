@@ -70,6 +70,8 @@ def build_stub_airflow() -> tuple[fastapi.FastAPI, StubAirflowState]:
                             "dag_display_name": "Print hello world",
                         }
                     ],
+                    "is_backfillable": False,
+                    "timetable_periodic": False,
                     "timetable_partitioned": False,
                 }
             ],
@@ -102,6 +104,9 @@ def build_stub_airflow() -> tuple[fastapi.FastAPI, StubAirflowState]:
             "catchup": False,
             "concurrency": 16,
             "render_template_as_native_obj": False,
+            "is_backfillable": False,
+            "timetable_periodic": False,
+            "timetable_partitioned": False,
             "params": {
                 "name": {
                     "__class": "airflow.sdk.definitions.param.Param",

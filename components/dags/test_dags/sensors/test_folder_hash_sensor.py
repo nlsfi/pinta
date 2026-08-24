@@ -20,7 +20,7 @@ def test_folder_hash_sensor_raises_skip_when_no_changes(
     sensor = FolderHashSensor(task_id="check_for_changes", base_path="/some/path")
     mocker.patch.object(sensor, "_find_changed_folders", return_value=[])
 
-    from airflow.exceptions import AirflowSkipException
+    from airflow.sdk.exceptions import AirflowSkipException
 
     with pytest.raises(AirflowSkipException):
         sensor.execute({})  # type: ignore[arg-type]
