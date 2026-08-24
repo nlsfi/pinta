@@ -4,6 +4,7 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import logging
+import uuid
 from typing import Annotated
 
 import fastapi
@@ -137,4 +138,66 @@ async def trigger_workflow(
         message=_("Workflow run started."),
         dag_id=run.dag_id,
         dag_run_id=run.dag_run_id,
+    )
+
+
+@router.delete(
+    "/production-areas/{production_area_id}/database",
+    responses={
+        400: {"model": models.ErrorResponse},
+        404: {"model": models.ErrorResponse},
+        500: {"model": models.ErrorResponse},
+        503: {"model": models.ErrorResponse},
+    },
+)
+def delete_production_area_database(
+    production_area_id: uuid.UUID,
+) -> models.JobDatabaseDeleted:
+    """Delete the production area's job database and reset its processing state."""
+    try:
+        database_name = production_area.delete_job_database(str(production_area_id))
+    except exceptions.ProductionAreaNotFoundError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_404_NOT_FOUND,
+            detail=_("Production area '{id}' not found.").format(
+                id=exc.production_area_id
+            ),
+        ) from exc
+    except exceptions.JobDatabaseNotDeletableError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_400_BAD_REQUEST,
+            detail=_(
+                "Production area database cannot be deleted while its "
+                "processing status is '{status}'."
+            ).format(status=exc.processing_status),
+        ) from exc
+    except exceptions.JobDatabaseProtectedError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_400_BAD_REQUEST,
+            detail=_("Database '{name}' cannot be deleted.").format(
+                name=exc.database_name
+            ),
+        ) from exc
+    except exceptions.JobDatabaseDropFailedError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=_("Failed to delete database '{name}'.").format(
+                name=exc.database_name
+            ),
+        ) from exc
+    except exceptions.JobDatabaseUnreachableError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=_("Job database is not reachable."),
+        ) from exc
+    except exceptions.DatabaseUnreachableError as exc:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=_("Database is not reachable."),
+        ) from exc
+
+    return models.JobDatabaseDeleted(
+        message=_("Production area database deleted."),
+        production_area_id=str(production_area_id),
+        database_name=database_name,
     )

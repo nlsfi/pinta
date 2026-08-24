@@ -60,6 +60,17 @@ class Settings(pydantic_settings.BaseSettings):
         validation_alias="DB_PRIMARY_BACKEND_PASSWORD"
     )
 
+    job_db_host: str = pydantic.Field(validation_alias="DB_JOB_HOST")
+    job_db_port: str = pydantic.Field(validation_alias="DB_JOB_PORT")
+    job_db_admin_user: str = pydantic.Field(validation_alias="DB_JOB_ADMIN_USER")
+    job_db_admin_password: pydantic.SecretStr = pydantic.Field(
+        validation_alias="DB_JOB_ADMIN_PASSWORD"
+    )
+    job_db_maintenance_name: str = pydantic.Field(
+        default="postgres",
+        validation_alias="DB_JOB_MAINTENANCE_NAME",
+    )
+
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore")
 
     @property
@@ -72,6 +83,14 @@ class Settings(pydantic_settings.BaseSettings):
         return (
             f"postgresql+psycopg://{self.primary_db_user}:{self.primary_db_password.get_secret_value()}"
             f"@{self.primary_db_host}:{self.primary_db_port}/{db_name}"
+        )
+
+    @property
+    def job_db_admin_uri(self) -> str:
+        """Admin connection URI to the job cluster's maintenance database."""
+        return (
+            f"postgresql+psycopg://{self.job_db_admin_user}:{self.job_db_admin_password.get_secret_value()}"
+            f"@{self.job_db_host}:{self.job_db_port}/{self.job_db_maintenance_name}"
         )
 
 

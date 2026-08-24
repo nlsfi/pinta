@@ -61,6 +61,14 @@ class WorkflowRunStarted(pydantic.BaseModel):
     dag_run_id: str
 
 
+class JobDatabaseDeleted(pydantic.BaseModel):
+    """Response payload returned after a job database is deleted."""
+
+    message: str
+    production_area_id: str
+    database_name: str | None = None
+
+
 class ErrorResponse(pydantic.BaseModel):
     """Translated error payload."""
 
