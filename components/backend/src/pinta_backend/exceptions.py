@@ -52,3 +52,35 @@ class ProductionAreaNotFoundError(Exception):
 
 class DatabaseUnreachableError(Exception):
     """Raised when a database connection or query fails at the transport level."""
+
+
+class JobDatabaseProtectedError(Exception):
+    """Raised when the database name is not one a production area may drop."""
+
+    def __init__(self, database_name: str) -> None:
+        super().__init__(f"Database '{database_name}' must not be deleted")
+        self.database_name = database_name
+
+
+class JobDatabaseNotDeletableError(Exception):
+    """Raised when the production area's state does not allow dropping its db."""
+
+    def __init__(self, production_area_id: str, processing_status: str) -> None:
+        super().__init__(
+            f"Production area '{production_area_id}' cannot have its database "
+            f"deleted while its processing status is '{processing_status}'"
+        )
+        self.production_area_id = production_area_id
+        self.processing_status = processing_status
+
+
+class JobDatabaseUnreachableError(Exception):
+    """Raised when the job database cluster cannot be reached."""
+
+
+class JobDatabaseDropFailedError(Exception):
+    """Raised when the job cluster refuses to drop the database."""
+
+    def __init__(self, database_name: str, detail: str) -> None:
+        super().__init__(f"Failed to drop database '{database_name}': {detail}")
+        self.database_name = database_name

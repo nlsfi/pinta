@@ -203,3 +203,4 @@ iterrows
 isna
 2d
 isin
+deletable

@@ -41,3 +41,23 @@ def primary_db_session(
             yield session
     finally:
         engine.dispose()
+
+
+@contextlib.contextmanager
+def job_db_admin_connection() -> typing.Generator[
+    sqlalchemy.Connection, typing.Any, None
+]:
+    """Open an admin connection to the job cluster's maintenance database.
+
+    The connection uses the AUTOCOMMIT isolation level, since DROP DATABASE
+    cannot run inside a transaction block.
+    """
+    current_settings = settings.get_settings()
+    engine = sqlalchemy.create_engine(
+        current_settings.job_db_admin_uri, isolation_level="AUTOCOMMIT"
+    )
+    try:
+        with engine.connect() as connection:
+            yield connection
+    finally:
+        engine.dispose()
