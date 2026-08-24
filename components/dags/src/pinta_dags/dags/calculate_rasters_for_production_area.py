@@ -70,6 +70,7 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
         ) -> None:
             import sqlalchemy
             import sqlmodel
+            from pinta_db import constants as db_constants
             from pinta_db.primary_db.models.management import (
                 ProcessingStatus,
                 ProductionArea,
@@ -88,7 +89,9 @@ def create_calculate_rasters_for_production_area_dag(  # noqa: PLR0915
                     raise ValueError(msg)
 
                 if area.database_name is None:
-                    area.database_name = f"job_{production_area_id}"
+                    area.database_name = (
+                        f"{db_constants.JOB_DATABASE_NAME_PREFIX}{production_area_id}"
+                    )
                 database_name = area.database_name
                 area.processing_status = ProcessingStatus.STARTED
                 session.commit()
