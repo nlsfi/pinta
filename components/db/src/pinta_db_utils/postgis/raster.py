@@ -118,6 +118,17 @@ def initialize_overview_tables(
         session.commit()
 
 
+def truncate_raster_table(
+    session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
+) -> None:
+    """Truncate a single raster table."""
+    session.exec(  # type: ignore[call-overload]
+        sa.text(f'TRUNCATE "{schema}"."{table_name}"')
+    )
+
+
 def merge_staging_tables(
     schema: str,
     table_name: str,

@@ -61,6 +61,43 @@ def _create_template_overview_tables(
     return overview_table_names
 
 
+def _insert_empty_rasters(
+    session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
+    overview_table_names: list[str],
+) -> None:
+    """Insert one empty raster into a raster table and its overview tables."""
+    pixel_sizes = [
+        Settings.DB_DEM_PIXEL_SIZE,
+        *(
+            Settings.DB_DEM_PIXEL_SIZE * level
+            for level in raster.DEFAULT_OVERVIEW_LEVELS
+        ),
+    ]
+    for name, pixel_size in zip(
+        [table_name, *overview_table_names], pixel_sizes, strict=False
+    ):
+        constraints._make_empty_raster(
+            session=session,
+            schema=schema,
+            table=name,
+            pixel_size=pixel_size,
+        )
+    session.commit()
+
+
+def _row_count(
+    session: sqlmodel.Session,
+    schema: str,
+    table_name: str,
+) -> int:
+    result = session.exec(  # type: ignore[call-overload]
+        sa.text(f"SELECT COUNT(*) FROM {schema}.{table_name}")
+    ).first()
+    return int(result[0])
+
+
 def _assert_table_exists(
     session: sqlmodel.Session,
     schema: str,
@@ -623,3 +660,47 @@ def test_initialize_overview_tables_does_not_create_staging_when_overview_is_mis
             schema,
             overview_name,
         )
+
+
+def test_truncate_raster_table(job_db: sqlmodel.Session):
+    """Test truncating a raster table empties only that table."""
+    table_name = "test_raster_truncate"
+    schema = _SCHEMA
+    _create_template_raster_table(job_db, schema, table_name)
+    overview_table_names = _create_template_overview_tables(job_db, schema, table_name)
+    raster.initialize_raster_table(
+        table_name=table_name,
+        schema=schema,
+        staging_tables=1,
+        session=job_db,
+    )
+    _insert_empty_rasters(job_db, schema, table_name, overview_table_names)
+
+    raster.truncate_raster_table(job_db, schema, table_name)
+    job_db.commit()
+
+    assert _row_count(job_db, schema, table_name) == 0
+    # Overview and staging tables are left for their own callers
+    for overview_table_name in overview_table_names:
+        assert _row_count(job_db, schema, overview_table_name) == 1
+    _assert_table_exists(
+        job_db,
+        schema,
+        f"{table_name}_p0",
+        table_type=raster.TableType.UNLOGGED,
+    )
+
+
+def test_truncate_raster_table_leaves_committing_to_the_caller(
+    job_db: sqlmodel.Session,
+):
+    """Test a rolled back truncate keeps the data."""
+    table_name = "test_raster_truncate_rollback"
+    schema = _SCHEMA
+    _create_template_raster_table(job_db, schema, table_name)
+    _insert_empty_rasters(job_db, schema, table_name, [])
+
+    raster.truncate_raster_table(job_db, schema, table_name)
+    job_db.rollback()
+
+    assert _row_count(job_db, schema, table_name) == 1
