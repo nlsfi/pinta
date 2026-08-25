@@ -3,7 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-from typing import Any
+from typing import Any, cast
 
 from airflow.sdk import DAG, Param, Variable, dag, task
 from pinta_common import constants
@@ -47,7 +47,7 @@ def _container_task_args_with_environment(
     }
 
 
-def load_dem_dag(
+def load_dem_dag(  # noqa: C901, PLR0915
     *,
     dag_id: str,
 ) -> DAG:
@@ -58,19 +58,29 @@ def load_dem_dag(
         dag_display_name="Load dem from files",
         schedule=None,
         max_active_runs=1,
+        # Render templates to native Python objects so boolean params stay bools.
+        render_template_as_native_obj=True,
         params={
             "folder": Param(
-                "",
+                default="/dem",
                 type="string",
                 description=(
                     "Absolute path inside the processing container. "
                     "Data is mounted under /dem"
                 ),
-            )
+            ),
+            "override_data": Param(
+                default=False,
+                type="boolean",
+                description=(
+                    "WARNING: This will erase all DEM data registered to primary "
+                    "dem!\nReplace the existing DEM data with data from network share."
+                ),
+            ),
         },
         is_paused_upon_creation=False,
     )
-    def load_dem_from_files_dag() -> None:
+    def load_dem_from_files_dag() -> None:  # noqa: C901, PLR0915
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def initialize_dem_tables(
@@ -91,6 +101,31 @@ def load_dem_dag(
                 raster.initialize_overview_tables(
                     session, schema, table_name, staging_tables=staging_tables
                 )
+
+        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+        def truncate_dem_tables(
+            connection_uri: str,
+            schema: str,
+            table_name: str,
+            *,
+            override_data: bool,
+        ) -> None:
+            import sqlalchemy
+            import sqlmodel
+            from pinta_db_utils.postgis import raster
+
+            if not override_data:
+                return
+
+            engine = sqlalchemy.create_engine(connection_uri)
+            with sqlmodel.Session(engine) as session:
+                raster.truncate_raster_table(session, schema, table_name)
+                for level in raster.DEFAULT_OVERVIEW_LEVELS:
+                    overview_table = raster.OVERVIEW_TABLE_NAME.format(
+                        level=level, table_name=table_name
+                    )
+                    raster.truncate_raster_table(session, schema, overview_table)
+                session.commit()
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def list_dem_files(data_dir: str) -> list[str]:
@@ -182,9 +217,18 @@ def load_dem_dag(
             schema=DEM_SCHEMA,
             table_name=DEM_TABLE_NAME,
         )
+        # Truncate only after the files are known, so an empty folder never
+        # wipes the existing data.
+        truncate_task = truncate_dem_tables(
+            connection_uri=connection_uri,
+            schema=DEM_SCHEMA,
+            table_name=DEM_TABLE_NAME,
+            override_data=cast("bool", "{{ params.override_data }}"),
+        )
         processed_files = process_dem_file_task.expand(input_path=files_to_process)
         (
             files_to_process
+            >> truncate_task
             >> initialize_task
             >> processed_files
             >> merge_dem_staging_tables(

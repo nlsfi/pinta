@@ -56,7 +56,7 @@ def test_load_dem_dag_all_tasks(
     create_dag_to_test()
 
     assert mock_task.call_count == 1
-    assert mock_task.docker.call_count == 4
+    assert mock_task.docker.call_count == 5
 
 
 def test_load_dem_dag_runs_workflow(
@@ -100,6 +100,30 @@ def test_load_dem_dag_runs_workflow(
     assert mock_raster.merge_staging_tables.call_count == 3
     for call in mock_raster.merge_staging_tables.call_args_list:
         assert call.kwargs["staging_tables"] == 3
+    mock_raster.truncate_raster_table.assert_not_called()
+
+
+def test_load_dem_dag_truncates_tables_when_override_data(
+    tmp_path: Path,
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    (tmp_path / "dem_1.zip").write_text("fake zip data")
+
+    mock_raster = mock_submodule("pinta_db_utils.postgis.raster")
+    mock_raster.DEFAULT_OVERVIEW_LEVELS = [2, 8]
+    mock_raster.OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
+    mock_pipelines_module.rasterio_to_postgis.return_value = mocker.MagicMock()
+
+    dag = create_dag_to_test()
+    dag.test(run_conf={"folder": str(tmp_path), "override_data": True})
+
+    truncated_tables = [
+        call.args[2] for call in mock_raster.truncate_raster_table.call_args_list
+    ]
+    assert truncated_tables == ["dem", "o_2_dem", "o_8_dem"]
+    assert mock_pipelines_module.rasterio_to_postgis.call_count == 1
 
 
 def test_load_dem_dag_skips_processing_when_no_files(
@@ -118,3 +142,18 @@ def test_load_dem_dag_skips_processing_when_no_files(
     mock_raster.initialize_overview_tables.assert_not_called()
     mock_pipelines_module.rasterio_to_postgis.assert_not_called()
     mock_raster.merge_staging_tables.assert_not_called()
+
+
+def test_load_dem_dag_does_not_truncate_when_no_files(
+    tmp_path: Path,
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    (tmp_path / "ignored.tif").write_text("fake tif data")
+
+    mock_raster = mock_submodule("pinta_db_utils.postgis.raster")
+    mock_submodule("pinta_processing.pipelines")
+
+    dag = create_dag_to_test()
+    dag.test(run_conf={"folder": str(tmp_path), "override_data": True})
+
+    mock_raster.truncate_raster_table.assert_not_called()
