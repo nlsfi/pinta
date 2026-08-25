@@ -66,7 +66,7 @@ flowchart LR
 | Grantee | Schema | Owner | Privileges |
 | --- | --- | --- | --- |
 | `pinta_owner` | `processing` | `pinta_processing_worker` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
-| `pinta_processing_worker` | `dem` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE |
+| `pinta_processing_worker` | `dem` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
 | `pinta_processing_worker` | `management` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
 | `pinta_processing_worker` | `processing` | `pinta_owner` | SELECT, INSERT, UPDATE, DELETE, TRUNCATE |
 | `pinta_reader` | `dem` | `pinta_owner` | SELECT |
