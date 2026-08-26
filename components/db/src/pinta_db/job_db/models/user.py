@@ -21,6 +21,9 @@ class UpdateArea(job_base.UserVectorBase, table=True):  # type: ignore[call-arg]
     geom: Any = Field(
         sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=False))
     )
+    dissolved_geom: Any = Field(
+        sa_column=Column(Geometry(POLYGON, srid=Settings.DB_SRID, nullable=True))
+    )
     elevation: float | None = Field(
         default=None, sa_column=Column(Float, nullable=True)
     )
