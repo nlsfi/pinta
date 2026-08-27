@@ -12,6 +12,7 @@ from shapely.geometry import Point
 
 from pinta_processing import core, exceptions
 from pinta_processing.filters import DownsampleOverview
+from pinta_processing.utils import tiles
 from pinta_processing.writer import RasterPostgisWriter, VectorPostgisWriter, WriterMode
 
 
@@ -177,6 +178,31 @@ def test_generate_tiles_returns_empty_for_zero_sized_raster():
     stage = RasterPostgisWriter("foo", "bar", None, tile_size=4)  # type: ignore[arg-type]
 
     assert stage._generate_tiles(empty) == []
+
+
+def test_generate_tiles_skips_tiles_outside_grid_snapped_data():
+    """A data edge a hair above a grid line must not crash the tiling."""
+    tile_size = 256
+    pixel_size = 2.0
+    # A latitude exactly on the global tile grid, nudged up by float error.
+    grid_line = tiles.GRID_ORIGIN_Y + 653 * tile_size * pixel_size
+    transform = Affine(
+        pixel_size, 0.0, tiles.GRID_ORIGIN_X, 0.0, -pixel_size, grid_line + 1e-9
+    )
+    data = core.RasterDataset(
+        array=np.ones((54, 58), dtype=np.float32),
+        transform=transform,
+        crs="EPSG:3067",
+        nodata=-9999.0,
+    )
+    stage = RasterPostgisWriter("foo", "bar", None, tile_size=tile_size)  # type: ignore[arg-type]
+
+    generated = stage._generate_tiles(data)
+
+    # Only the tile the data actually falls in survives; the phantom row above
+    # it is dropped rather than written out as an all-nodata tile.
+    assert len(generated) == 1
+    assert (generated[0].array == 1.0).sum() == data.array.size
 
 
 def test_update_mode_skips_raster_downsampled_below_one_pixel(
