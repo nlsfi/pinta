@@ -20,7 +20,7 @@ import numpy as np
 import sqlmodel
 from affine import Affine
 from pinta_common import Settings
-from rasterio.windows import Window, from_bounds
+from rasterio.windows import Window, from_bounds, intersect
 
 from pinta_processing import core, exceptions
 from pinta_processing.utils import tiles
@@ -258,6 +258,14 @@ class RasterPostgisWriter(core.Stage):
 
                 # Stabilize floating precision
                 win = win.round_offsets().round_lengths()
+
+                # Snapping the data bounds out to the global grid can put a
+                # whole tile row or column outside the data when an edge falls
+                # within float error of a grid line, and rasterio raises on an
+                # empty intersection instead of returning one.
+                if not intersect(win, full_window):
+                    x += tile_width
+                    continue
 
                 # Intersect with raster extent
                 src_win = win.intersection(full_window)
