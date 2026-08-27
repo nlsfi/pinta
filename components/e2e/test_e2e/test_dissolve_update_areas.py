@@ -56,6 +56,24 @@ GAP_PROBE_OFFSET_M = 80
 # Radius (m) of the coverage gap probe polygon.
 GAP_PROBE_RADIUS_M = 10
 
+# Constant the preview is flattened to inside the previous dissolve footprint of
+# the shrunk update area, standing in for what that earlier dissolve wrote.
+STALE_DEM_VALUE = 2000.0
+
+# Offset (m) of the shrunk update area north of the DEM centroid, far enough
+# that its previous dissolve footprint cannot reach the other update areas.
+SHRUNK_AREA_OFFSET_M = 160
+
+# Radius (m) of the previous dissolve footprint of the shrunk update area. The
+# area itself is only UPDATE_AREA_RADIUS_M wide, so the ring between the two is
+# the stale part the restore must reset from the primary DEM.
+SHRUNK_AREA_DISSOLVED_RADIUS_M = 40
+
+# Distance (m) from the shrunk area centre and radius (m) of the probe inside
+# the stale ring, kept clear of both buffered edges of the ring.
+STALE_PROBE_DISTANCE_M = 30
+STALE_PROBE_RADIUS_M = 5
+
 
 class DissolveSetup(typing.NamedTuple):
     """Geometries (EWKT) and expectations seeded for the dissolve tests."""
@@ -74,6 +92,13 @@ class DissolveSetup(typing.NamedTuple):
     pocket_probe_ewkt: str
     # Primary DEM mean over the pocket, the value the fill upsert restores.
     pocket_probe_primary_mean: float
+    # Update area that shrank since the previous dissolve: its dissolved_geom is
+    # SHRUNK_AREA_DISSOLVED_RADIUS_M wide, its geom only UPDATE_AREA_RADIUS_M.
+    shrunk_area_ewkt: str
+    # Probe in the ring the shrunk area no longer covers, seeded STALE_DEM_VALUE.
+    stale_probe_ewkt: str
+    # Primary DEM mean over the stale ring probe, the value the restore returns.
+    stale_probe_primary_mean: float
 
 
 def _dem_preview_mean(database_name: str, area_ewkt: str) -> float:
@@ -115,6 +140,87 @@ def _update_area_dirty(database_name: str, area_ewkt: str) -> bool:
         ).scalar_one()
 
 
+def _update_area_dissolved_geom_matches(database_name: str, area_ewkt: str) -> bool:
+    """Return whether the update area's ``dissolved_geom`` equals its ``geom``."""
+    credentials = db_utils.get_job_admin_credentials(database_name)
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        return connection.execute(
+            sqlmodel.text(
+                "SELECT ST_Equals(dissolved_geom, geom) FROM user_data.update_area "
+                "WHERE ST_Equals(geom, ST_GeomFromEWKT(:area))"
+            ).bindparams(area=area_ewkt)
+        ).scalar_one()
+
+
+class PreviewBefore(typing.NamedTuple):
+    """Preview means measured before the dissolve, kept for the after comparison."""
+
+    mean: float
+    elevation_mean: float
+
+
+def _assert_preview_before_dissolve(
+    database_name: str, setup: DissolveSetup
+) -> PreviewBefore:
+    """Assert the seeded preview state and return the means to compare against."""
+    # The preview starts from the primary DEM, i.e. the real elevations, well
+    # below the flat reference surface it should be dissolved to.
+    mean = _dem_preview_mean(database_name, setup.area_ewkt)
+    assert mean != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
+    elevation_mean = _dem_preview_mean(database_name, setup.elevation_area_ewkt)
+    assert elevation_mean != pytest.approx(UPDATE_AREA_ELEVATION, abs=100)
+
+    # The edge area's west half sits on a preview coverage gap: no tile at all.
+    assert _dem_preview_tile_count(database_name, setup.gap_probe_ewkt) == 0
+
+    # The east neighbor tile exists but its nodata pocket holds no values, the
+    # way a partially initialized tile at the production area boundary looks.
+    assert _dem_preview_mean(database_name, setup.pocket_probe_ewkt) is None
+
+    # The shrunk area's preview still carries what the previous dissolve wrote,
+    # including the ring the area no longer covers.
+    assert _dem_preview_mean(database_name, setup.stale_probe_ewkt) == pytest.approx(
+        STALE_DEM_VALUE, abs=1
+    )
+
+    return PreviewBefore(mean=mean, elevation_mean=elevation_mean)
+
+
+def _run_dissolve_workflow(
+    qtbot: "QtBot",
+    m_error_dialog: "MagicMock",
+    airflow_client: "AirflowClient",
+) -> None:
+    """Start the dissolve from the production area layer and wait for the run."""
+    # Importing here to avoid wrong DB name in environment
+    from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
+    from pinta_qgis_plugin.project.groups import (  # noqa: PLC0415
+        management_layer_collection,
+    )
+
+    production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
+    assert production_area_layer.featureCount() == 1
+    action = layers.find_layer_action(
+        production_area_layer,
+        management_layer_collection.ACTION_TITLE_START_DISSOLVE_UPDATE_AREAS,
+    )
+    feature = next(production_area_layer.getFeatures())
+
+    client = api_client.get_api_client()
+    with qtbot.waitSignal(client.workflow_started, timeout=10000) as blocker:
+        layers.run_layer_action(production_area_layer, action, feature)
+        dag_id, dag_run_id = blocker.args
+
+    m_error_dialog.assert_not_called()
+    dag_run = DagRun(id=dag_id, run_id=dag_run_id)
+
+    state = airflow_client.wait_for_dag_run(dag_run, timeout=WORKFLOW_TIMEOUT_S)
+    assert state == "success", (
+        f"DAG run finished with state={state}\n"
+        f"{airflow_client.describe_failed_run(dag_run)}"
+    )
+
+
 @pytest.fixture
 def dissolve_update_area_setup(
     request: "pytest.FixtureRequest",
@@ -127,15 +233,20 @@ def dissolve_update_area_setup(
     ``seeded_processing_dem`` populates the primary ``dem.dem`` table. This fixture
     then provisions a job database the way the orchestrator DAG would, copies the
     primary DEM into ``user_data.dem_preview``, seeds a distinct constant-valued
-    ``reference.dem`` and creates three update area polygons: one over the DEM
+    ``reference.dem`` and creates four update area polygons: one over the DEM
     centroid that dissolves from the reference DEM, one ELEVATION_AREA_OFFSET_M
     east of it with a constant elevation set that the dissolve must mask flat
     without reading the reference DEM, and one straddling a preview coverage
     gap: the westernmost preview tile under it is deleted again, the way an
     update area reaching outside the production area lands on preview tiles
-    that were never initialized. Returns the update area geometries as EWKT
-    plus a probe polygon (and its expected primary DEM mean) inside the gap so
-    the test can verify the dissolve copies the missing tile back in.
+    that were never initialized, and one SHRUNK_AREA_OFFSET_M north of the
+    centroid that shrank since the previous dissolve: its ``dissolved_geom`` is
+    the wider footprint that dissolve wrote, and the whole footprint is
+    flattened to STALE_DEM_VALUE the way that dissolve would have left it.
+    Returns the update area geometries as EWKT plus probe polygons (and their
+    expected primary DEM means) inside the coverage gap and inside the stale
+    ring, so the test can verify the dissolve copies the missing tile back in
+    and resets the pixels no update area covers any more.
 
     The update areas are seeded ``dirty`` by default; parametrize the fixture
     indirectly with ``False`` to seed clean areas that the dissolve DAG must skip.
@@ -320,6 +431,43 @@ def dissolve_update_area_setup(
             "The seeded primary DEM has no data under the nodata pocket probe"
         )
 
+        def centroid_buffer(offset: float, radius: float) -> str:
+            return job_connection.execute(
+                sqlmodel.text(
+                    "SELECT ST_AsEWKT(ST_Buffer(ST_Translate("
+                    "ST_Centroid(ST_Union(rast::geometry)), 0, :offset), :radius)) "
+                    "FROM user_data.dem_preview"
+                ).bindparams(offset=offset, radius=radius)
+            ).scalar_one()
+
+        shrunk_area_ewkt = centroid_buffer(SHRUNK_AREA_OFFSET_M, UPDATE_AREA_RADIUS_M)
+        shrunk_dissolved_ewkt = centroid_buffer(
+            SHRUNK_AREA_OFFSET_M, SHRUNK_AREA_DISSOLVED_RADIUS_M
+        )
+        stale_probe_ewkt = centroid_buffer(
+            SHRUNK_AREA_OFFSET_M + STALE_PROBE_DISTANCE_M, STALE_PROBE_RADIUS_M
+        )
+
+        # The restore resets everything the previous dissolve footprint covers
+        # and no update area covers any more, so that footprint must stay clear
+        # of the other areas or it would wipe their pixels too.
+        for other_ewkt in (area_ewkt, elevation_area_ewkt, edge_area_ewkt):
+            separation = job_connection.execute(
+                sqlmodel.text(
+                    "SELECT ST_Distance("
+                    "ST_GeomFromEWKT(:footprint), ST_GeomFromEWKT(:other))"
+                ).bindparams(footprint=shrunk_dissolved_ewkt, other=other_ewkt)
+            ).scalar_one()
+            assert separation > EDGE_AREA_MIN_SEPARATION_M, (
+                "The shrunk update area's previous dissolve footprint is too "
+                "close to the other update areas"
+            )
+
+        stale_probe_primary_mean = primary_dem_mean(stale_probe_ewkt)
+        assert stale_probe_primary_mean is not None, (
+            "The seeded primary DEM has no data under the stale ring probe"
+        )
+
         job_connection.execute(
             sqlmodel.text(
                 "DELETE FROM user_data.dem_preview "
@@ -348,6 +496,25 @@ def dissolve_update_area_setup(
             ).bindparams(geom=edge_area_ewkt, dirty=dirty)
         )
 
+        # Flatten the whole previous dissolve footprint the way that dissolve
+        # left it, then register the area as having shrunk back to its geom.
+        job_connection.execute(
+            sqlmodel.text(
+                "UPDATE user_data.dem_preview "
+                "SET rast = ST_SetValue(rast, 1, ST_GeomFromEWKT(:geom), :value) "
+                "WHERE ST_Intersects(rast, ST_GeomFromEWKT(:geom))"
+            ).bindparams(geom=shrunk_dissolved_ewkt, value=STALE_DEM_VALUE)
+        )
+        job_connection.execute(
+            sqlmodel.text(
+                "INSERT INTO user_data.update_area "
+                "(id, geom, dissolved_geom, dirty) VALUES (gen_random_uuid(), "
+                "ST_GeomFromEWKT(:geom), ST_GeomFromEWKT(:dissolved), :dirty)"
+            ).bindparams(
+                geom=shrunk_area_ewkt, dissolved=shrunk_dissolved_ewkt, dirty=dirty
+            )
+        )
+
     return DissolveSetup(
         area_ewkt=area_ewkt,
         elevation_area_ewkt=elevation_area_ewkt,
@@ -356,6 +523,9 @@ def dissolve_update_area_setup(
         gap_probe_primary_mean=gap_probe_primary_mean,
         pocket_probe_ewkt=pocket_probe_ewkt,
         pocket_probe_primary_mean=pocket_probe_primary_mean,
+        shrunk_area_ewkt=shrunk_area_ewkt,
+        stale_probe_ewkt=stale_probe_ewkt,
+        stale_probe_primary_mean=stale_probe_primary_mean,
     )
 
 
@@ -369,72 +539,33 @@ def test_dissolve_update_areas_workflow(
     db: "Session",
     dissolve_update_area_setup: DissolveSetup,
 ) -> None:
-    # Importing here to avoid wrong DB name in environment
-    from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
-    from pinta_qgis_plugin.project.groups import (  # noqa: PLC0415
-        management_layer_collection,
-    )
-
     area_ewkt = dissolve_update_area_setup.area_ewkt
     elevation_area_ewkt = dissolve_update_area_setup.elevation_area_ewkt
     edge_area_ewkt = dissolve_update_area_setup.edge_area_ewkt
     gap_probe_ewkt = dissolve_update_area_setup.gap_probe_ewkt
+    shrunk_area_ewkt = dissolve_update_area_setup.shrunk_area_ewkt
+    stale_probe_ewkt = dissolve_update_area_setup.stale_probe_ewkt
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
     assert production_area is not None
     database_name = production_area.database_name
     assert database_name is not None
 
-    # The preview starts from the primary DEM, i.e. the real elevations, well
-    # below the flat reference surface it should be dissolved to.
-    mean_before = _dem_preview_mean(database_name, area_ewkt)
-    assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
-    elevation_mean_before = _dem_preview_mean(database_name, elevation_area_ewkt)
-    assert elevation_mean_before != pytest.approx(UPDATE_AREA_ELEVATION, abs=100)
+    before = _assert_preview_before_dissolve(database_name, dissolve_update_area_setup)
 
-    # The edge area's west half sits on a preview coverage gap: no tile at all.
-    assert _dem_preview_tile_count(database_name, gap_probe_ewkt) == 0
-
-    # The east neighbor tile exists but its nodata pocket holds no values, the
-    # way a partially initialized tile at the production area boundary looks.
-    assert (
-        _dem_preview_mean(database_name, dissolve_update_area_setup.pocket_probe_ewkt)
-        is None
-    )
-
-    production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
-    assert production_area_layer.featureCount() == 1
-    action = layers.find_layer_action(
-        production_area_layer,
-        management_layer_collection.ACTION_TITLE_START_DISSOLVE_UPDATE_AREAS,
-    )
-    feature = next(production_area_layer.getFeatures())
-
-    client = api_client.get_api_client()
-    with qtbot.waitSignal(client.workflow_started, timeout=10000) as blocker:
-        layers.run_layer_action(production_area_layer, action, feature)
-        dag_id, dag_run_id = blocker.args
-
-    m_error_dialog.assert_not_called()
-    dag_run = DagRun(id=dag_id, run_id=dag_run_id)
-
-    state = airflow_client.wait_for_dag_run(dag_run, timeout=WORKFLOW_TIMEOUT_S)
-    assert state == "success", (
-        f"DAG run finished with state={state}\n"
-        f"{airflow_client.describe_failed_run(dag_run)}"
-    )
+    _run_dissolve_workflow(qtbot, m_error_dialog, airflow_client)
 
     # The dissolve unions the reference DEM (priority) into the preview inside the
     # update area, so the preview must now match the flat reference surface.
     mean_after = _dem_preview_mean(database_name, area_ewkt)
     assert mean_after == pytest.approx(REFERENCE_DEM_VALUE, abs=50)
-    assert abs(mean_after - mean_before) > 100
+    assert abs(mean_after - before.mean) > 100
 
     # The area with a constant elevation set skips the reference DEM (a flat
     # surface at REFERENCE_DEM_VALUE, which would fail this check) and is masked
     # flat to its own elevation instead.
     elevation_mean_after = _dem_preview_mean(database_name, elevation_area_ewkt)
     assert elevation_mean_after == pytest.approx(UPDATE_AREA_ELEVATION, abs=50)
-    assert abs(elevation_mean_after - elevation_mean_before) > 100
+    assert abs(elevation_mean_after - before.elevation_mean) > 100
 
     # The dissolve copied the missing preview tile from the primary DEM before
     # merging, so the edge area dissolves to the reference surface on both
@@ -457,11 +588,26 @@ def test_dissolve_update_areas_workflow(
         dissolve_update_area_setup.pocket_probe_primary_mean, abs=0.01
     )
 
+    # Pixels the previous dissolve wrote that no update area covers any more are
+    # reset from the primary DEM before anything is dissolved, so the ring the
+    # shrunk area gave up carries the real elevations again.
+    stale_probe_mean_after = _dem_preview_mean(database_name, stale_probe_ewkt)
+    assert stale_probe_mean_after == pytest.approx(
+        dissolve_update_area_setup.stale_probe_primary_mean, abs=0.01
+    )
+
+    # The shrunk area itself is still dissolved to the reference surface, and
+    # the worker records the footprint it wrote so the next run can restore it.
+    shrunk_mean_after = _dem_preview_mean(database_name, shrunk_area_ewkt)
+    assert shrunk_mean_after == pytest.approx(REFERENCE_DEM_VALUE, abs=50)
+    assert _update_area_dissolved_geom_matches(database_name, shrunk_area_ewkt)
+
     # The worker clears the dirty flags once the areas are dissolved, and the
     # dirty trigger leaves the worker's own update alone, so all end up clean.
     assert _update_area_dirty(database_name, area_ewkt) is False
     assert _update_area_dirty(database_name, elevation_area_ewkt) is False
     assert _update_area_dirty(database_name, edge_area_ewkt) is False
+    assert _update_area_dirty(database_name, shrunk_area_ewkt) is False
 
     # The workflow stamps the production area processing status COMPLETED on success.
     db.expire_all()
@@ -480,12 +626,6 @@ def test_dissolve_skips_clean_update_areas(
     db: "Session",
     dissolve_update_area_setup: DissolveSetup,
 ) -> None:
-    # Importing here to avoid wrong DB name in environment
-    from pinta_qgis_plugin.api import api_client  # noqa: PLC0415
-    from pinta_qgis_plugin.project.groups import (  # noqa: PLC0415
-        management_layer_collection,
-    )
-
     area_ewkt = dissolve_update_area_setup.area_ewkt
     elevation_area_ewkt = dissolve_update_area_setup.elevation_area_ewkt
     production_area = db.exec(sqlmodel.select(ProductionArea)).first()
@@ -499,26 +639,7 @@ def test_dissolve_skips_clean_update_areas(
     assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
     elevation_mean_before = _dem_preview_mean(database_name, elevation_area_ewkt)
 
-    production_area_layer = layers.get_vector_layer_by_model(ProductionArea)
-    action = layers.find_layer_action(
-        production_area_layer,
-        management_layer_collection.ACTION_TITLE_START_DISSOLVE_UPDATE_AREAS,
-    )
-    feature = next(production_area_layer.getFeatures())
-
-    client = api_client.get_api_client()
-    with qtbot.waitSignal(client.workflow_started, timeout=10000) as blocker:
-        layers.run_layer_action(production_area_layer, action, feature)
-        dag_id, dag_run_id = blocker.args
-
-    m_error_dialog.assert_not_called()
-    dag_run = DagRun(id=dag_id, run_id=dag_run_id)
-
-    state = airflow_client.wait_for_dag_run(dag_run, timeout=WORKFLOW_TIMEOUT_S)
-    assert state == "success", (
-        f"DAG run finished with state={state}\n"
-        f"{airflow_client.describe_failed_run(dag_run)}"
-    )
+    _run_dissolve_workflow(qtbot, m_error_dialog, airflow_client)
 
     # No dirty areas means no dissolve ran: the preview is untouched (also in
     # the elevation area) and the clean areas stay clean.
@@ -544,3 +665,10 @@ def test_dissolve_skips_clean_update_areas(
         _dem_preview_mean(database_name, dissolve_update_area_setup.pocket_probe_ewkt)
         is None
     )
+
+    # Clean areas are never re-dissolved, so nothing they covered turns stale:
+    # the previous dissolve footprint must be left exactly as it was.
+    stale_probe_mean = _dem_preview_mean(
+        database_name, dissolve_update_area_setup.stale_probe_ewkt
+    )
+    assert stale_probe_mean == pytest.approx(STALE_DEM_VALUE, abs=1)

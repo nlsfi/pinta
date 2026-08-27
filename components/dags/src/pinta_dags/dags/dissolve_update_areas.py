@@ -8,6 +8,10 @@ from typing import cast
 
 from airflow.sdk import DAG, Param, Variable, dag, task
 from pinta_common import constants
+from pinta_db.job_db.models.user import DemPreview
+from pinta_db.job_db.schema import Schema
+from pinta_db.primary_db.models.dem import Dem as PrimaryDem
+from pinta_db.primary_db.schema import Schema as PrimarySchema
 
 from pinta_dags import config
 from pinta_dags.config import AirflowVariable
@@ -21,6 +25,11 @@ from pinta_dags.tasks import (
     set_processing_status_failed,
     set_processing_status_started,
 )
+
+FROM_DB_SCHEMA = PrimarySchema.DEM.value
+FROM_DB_TABLE = PrimaryDem.__tablename__
+TO_DB_SCHEMA = Schema.USER.value
+TO_DB_TABLE = DemPreview.__tablename__
 
 
 def _get_max_parallel_pipelines() -> int:
@@ -51,7 +60,7 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
         },
         is_paused_upon_creation=False,
     )
-    def dissolve_update_areas_dag() -> None:  # noqa: PLR0915
+    def dissolve_update_areas_dag() -> None:  # noqa: C901, PLR0915
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
 
@@ -166,6 +175,58 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                         )
                         pipeline.execute()
 
+        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+        def restore_stale_dem_preview(  # noqa: PLR0913
+            primary_connection_uri: str,
+            job_connection_uri: str,
+            from_schema: str,
+            from_table: str,
+            to_schema: str,
+            to_table: str,
+        ) -> None:
+            import shapely
+            import sqlalchemy
+            import sqlmodel
+            from geoalchemy2.shape import to_shape
+            from pinta_db.job_db.models.user import UpdateArea
+            from pinta_processing import pipelines, writer
+
+            with (
+                sqlmodel.Session(
+                    sqlalchemy.create_engine(primary_connection_uri)
+                ) as primary_session,
+                sqlmodel.Session(
+                    sqlalchemy.create_engine(job_connection_uri)
+                ) as job_session,
+            ):
+                update_areas = job_session.exec(sqlmodel.select(UpdateArea)).all()
+                buffer = pipelines.REGISTER_UPDATE_AREA_BUFFER
+                # Pixels an earlier dissolve wrote that no update area covers any
+                # more must be reset from the primary DEM.
+                stale_area = shapely.union_all(
+                    [
+                        to_shape(area.dissolved_geom).buffer(buffer)
+                        for area in update_areas
+                        if area.dirty and area.dissolved_geom is not None
+                    ]
+                ) - shapely.union_all(
+                    [to_shape(area.geom).buffer(buffer) for area in update_areas]
+                )
+                if stale_area.is_empty:
+                    return
+
+                pipeline = pipelines.postgis_to_postgis(
+                    from_session=primary_session,
+                    from_schema=from_schema,
+                    from_table=from_table,
+                    to_session=job_session,
+                    to_schema=to_schema,
+                    to_table=to_table,
+                    tile_wkt=stale_area.wkt,
+                    mode=writer.WriterMode.UPDATE,
+                )
+                pipeline.execute()
+
         @task.docker(
             **config.PINTA_CONTAINER_TASK_ARGS,
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
@@ -207,6 +268,7 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 pipeline.execute()
 
                 update_area.dirty = False
+                update_area.dissolved_geom = update_area.geom
                 job_session.add(update_area)
                 job_session.commit()
 
@@ -252,6 +314,15 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             job_connection_uri=job_db_uri,
         ).expand_kwargs(dirty_update_areas)
 
+        restore_dem = restore_stale_dem_preview(
+            primary_connection_uri=primary_connection_uri,
+            job_connection_uri=job_db_uri,
+            from_schema=FROM_DB_SCHEMA,
+            from_table=FROM_DB_TABLE,
+            to_schema=TO_DB_SCHEMA,
+            to_table=TO_DB_TABLE,
+        )
+
         dissolved_areas = dissolve_update_area.partial(
             primary_connection_uri=primary_connection_uri,
             job_connection_uri=job_db_uri,
@@ -270,7 +341,7 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
         status_started >> database_name
 
         job_admin_db_uri >> revoke_qgis_write_access >> dirty_update_areas
-        dirty_update_areas >> ensured_areas >> dissolved_areas
+        dirty_update_areas >> ensured_areas >> restore_dem >> dissolved_areas
         dissolved_areas >> restore_qgis_write_access
 
         # Resolve the final status off every task that can fail (each is a direct
@@ -284,6 +355,7 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             revoke_qgis_write_access,
             dirty_update_areas,
             ensured_areas,
+            restore_dem,
             dissolved_areas,
             restore_qgis_write_access,
         ]
