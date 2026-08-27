@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
+import shapely
 from airflow.dag_processing import dagbag
 from airflow.models import DagBag
 from pinta_common import Settings
@@ -57,6 +58,7 @@ def test_dissolve_update_areas_all_tasks() -> None:
         "revoke_update_area_write_access",
         "find_dirty_update_areas",
         "ensure_dem_preview_coverage",
+        "restore_stale_dem_preview",
         "dissolve_update_area",
         "restore_update_area_write_access",
         "set_processing_status_completed",
@@ -73,6 +75,7 @@ def test_dependencies() -> None:
     build_job_connection_uri_task = dag.get_task("build_job_connection_uri_task")
     find_dirty_update_areas = dag.get_task("find_dirty_update_areas")
     ensure_dem_preview_coverage = dag.get_task("ensure_dem_preview_coverage")
+    restore_stale_dem_preview = dag.get_task("restore_stale_dem_preview")
     dissolve_update_area = dag.get_task("dissolve_update_area")
     revoke_write_access = dag.get_task("revoke_update_area_write_access")
 
@@ -88,7 +91,13 @@ def test_dependencies() -> None:
     assert (
         find_dirty_update_areas.task_id in ensure_dem_preview_coverage.upstream_task_ids
     )
-    assert ensure_dem_preview_coverage.task_id in dissolve_update_area.upstream_task_ids
+    assert (
+        ensure_dem_preview_coverage.task_id
+        in restore_stale_dem_preview.upstream_task_ids
+    )
+    # Pixels no update area covers any more are reset before any area is
+    # dissolved, so a restore cannot wipe a freshly dissolved neighbour.
+    assert restore_stale_dem_preview.task_id in dissolve_update_area.upstream_task_ids
 
 
 def test_processing_status_tasks() -> None:
@@ -107,6 +116,7 @@ def test_processing_status_tasks() -> None:
         "revoke_update_area_write_access",
         "find_dirty_update_areas",
         "ensure_dem_preview_coverage",
+        "restore_stale_dem_preview",
         "dissolve_update_area",
         "restore_update_area_write_access",
     }
@@ -203,6 +213,109 @@ def test_dissolve_update_area_builds_and_executes_pipeline(
     assert "primary_session" in kwargs
     assert "job_session" in kwargs
     mock_pipeline.execute.assert_called_once_with()
+
+
+def _run_restore_stale_dem_preview(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+    update_areas: list[MagicMock],
+) -> tuple[MagicMock, MagicMock]:
+    """Run the restore task body with mocked sessions and processing modules."""
+    mocker.patch("sqlalchemy.create_engine")
+    primary_session = MagicMock()
+    job_session = MagicMock()
+    session_ctx = mocker.patch("sqlmodel.Session")
+    # The task opens the primary session first, then the job session.
+    session_ctx.return_value.__enter__.side_effect = [primary_session, job_session]
+    job_session.exec.return_value.all.return_value = update_areas
+
+    # The models hold WKB elements in production; the fakes hold the shapes.
+    mocker.patch("geoalchemy2.shape.to_shape", side_effect=lambda geom: geom)
+
+    mock_pipelines = mock_submodule("pinta_processing.pipelines")
+    mock_pipelines.REGISTER_UPDATE_AREA_BUFFER = 0.0
+    mock_writer = mock_submodule("pinta_processing.writer")
+
+    dag = create_dag_to_test()
+    restore = dag.get_task("restore_stale_dem_preview").python_callable
+    restore(
+        primary_connection_uri="postgres://primary",
+        job_connection_uri="postgres://job",
+        from_schema="dem",
+        from_table="dem",
+        to_schema="user",
+        to_table="dem_preview",
+    )
+
+    return mock_pipelines, mock_writer
+
+
+def test_restore_stale_dem_preview_resets_area_no_longer_covered(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    # The area shrank to the left half of what the previous dissolve wrote.
+    shrunk = MagicMock(
+        dirty=True,
+        geom=shapely.box(0, 0, 10, 10),
+        dissolved_geom=shapely.box(0, 0, 20, 10),
+    )
+
+    mock_pipelines, mock_writer = _run_restore_stale_dem_preview(
+        mocker, mock_submodule, [shrunk]
+    )
+
+    mock_pipelines.postgis_to_postgis.assert_called_once()
+    kwargs = mock_pipelines.postgis_to_postgis.call_args.kwargs
+    assert shapely.from_wkt(kwargs["tile_wkt"]).equals(shapely.box(10, 0, 20, 10))
+    # The preview tiles already exist, so the restore overwrites them in place.
+    assert kwargs["mode"] is mock_writer.WriterMode.UPDATE
+    mock_pipelines.postgis_to_postgis.return_value.execute.assert_called_once_with()
+
+
+def test_restore_stale_dem_preview_spares_other_update_areas(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    shrunk = MagicMock(
+        dirty=True,
+        geom=shapely.box(0, 0, 10, 10),
+        dissolved_geom=shapely.box(0, 0, 20, 10),
+    )
+    # An already dissolved neighbour overlapping the stale part must keep its
+    # pixels, or its edit would be lost before it is registered.
+    neighbour = MagicMock(
+        dirty=False,
+        geom=shapely.box(12, 0, 20, 10),
+        dissolved_geom=shapely.box(12, 0, 20, 10),
+    )
+
+    mock_pipelines, _ = _run_restore_stale_dem_preview(
+        mocker, mock_submodule, [shrunk, neighbour]
+    )
+
+    kwargs = mock_pipelines.postgis_to_postgis.call_args.kwargs
+    assert shapely.from_wkt(kwargs["tile_wkt"]).equals(shapely.box(10, 0, 12, 10))
+
+
+def test_restore_stale_dem_preview_skips_unchanged_areas(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    unchanged = MagicMock(
+        dirty=True,
+        geom=shapely.box(0, 0, 10, 10),
+        dissolved_geom=shapely.box(0, 0, 10, 10),
+    )
+    never_dissolved = MagicMock(
+        dirty=True, geom=shapely.box(20, 0, 30, 10), dissolved_geom=None
+    )
+
+    mock_pipelines, _ = _run_restore_stale_dem_preview(
+        mocker, mock_submodule, [unchanged, never_dissolved]
+    )
+
+    mock_pipelines.postgis_to_postgis.assert_not_called()
 
 
 def _run_ensure_dem_preview_coverage(
