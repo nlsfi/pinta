@@ -143,16 +143,16 @@ def calculate_diff_models(
 
     return (
         reader.PostgisReader(
-            dem_schema,
-            dem_table,
-            primary_session,
+            reference_schema,
+            reference_dem_table,
+            job_session,
             tile_wkt,
         )
         | core.Zip(
             reader.PostgisReader(
-                reference_schema,
-                reference_dem_table,
-                job_session,
+                dem_schema,
+                dem_table,
+                primary_session,
                 tile_wkt,
             )
         )
