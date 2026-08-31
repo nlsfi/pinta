@@ -123,6 +123,17 @@ def test_find_dirty_update_areas_filters_on_dirty(mock_session: MagicMock) -> No
     assert "is true" in compiled.lower()
 
 
+def test_find_dirty_update_areas_excludes_registered(mock_session: MagicMock) -> None:
+    mock_session.exec.return_value.all.return_value = []
+
+    tasks.find_dirty_update_areas.function("postgres://mock/db")
+
+    # A registered area is frozen, so it must never be picked up again.
+    statement = mock_session.exec.call_args.args[0]
+    compiled = str(statement.compile(compile_kwargs={"literal_binds": True}))
+    assert "registered_at is null" in compiled.lower()
+
+
 def test_find_dirty_update_areas_no_dirty_areas_returns_empty(
     mock_session: MagicMock,
 ) -> None:
@@ -131,6 +142,63 @@ def test_find_dirty_update_areas_no_dirty_areas_returns_empty(
     result = tasks.find_dirty_update_areas.function("postgres://mock/db")
 
     assert result == []
+
+
+def test_find_unregistered_update_areas_returns_ids_and_wkt(
+    mock_session: MagicMock, mocker: "MockerFixture"
+) -> None:
+    mocker.patch(
+        "geoalchemy2.shape.to_shape",
+        side_effect=[MagicMock(wkt="POINT (0 0)"), MagicMock(wkt="POINT (1 1)")],
+    )
+    area_1 = MagicMock()
+    area_1.id = "area-1"
+    area_2 = MagicMock()
+    area_2.id = "area-2"
+    mock_session.exec.return_value.all.return_value = [area_1, area_2]
+
+    result = tasks.find_unregistered_update_areas.function("postgres://mock/db")
+
+    # Each area's id stays paired with its own geometry.
+    assert result == [
+        {"update_area_id": "area-1", "geom_wkt": "POINT (0 0)"},
+        {"update_area_id": "area-2", "geom_wkt": "POINT (1 1)"},
+    ]
+
+
+def test_find_unregistered_update_areas_excludes_registered(
+    mock_session: MagicMock,
+) -> None:
+    mock_session.exec.return_value.all.return_value = []
+
+    result = tasks.find_unregistered_update_areas.function("postgres://mock/db")
+
+    assert result == []
+    statement = mock_session.exec.call_args.args[0]
+    compiled = str(statement.compile(compile_kwargs={"literal_binds": True}))
+    assert "registered_at is null" in compiled.lower()
+
+
+def test_restore_update_area_write_access_grants_by_default(
+    mock_session: MagicMock, mocker: "MockerFixture"
+) -> None:
+    restore = mocker.patch(
+        "pinta_db.job_db.privileges.restore_update_area_write_access"
+    )
+
+    tasks.restore_update_area_write_access.function("postgres://mock/db")
+
+    restore.assert_called_once()
+
+
+def test_restore_update_area_write_access_skipped_when_disabled(
+    mocker: "MockerFixture",
+) -> None:
+    create_engine = mocker.patch("sqlalchemy.create_engine")
+
+    tasks.restore_update_area_write_access.function("postgres://mock/db", enabled=False)
+
+    create_engine.assert_not_called()
 
 
 def test_build_job_connection_uri_task_replaces_database_name() -> None:
