@@ -9,7 +9,7 @@
 | [reference.diff_lte_threshold](reference.diff_lte_threshold.md) | 2 |  | BASE TABLE |
 | [reference.diff_polygon](reference.diff_polygon.md) | 4 |  | BASE TABLE |
 | [reference.update_area_suggestion](reference.update_area_suggestion.md) | 6 |  | BASE TABLE |
-| [user_data.update_area](user_data.update_area.md) | 4 |  | BASE TABLE |
+| [user_data.update_area](user_data.update_area.md) | 5 |  | BASE TABLE |
 | [reference.o_2_dem](reference.o_2_dem.md) | 2 |  | BASE TABLE |
 | [reference.o_8_dem](reference.o_8_dem.md) | 2 |  | BASE TABLE |
 | [reference.o_128_dem](reference.o_128_dem.md) | 2 |  | BASE TABLE |
@@ -67,6 +67,7 @@ erDiagram
   geometry_Polygon_3067_ geom
   boolean dirty
   double_precision elevation
+  geometry_Polygon_3067_ dissolved_geom
 }
 "reference.o_2_dem" {
   bigint rid
