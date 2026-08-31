@@ -3,6 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import datetime
 import uuid
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
@@ -52,11 +53,14 @@ def test_register_update_areas_all_tasks() -> None:
         "set_processing_status_started",
         "get_database_name",
         "build_job_connection_uri_task",
+        "build_job_admin_connection_uri",
+        "revoke_update_area_write_access",
         "find_dirty_update_areas",
         "should_dissolve",
         "trigger_dissolve_update_areas",
-        "find_update_area_geometries",
+        "find_unregistered_update_areas",
         "register_update_area",
+        "restore_update_area_write_access",
         "set_processing_status_completed",
         "set_processing_status_failed",
     }
@@ -72,7 +76,7 @@ def test_dependencies() -> None:
     find_dirty_update_areas = dag.get_task("find_dirty_update_areas")
     should_dissolve = dag.get_task("should_dissolve")
     trigger_dissolve = dag.get_task("trigger_dissolve_update_areas")
-    find_update_area_geometries = dag.get_task("find_update_area_geometries")
+    find_unregistered_update_areas = dag.get_task("find_unregistered_update_areas")
     register_update_area = dag.get_task("register_update_area")
 
     assert status_started.task_id in get_database_name.upstream_task_ids
@@ -84,8 +88,19 @@ def test_dependencies() -> None:
     # Dirty areas gate the dissolve trigger, which runs before the register.
     assert find_dirty_update_areas.task_id in should_dissolve.upstream_task_ids
     assert should_dissolve.task_id in trigger_dissolve.upstream_task_ids
-    assert trigger_dissolve.task_id in find_update_area_geometries.upstream_task_ids
-    assert find_update_area_geometries.task_id in register_update_area.upstream_task_ids
+    assert trigger_dissolve.task_id in find_unregistered_update_areas.upstream_task_ids
+    assert (
+        find_unregistered_update_areas.task_id in register_update_area.upstream_task_ids
+    )
+
+    # QGIS editors are locked out before any update area state is read.
+    admin_uri = dag.get_task("build_job_admin_connection_uri")
+    revoke_write_access = dag.get_task("revoke_update_area_write_access")
+    restore_write_access = dag.get_task("restore_update_area_write_access")
+    assert admin_uri.task_id in revoke_write_access.upstream_task_ids
+    assert admin_uri.task_id in restore_write_access.upstream_task_ids
+    assert revoke_write_access.task_id in find_dirty_update_areas.upstream_task_ids
+    assert register_update_area.task_id in restore_write_access.upstream_task_ids
 
 
 def test_trigger_dissolve_configuration() -> None:
@@ -94,11 +109,17 @@ def test_trigger_dissolve_configuration() -> None:
     trigger_dissolve = dag.get_task("trigger_dissolve_update_areas")
     assert trigger_dissolve.trigger_dag_id == constants.DAG_ID_DISSOLVE_UPDATE_AREAS
     assert trigger_dissolve.wait_for_completion is True
+    # The dissolve must leave the editors locked out; the register restores
+    # the write access itself at its own end.
+    assert trigger_dissolve.conf == {
+        "id": "{{ params.id }}",
+        "restore_write_access": False,
+    }
 
     # The register read runs also when the dissolve trigger was skipped
     # because every update area was already clean.
-    find_update_area_geometries = dag.get_task("find_update_area_geometries")
-    assert find_update_area_geometries.trigger_rule == "none_failed"
+    find_unregistered_update_areas = dag.get_task("find_unregistered_update_areas")
+    assert find_unregistered_update_areas.trigger_rule == "none_failed"
 
 
 def test_processing_status_tasks() -> None:
@@ -113,10 +134,13 @@ def test_processing_status_tasks() -> None:
         "set_processing_status_started",
         "get_database_name",
         "build_job_connection_uri_task",
+        "build_job_admin_connection_uri",
+        "revoke_update_area_write_access",
         "find_dirty_update_areas",
         "trigger_dissolve_update_areas",
-        "find_update_area_geometries",
+        "find_unregistered_update_areas",
         "register_update_area",
+        "restore_update_area_write_access",
     }
     assert expected_upstream <= status_completed.upstream_task_ids
     assert expected_upstream <= status_failed.upstream_task_ids
@@ -140,15 +164,48 @@ def test_should_dissolve_gates_on_dirty_areas() -> None:
     )
 
 
+def test_write_access_is_restored_even_when_register_fails() -> None:
+    dag = create_dag_to_test()
+
+    restore_write_access = dag.get_task("restore_update_area_write_access")
+
+    assert "register_update_area" in restore_write_access.upstream_task_ids
+    assert restore_write_access.trigger_rule == "all_done"
+
+
+def test_register_update_area_maps_paired_kwargs() -> None:
+    dag = create_dag_to_test()
+    register_update_area = dag.get_task("register_update_area")
+
+    # expand_kwargs keeps each area's id paired with its own geometry instead
+    # of a cartesian product of separately expanded lists.
+    expand_input = register_update_area.op_kwargs_expand_input
+    assert type(expand_input).__name__ == "ListOfDictsExpandInput"
+    assert expand_input.value.operator.task_id == "find_unregistered_update_areas"
+
+
+@pytest.fixture
+def mock_session(mocker: "MockerFixture") -> MagicMock:
+    """Patch the engine/session so task bodies run without a real database.
+
+    Both the primary and the job session resolve to the same mock.
+    """
+    mocker.patch("sqlalchemy.create_engine")
+    session = MagicMock()
+    session_ctx = mocker.patch("sqlmodel.Session")
+    session_ctx.return_value.__enter__.return_value = session
+    return session
+
+
 def test_register_update_area_builds_and_executes_pipeline(
-    mocker: "MockerFixture",
+    mock_session: MagicMock,
     mock_submodule: "Callable[[str], MagicMock]",
 ) -> None:
     from pinta_processing.writer import WriterMode
     from shapely import wkt as shapely_wkt
 
-    mocker.patch("sqlalchemy.create_engine")
-    mocker.patch("sqlmodel.Session")
+    update_area = MagicMock()
+    mock_session.exec.return_value.first.return_value = update_area
     # Inject a mock pipelines module so the task body's ``from pinta_processing
     # import pipelines`` resolves to the mock instead of importing the real
     # (heavy) module.
@@ -161,15 +218,21 @@ def test_register_update_area_builds_and_executes_pipeline(
     register_update_area = dag.get_task("register_update_area").python_callable
 
     geom_wkt = "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))"
+    update_area_id = str(uuid.uuid4())
     register_update_area(
         primary_connection_uri="postgres://primary",
         job_connection_uri="postgres://job",
         geom_wkt=geom_wkt,
+        update_area_id=update_area_id,
         from_schema="user_data",
         from_table="dem_preview",
         to_schema="dem",
         to_table="dem",
     )
+
+    # The area is looked up by the mapped id.
+    lookup = mock_session.exec.call_args.args[0]
+    assert update_area_id in lookup.compile().params.values()
 
     mock_pipelines_module.postgis_to_postgis.assert_called_once()
     kwargs = mock_pipelines_module.postgis_to_postgis.call_args.kwargs
@@ -190,3 +253,35 @@ def test_register_update_area_builds_and_executes_pipeline(
     assert read_area.symmetric_difference(expected).area < 1e-6
 
     mock_pipeline.execute.assert_called_once_with()
+
+    # A successful pipeline run freezes the area by stamping registered_at.
+    assert isinstance(update_area.registered_at, datetime.datetime)
+    mock_session.add.assert_called_once_with(update_area)
+    mock_session.commit.assert_called_once_with()
+
+
+def test_register_update_area_missing_area_skips_pipeline(
+    mock_session: MagicMock,
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    mock_session.exec.return_value.first.return_value = None
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
+    mock_pipelines_module.REGISTER_UPDATE_AREA_BUFFER = 6
+
+    dag = create_dag_to_test()
+    register_update_area = dag.get_task("register_update_area").python_callable
+
+    register_update_area(
+        primary_connection_uri="postgres://primary",
+        job_connection_uri="postgres://job",
+        geom_wkt="POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+        update_area_id=str(uuid.uuid4()),
+        from_schema="user_data",
+        from_table="dem_preview",
+        to_schema="dem",
+        to_table="dem",
+    )
+
+    # Vanished area: nothing is copied and nothing is stamped.
+    mock_pipelines_module.postgis_to_postgis.assert_not_called()
+    mock_session.commit.assert_not_called()
