@@ -96,6 +96,24 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
     config.VectorLayerConfig(
         schema="user_data",
         table_name="update_area",
+        layer_name=tr("Update area (registered)"),
+        layer_id="update_area",
+        geom_column="geom",
+        key_column="id",
+        wkb_type=config.geometry_type_to_qgis_wkb("POLYGON"),
+        srid=Settings.DB_SRID,
+        style_path=_STYLES_PATH / "update_area_registered.qml",
+        aliases={
+            **config.COMMON_ALIASES,
+            "elevation": tr("Elevation"),
+            "dirty": tr("Dirty"),
+        },
+        read_only=True,
+        subset_string="registered_at IS NOT NULL",
+    ),
+    config.VectorLayerConfig(
+        schema="user_data",
+        table_name="update_area",
         layer_name=tr("Update area"),
         layer_id="update_area",
         geom_column="geom",
@@ -112,5 +130,6 @@ LAYERS: list[config.RasterLayerConfig | config.VectorLayerConfig] = [
         # The id primary key has no database-side default, so generate a UUID
         # client-side when a new update area is digitised.
         default_expressions={"id": "uuid('WithoutBraces')"},
+        subset_string="registered_at IS NULL",
     ),
 ]
