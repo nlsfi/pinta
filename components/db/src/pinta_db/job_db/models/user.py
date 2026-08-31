@@ -2,7 +2,7 @@
 # (https://www.maanmittauslaitos.fi/en).
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
-
+import datetime
 from typing import Any
 
 from geoalchemy2 import Geometry
@@ -31,6 +31,7 @@ class UpdateArea(job_base.UserVectorBase, table=True):  # type: ignore[call-arg]
         default=True,
         sa_column=Column(Boolean, nullable=False, server_default=true()),
     )
+    registered_at: datetime.datetime | None = Field(default=None)
 
 
 class DemPreview(job_base.UserBase, base.RasterBase, table=True):  # type: ignore[call-arg]
