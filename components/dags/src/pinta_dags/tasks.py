@@ -114,16 +114,18 @@ def find_dirty_update_areas(
     engine = sqlalchemy.create_engine(connection_uri)
     with sqlmodel.Session(engine) as session:
         update_areas = session.exec(
-            sqlmodel.select(UpdateArea).where(sqlmodel.col(UpdateArea.dirty).is_(True))
+            sqlmodel.select(UpdateArea)
+            .where(sqlmodel.col(UpdateArea.dirty).is_(True))
+            .where(sqlmodel.col(UpdateArea.registered_at).is_(None))
         ).all()
         return [{"update_area_id": str(area.id)} for area in update_areas]
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-def find_update_area_geometries(
+def find_unregistered_update_areas(
     connection_uri: str,
-) -> list[str]:
-    """Return the geometry (as WKT) of every update area."""
+) -> list[dict[str, str]]:
+    """Return the id and geometry (as WKT) of every unregistered update area."""
     import sqlalchemy
     import sqlmodel
     from geoalchemy2.shape import to_shape
@@ -131,8 +133,15 @@ def find_update_area_geometries(
 
     engine = sqlalchemy.create_engine(connection_uri)
     with sqlmodel.Session(engine) as session:
-        update_areas = session.exec(sqlmodel.select(UpdateArea)).all()
-        return [to_shape(area.geom).wkt for area in update_areas]
+        update_areas = session.exec(
+            sqlmodel.select(UpdateArea).where(
+                sqlmodel.col(UpdateArea.registered_at).is_(None)
+            )
+        ).all()
+        return [
+            {"update_area_id": str(area.id), "geom_wkt": to_shape(area.geom).wkt}
+            for area in update_areas
+        ]
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
@@ -152,8 +161,17 @@ def revoke_update_area_write_access(connection_uri: str) -> None:
     **config.PINTA_CONTAINER_TASK_ARGS,
     trigger_rule=TriggerRule.ALL_DONE,
 )
-def restore_update_area_write_access(connection_uri: str) -> None:
-    """Give QGIS editors their update_area write access back."""
+def restore_update_area_write_access(
+    connection_uri: str, *, enabled: bool = True
+) -> None:
+    """Give QGIS editors their update_area write access back.
+
+    With `enabled=False` the restore is skipped so a parent DAG that
+    triggered this one can keep the editors locked out until its own end.
+    """
+    if not enabled:
+        return
+
     import sqlalchemy
     import sqlmodel
     from pinta_common import Settings
