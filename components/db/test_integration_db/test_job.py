@@ -3,6 +3,7 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import datetime
 import os
 
 import pytest
@@ -99,3 +100,59 @@ def test_set_update_area_dirty_trigger(
     )
 
     assert area.dirty is expected_dirty
+
+
+def _add_registered_update_area(session: sqlmodel.Session) -> UpdateArea:
+    """Insert an update area and stamp it registered."""
+    area = UpdateArea(geom="Polygon((0 0, 1 0, 1 1, 0 1, 0 0))", dirty=False)
+    session.add(area)
+    session.commit()
+
+    # Stamping registered_at on an unregistered row is the one allowed change.
+    area.registered_at = datetime.datetime(2026, 8, 31, 12, 0)
+    session.commit()
+    session.refresh(area)
+    return area
+
+
+@pytest.mark.parametrize(
+    "edit_role",
+    [None, _WRITER_ROLE, _PROCESSING_WORKER_ROLE],
+    ids=["admin", "writer", "worker"],
+)
+def test_registered_update_area_cannot_be_updated(
+    job_db: sqlmodel.Session,
+    edit_role: str | None,
+):
+    area = _add_registered_update_area(job_db)
+
+    if edit_role is not None:
+        job_db.exec(sa.text(f'SET ROLE "{edit_role}"'))  # type: ignore[call-overload]
+    area.geom = "Polygon((0 0, 2 0, 2 2, 0 2, 0 0))"
+    with pytest.raises(sa.exc.ProgrammingError, match="can no longer be modified"):
+        job_db.commit()
+    job_db.rollback()
+    job_db.exec(sa.text("RESET ROLE"))  # type: ignore[call-overload]
+
+
+def test_registered_update_area_cannot_be_deleted(job_db: sqlmodel.Session):
+    area = _add_registered_update_area(job_db)
+
+    job_db.delete(area)
+    with pytest.raises(sa.exc.ProgrammingError, match="can no longer be modified"):
+        job_db.commit()
+    job_db.rollback()
+
+
+def test_unregistered_update_area_can_be_edited_and_deleted(
+    job_db: sqlmodel.Session,
+):
+    area = UpdateArea(geom="Polygon((0 0, 1 0, 1 1, 0 1, 0 0))", dirty=False)
+    job_db.add(area)
+    job_db.commit()
+
+    area.geom = "Polygon((0 0, 2 0, 2 2, 0 2, 0 0))"
+    job_db.commit()
+
+    job_db.delete(area)
+    job_db.commit()
