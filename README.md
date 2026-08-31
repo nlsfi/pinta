@@ -3,6 +3,14 @@
 > [!CAUTION]
 > Under active development!
 
+## About the Pinta project
+
+The National Land Survey of Finland maintains a nationwide terrain model with a resolution of 2 metres. The terrain model is available as open data through viewing and download services: [Elevation model 2 m](https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/datasets-and-interfaces/product-descriptions/elevation-model-2-m)
+
+The current national laser scanning programme produces point clouds captured during the summer season. To maintain the accuracy of the terrain model, it is updated only with changes resulting from construction activities, soil extraction, and other significant terrain modifications. The original terrain model is based on springtime laser scanning data, which is less affected by vegetation.
+
+Pinta enables the creation of a reference terrain model from new point cloud data collected in production areas. It allows users to efficiently identify, review, and approve terrain changes interactively. The system then updates the current terrain model with the accepted changes.
+
 ## Development instructions
 
 Check [component](./components) related instructions in each component's README.md.
