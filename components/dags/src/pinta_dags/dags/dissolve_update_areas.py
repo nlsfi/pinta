@@ -56,13 +56,28 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 type="string",
                 format="uuid",
                 description=("Production area id as UUID"),
-            )
+            ),
+            "restore_write_access": Param(
+                default=True,
+                type="boolean",
+                description=(
+                    "Restore the QGIS editors' update_area write access at the "
+                    "end. A triggering parent DAG sets this to false to keep "
+                    "the editors locked out until its own end."
+                ),
+            ),
         },
         is_paused_upon_creation=False,
     )
     def dissolve_update_areas_dag() -> None:  # noqa: C901, PLR0915
         # Precondition: the production area must already have its job database
         # provisioned and database_name set for production area by orchestrator DAG.
+
+        @task
+        def should_restore_write_access(params: dict) -> bool:
+            # Read the param in a task so the restore gets a native bool
+            # instead of a rendered template string.
+            return bool(params["restore_write_access"])
 
         @task.docker(
             **config.PINTA_CONTAINER_TASK_ARGS,
@@ -305,7 +320,9 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             ),
         )
         revoke_qgis_write_access = revoke_update_area_write_access(job_admin_db_uri)
-        restore_qgis_write_access = restore_update_area_write_access(job_admin_db_uri)
+        restore_qgis_write_access = restore_update_area_write_access(
+            job_admin_db_uri, enabled=should_restore_write_access()
+        )
 
         dirty_update_areas = find_dirty_update_areas(job_db_uri)
 

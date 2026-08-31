@@ -56,6 +56,7 @@ def test_dissolve_update_areas_all_tasks() -> None:
         "build_job_connection_uri_task",
         "build_job_admin_connection_uri",
         "revoke_update_area_write_access",
+        "should_restore_write_access",
         "find_dirty_update_areas",
         "ensure_dem_preview_coverage",
         "restore_stale_dem_preview",
@@ -152,6 +153,20 @@ def test_write_access_is_restored_even_when_dissolve_fails() -> None:
 
     assert "dissolve_update_area" in restore_write_access.upstream_task_ids
     assert restore_write_access.trigger_rule == "all_done"
+
+
+def test_restore_write_access_gated_on_param() -> None:
+    dag = create_dag_to_test()
+
+    # A parent DAG (register) sets restore_write_access=False in its trigger
+    # conf so the lock holds until the parent's own restore.
+    assert dag.params["restore_write_access"] is True
+    should_restore = dag.get_task("should_restore_write_access").python_callable
+    assert should_restore(params={"restore_write_access": True}) is True
+    assert should_restore(params={"restore_write_access": False}) is False
+
+    restore_write_access = dag.get_task("restore_update_area_write_access")
+    assert "should_restore_write_access" in restore_write_access.upstream_task_ids
 
 
 def test_get_max_parallel_pipelines_reads_variable() -> None:
