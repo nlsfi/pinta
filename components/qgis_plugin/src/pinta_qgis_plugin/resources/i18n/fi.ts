@@ -139,12 +139,12 @@
         <translation>Hallitsematon virhe tapahtui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="186"/>
+        <location filename="../../api/api_client.py" line="182"/>
         <source>Could not start workflow</source>
         <translation>Laskennan käynnistäminen epäonnistui</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="206"/>
+        <location filename="../../api/api_client.py" line="202"/>
         <source>Check log for more details</source>
         <translation>Tarkista loki lisätietojen varalta</translation>
     </message>
@@ -159,7 +159,7 @@
         <translation>Käynnistä vertausmallin työnkulku</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="110"/>
+        <location filename="../../api/api_client.py" line="106"/>
         <source>Reference DEM workflow task created successfully</source>
         <translation>Vertausmallin laskennan työnkulku käynnistettiin onnistuneesti</translation>
     </message>
@@ -194,12 +194,12 @@
         <translation>Klusterin pinta-ala</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="96"/>
+        <location filename="../../project/config/job_layers.py" line="114"/>
         <source>Update area</source>
         <translation>Muutosalue</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="96"/>
+        <location filename="../../project/config/job_layers.py" line="114"/>
         <source>Elevation</source>
         <translation>Korkeus</translation>
     </message>
@@ -209,7 +209,7 @@
         <translation>Tuloskorkeusmalli</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="122"/>
+        <location filename="../../api/api_client.py" line="118"/>
         <source>Dissolve update areas workflow task created successfully</source>
         <translation>Tuloskorkeusmallin päivityksen työnkulku käynnistettiin onnistuneesti </translation>
     </message>
@@ -224,12 +224,12 @@
         <translation>Käynnistä tuloskorkeusmallin päivityksen työnkulku tuotantoalueelle</translation>
     </message>
     <message>
-        <location filename="../../project/config/job_layers.py" line="96"/>
+        <location filename="../../project/config/job_layers.py" line="114"/>
         <source>Dirty</source>
         <translation>Päivittämättä</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="135"/>
+        <location filename="../../api/api_client.py" line="131"/>
         <source>Register update areas workflow task created successfully</source>
         <translation>Muutosalueiden rekisteröinnin työnkulku käynnistettiin onnistuneesti</translation>
     </message>
@@ -244,12 +244,12 @@
         <translation>Käynnistä muutosalueiden rekisteröinnin työnkulku tuotantoalueelle</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="151"/>
+        <location filename="../../api/api_client.py" line="147"/>
         <source>Production area database deleted successfully</source>
         <translation>Tuotantoalueen tietokanta poistettiin onnistuneesti</translation>
     </message>
     <message>
-        <location filename="../../api/api_client.py" line="190"/>
+        <location filename="../../api/api_client.py" line="186"/>
         <source>Could not delete production area database</source>
         <translation>Tuotantoalueen tietokannan poistaminen epäonnistui</translation>
     </message>
@@ -259,7 +259,7 @@
         <translation>Poista tuotantoalueen tietokanta</translation>
     </message>
     <message>
-        <location filename="../../workflows/job_database.py" line="26"/>
+        <location filename="../../workflows/job_database.py" line="29"/>
         <source>The database of the production area and all data in it are deleted permanently, and the processing status of the production area is reset. Do you want to continue?</source>
         <translation>Tuotantoalueen tietokanta ja kaikki sen sisältämä data poistetaan pysyvästi, ja tuotantoalueen käsittelyn tila nollataan. Haluatko jatkaa?</translation>
     </message>
@@ -267,6 +267,11 @@
         <location filename="../../project/groups/management_layer_collection.py" line="135"/>
         <source>Delete the database of the production area and reset its processing status</source>
         <translation>Poista tuotantoalueen tietokanta ja nollaa sen käsittelyn tila</translation>
+    </message>
+    <message>
+        <location filename="../../project/config/job_layers.py" line="96"/>
+        <source>Update area (registered)</source>
+        <translation>Muutosalue (rekisteröidyt)</translation>
     </message>
 </context>
 </TS>
