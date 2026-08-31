@@ -8,6 +8,7 @@
 | geom | geometry(Polygon,3067) |  | false |  |  |  |
 | dirty | boolean | true | false |  |  |  |
 | elevation | double precision |  | true |  |  |  |
+| dissolved_geom | geometry(Polygon,3067) |  | true |  |  |  |
 
 ## Constraints
 
@@ -21,6 +22,7 @@
 | ---- | ---------- |
 | update_area_pkey | CREATE UNIQUE INDEX update_area_pkey ON user_data.update_area USING btree (id) |
 | idx_update_area_geom | CREATE INDEX idx_update_area_geom ON user_data.update_area USING gist (geom) |
+| idx_update_area_dissolved_geom | CREATE INDEX idx_update_area_dissolved_geom ON user_data.update_area USING gist (dissolved_geom) |
 
 ## Triggers
 
@@ -39,6 +41,7 @@ erDiagram
   geometry_Polygon_3067_ geom
   boolean dirty
   double_precision elevation
+  geometry_Polygon_3067_ dissolved_geom
 }
 ```
 
