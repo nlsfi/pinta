@@ -34,5 +34,22 @@ set_update_area_dirty = pg_function.PGFunction(
     ),
 )
 
+# A registered update area has been copied into the primary DEM and is frozen
+# for every role; the row can never be modified or removed again.
+prevent_registered_update_area_modification = pg_function.PGFunction(
+    schema=Schema.USER.value,
+    signature="prevent_registered_update_area_modification()",
+    definition=textwrap.dedent(
+        """\
+        RETURNS trigger AS $$
+        BEGIN
+            RAISE EXCEPTION
+                'update_area % is registered and can no longer be modified',
+                OLD.id;
+        END; $$ LANGUAGE 'plpgsql';
+        """
+    ),
+)
 
-ALL = [set_update_area_dirty]
+
+ALL = [set_update_area_dirty, prevent_registered_update_area_modification]

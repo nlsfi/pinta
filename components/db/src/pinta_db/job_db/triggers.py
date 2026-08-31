@@ -25,4 +25,22 @@ trigger_set_update_area_dirty = pg_trigger.PGTrigger(
     on_entity=_update_area,
 )
 
-ALL = [trigger_set_update_area_dirty]
+# Freeze registered rows: the WHEN clause lets registered_at itself be stamped
+# on an unregistered row, but blocks every later change to the row.
+trigger_prevent_registered_update_area_modification = pg_trigger.PGTrigger(
+    schema=Schema.USER.value,
+    signature="prevent_registered_update_area_modification_trigger",
+    definition=f"""
+    BEFORE UPDATE OR DELETE ON {_update_area}
+    FOR EACH ROW
+    WHEN (OLD.registered_at IS NOT NULL)
+    EXECUTE FUNCTION
+    {Schema.USER.value}.{functions.prevent_registered_update_area_modification.signature}
+    """,
+    on_entity=_update_area,
+)
+
+ALL = [
+    trigger_set_update_area_dirty,
+    trigger_prevent_registered_update_area_modification,
+]
