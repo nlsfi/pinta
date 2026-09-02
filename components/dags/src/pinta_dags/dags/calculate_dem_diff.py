@@ -18,6 +18,7 @@ from pinta_dags.tasks import (
     get_database_name,
     initialize_dem_tables,
     merge_dem_staging_tables,
+    truncate_dem_tables,
 )
 
 DB_SCHEMA = Schema.REFERENCE.value
@@ -140,6 +141,15 @@ def create_calculate_dem_diff_dag(
             task_id="find_production_area"
         )(primary_connection_uri, prod_area_id)
 
+        # Truncate so a rerun replaces the previous diffs instead of violating
+        # the spatial uniqueness constraint on merge.
+        truncate_diff_task = truncate_dem_tables.override(
+            task_id="truncate_diff_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF)
+        truncate_diff_lte_threshold_task = truncate_dem_tables.override(
+            task_id="truncate_diff_lte_threshold_tables"
+        )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF_LTE_THRESHOLD)
+
         init_diff_task = initialize_dem_tables.override(
             task_id="initialize_diff_tables"
         )(job_db_uri, DB_SCHEMA, DB_TABLE_DIFF, staging_tables)
@@ -166,9 +176,11 @@ def create_calculate_dem_diff_dag(
         )(requested=cast("bool", "{{ params.cluster }}"))
         cluster_task = cluster_diff_polygons(job_db_uri)
 
+        tile_wkt_list >> [truncate_diff_task, truncate_diff_lte_threshold_task]
+        truncate_diff_task >> init_diff_task
+        truncate_diff_lte_threshold_task >> init_diff_lte_threshold_task
         (
-            tile_wkt_list
-            >> [init_diff_task, init_diff_lte_threshold_task]
+            [init_diff_task, init_diff_lte_threshold_task]
             >> processed_tiles
             >> [merge_diff_task, merge_diff_lte_threshold_task]
             >> cluster_gate

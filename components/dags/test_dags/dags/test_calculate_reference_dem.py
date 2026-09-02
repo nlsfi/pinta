@@ -88,6 +88,7 @@ def test_calculate_reference_all_tasks() -> None:
         "get_database_name",
         "build_job_connection_uri_task",
         "find_production_area",
+        "truncate_dem_tables",
         "initialize_dem_tables",
         "las2dem",
         "merge_dem_staging_tables",
@@ -101,12 +102,14 @@ def test_dependencies():
     get_database_name = dag.get_task("get_database_name")
     build_job_connection_uri_task = dag.get_task("build_job_connection_uri_task")
     find_production_area = dag.get_task("find_production_area")
+    truncate = dag.get_task("truncate_dem_tables")
     initialize = dag.get_task("initialize_dem_tables")
     las2dem = dag.get_task("las2dem")
     merge_dem_staging_tables = dag.get_task("merge_dem_staging_tables")
 
     assert get_database_name.task_id in build_job_connection_uri_task.upstream_task_ids
-    assert find_production_area.task_id in initialize.upstream_task_ids
+    assert find_production_area.task_id in truncate.upstream_task_ids
+    assert truncate.task_id in initialize.upstream_task_ids
     assert find_production_area.task_id in las2dem.upstream_task_ids
     assert initialize.task_id in las2dem.upstream_task_ids
     assert las2dem.task_id in merge_dem_staging_tables.upstream_task_ids

@@ -48,6 +48,8 @@ def test_calculate_dem_diff_all_tasks() -> None:
         "get_database_name",
         "build_job_connection_uri_task",
         "find_production_area",
+        "truncate_diff_tables",
+        "truncate_diff_lte_threshold_tables",
         "initialize_diff_tables",
         "initialize_diff_lte_threshold_tables",
         "calculate_dem_diff",
@@ -65,6 +67,8 @@ def test_dependencies() -> None:
     get_database_name = dag.get_task("get_database_name")
     build_job_connection_uri_task = dag.get_task("build_job_connection_uri_task")
     find_production_area = dag.get_task("find_production_area")
+    truncate_diff = dag.get_task("truncate_diff_tables")
+    truncate_diff_lte = dag.get_task("truncate_diff_lte_threshold_tables")
     init_diff = dag.get_task("initialize_diff_tables")
     init_diff_lte = dag.get_task("initialize_diff_lte_threshold_tables")
     calculate = dag.get_task("calculate_dem_diff")
@@ -75,8 +79,10 @@ def test_dependencies() -> None:
 
     assert get_database_name.task_id in build_job_connection_uri_task.upstream_task_ids
     # The diff tiles come from the production area geometries task.
-    assert find_production_area.task_id in init_diff.upstream_task_ids
-    assert find_production_area.task_id in init_diff_lte.upstream_task_ids
+    assert find_production_area.task_id in truncate_diff.upstream_task_ids
+    assert find_production_area.task_id in truncate_diff_lte.upstream_task_ids
+    assert truncate_diff.task_id in init_diff.upstream_task_ids
+    assert truncate_diff_lte.task_id in init_diff_lte.upstream_task_ids
     assert init_diff.task_id in calculate.upstream_task_ids
     assert init_diff_lte.task_id in calculate.upstream_task_ids
     assert calculate.task_id in merge_diff.upstream_task_ids
