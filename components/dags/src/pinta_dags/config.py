@@ -96,6 +96,7 @@ PINTA_COMMON_TASK_ARGS: dict[str, Any] = {
 }
 
 PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
+    **PINTA_COMMON_TASK_ARGS,
     "image": "{{ var.value.pinta_processing_image }}",
     "force_pull": False,
     # Cannot be templated at the moment
