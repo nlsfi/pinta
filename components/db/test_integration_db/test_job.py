@@ -9,8 +9,9 @@ import os
 import pytest
 import sqlalchemy as sa
 import sqlmodel
+from geoalchemy2.shape import to_shape
 
-from pinta_db.job_db.models.user import UpdateArea
+from pinta_db.job_db.models.user import UpdateArea, UpdateAreaRestore
 
 _PROCESSING_WORKER_ROLE = os.environ["DB_JOB_PROCESSING_WORKER_ROLE"]
 _WRITER_ROLE = os.environ["DB_JOB_WRITER_ROLE"]
@@ -156,3 +157,23 @@ def test_unregistered_update_area_can_be_edited_and_deleted(
 
     job_db.delete(area)
     job_db.commit()
+
+
+def test_deleting_dissolved_update_area_writes_restore_row(
+    job_db: sqlmodel.Session,
+):
+    dissolved_geom = "Polygon((0 0, 3 0, 3 3, 0 3, 0 0))"
+    area = UpdateArea(
+        geom="Polygon((0 0, 1 0, 1 1, 0 1, 0 0))",
+        dissolved_geom=dissolved_geom,
+        dirty=False,
+    )
+    job_db.add(area)
+    job_db.commit()
+
+    job_db.delete(area)
+    job_db.commit()
+
+    restore_rows = job_db.exec(sqlmodel.select(UpdateAreaRestore)).all()
+    assert len(restore_rows) == 1
+    assert to_shape(restore_rows[0].geom).wkt == dissolved_geom

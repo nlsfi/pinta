@@ -65,3 +65,27 @@ def test_prevent_registered_modification_trigger_definition() -> None:
         in trigger.definition
     )
     assert trigger in triggers.ALL
+
+
+def test_save_dissolved_geom_on_delete_function_definition() -> None:
+    function = functions.save_dissolved_geom_on_delete
+
+    assert isinstance(function, PGFunction)
+    assert function.schema == Schema.USER.value
+    assert function.signature == "save_dissolved_geom_on_delete()"
+    assert "OLD.dissolved_geom" in function.definition
+    assert "update_area_restore" in function.definition
+    assert "SECURITY DEFINER" in function.definition
+    assert function in functions.ALL
+
+
+def test_save_dissolved_geom_on_delete_trigger_definition() -> None:
+    trigger = triggers.trigger_save_dissolved_geom_on_delete
+
+    assert isinstance(trigger, PGTrigger)
+    assert trigger.schema == Schema.USER.value
+    assert trigger.signature == "save_dissolved_geom_on_delete_trigger"
+    assert trigger.on_entity == f"{Schema.USER.value}.update_area"
+    assert "AFTER DELETE" in trigger.definition
+    assert functions.save_dissolved_geom_on_delete.signature in trigger.definition
+    assert trigger in triggers.ALL

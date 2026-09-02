@@ -15,6 +15,7 @@ from pinta_db.job_db.schema import Schema
 # dirty so the area is re-dissolved. Membership (not the exact login user) is
 # checked so the group role and its member logins are all treated as the worker.
 _PROCESSING_WORKER_ROLE = os.environ["DB_JOB_PROCESSING_WORKER_ROLE"]
+_RESTORE_TABLE = f"{Schema.USER.value}.update_area_restore"
 
 set_update_area_dirty = pg_function.PGFunction(
     schema=Schema.USER.value,
@@ -51,5 +52,26 @@ prevent_registered_update_area_modification = pg_function.PGFunction(
     ),
 )
 
+save_dissolved_geom_on_delete = pg_function.PGFunction(
+    schema=Schema.USER.value,
+    signature="save_dissolved_geom_on_delete()",
+    definition=textwrap.dedent(
+        f"""\
+        RETURNS trigger AS $$
+        BEGIN
+            IF OLD.dissolved_geom IS NOT NULL THEN
+                INSERT INTO {_RESTORE_TABLE} (id, geom)
+                VALUES (gen_random_uuid(), OLD.dissolved_geom);
+            END IF;
+            RETURN NULL;
+        END; $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+        """  # noqa: S608
+    ),
+)
 
-ALL = [set_update_area_dirty, prevent_registered_update_area_modification]
+
+ALL = [
+    set_update_area_dirty,
+    prevent_registered_update_area_modification,
+    save_dissolved_geom_on_delete,
+]
