@@ -40,7 +40,20 @@ trigger_prevent_registered_update_area_modification = pg_trigger.PGTrigger(
     on_entity=_update_area,
 )
 
+
+trigger_save_dissolved_geom_on_delete = pg_trigger.PGTrigger(
+    schema=Schema.USER.value,
+    signature="save_dissolved_geom_on_delete_trigger",
+    definition=f"""
+    AFTER DELETE ON {_update_area}
+    FOR EACH ROW EXECUTE FUNCTION
+    {Schema.USER.value}.{functions.save_dissolved_geom_on_delete.signature}
+    """,
+    on_entity=_update_area,
+)
+
 ALL = [
     trigger_set_update_area_dirty,
     trigger_prevent_registered_update_area_modification,
+    trigger_save_dissolved_geom_on_delete,
 ]
