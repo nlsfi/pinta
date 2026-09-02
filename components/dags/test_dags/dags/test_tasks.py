@@ -201,6 +201,52 @@ def test_restore_update_area_write_access_skipped_when_disabled(
     create_engine.assert_not_called()
 
 
+def test_find_restore_areas_returns_id_and_geom_wkt(
+    mock_session: MagicMock, mocker: "MockerFixture"
+) -> None:
+    row_1 = MagicMock(id="restore-1", geom="geom-1")
+    row_2 = MagicMock(id="restore-2", geom="geom-2")
+    mock_session.exec.return_value.all.return_value = [row_1, row_2]
+
+    mocker.patch(
+        "geoalchemy2.shape.to_shape",
+        side_effect=[
+            MagicMock(wkt="POLYGON ((0 0, 0 1, 1 1, 0 0))"),
+            MagicMock(wkt="POLYGON ((1 1, 1 2, 2 2, 1 1))"),
+        ],
+    )
+
+    result = tasks.find_restore_areas.function("postgres://mock/db")
+
+    assert result == [
+        {"restore_id": "restore-1", "geom_wkt": "POLYGON ((0 0, 0 1, 1 1, 0 0))"},
+        {"restore_id": "restore-2", "geom_wkt": "POLYGON ((1 1, 1 2, 2 2, 1 1))"},
+    ]
+
+
+def test_delete_restore_area_deletes_existing_row(mock_session: MagicMock) -> None:
+    restore_row = MagicMock()
+    mock_session.get.return_value = restore_row
+
+    tasks.delete_restore_area.function("postgres://mock/db", "restore-1")
+
+    mock_session.get.assert_called_once()
+    mock_session.delete.assert_called_once_with(restore_row)
+    mock_session.commit.assert_called_once_with()
+
+
+def test_delete_restore_area_is_idempotent_when_missing(
+    mock_session: MagicMock,
+) -> None:
+    mock_session.get.return_value = None
+
+    tasks.delete_restore_area.function("postgres://mock/db", "restore-1")
+
+    mock_session.get.assert_called_once()
+    mock_session.delete.assert_not_called()
+    mock_session.commit.assert_not_called()
+
+
 def test_build_job_connection_uri_task_replaces_database_name() -> None:
     result = tasks.build_job_connection_uri_task.function(
         base_uri="postgresql://user:pass@host:1234/template_db",

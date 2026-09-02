@@ -56,6 +56,7 @@ def test_register_update_areas_all_tasks() -> None:
         "build_job_admin_connection_uri",
         "revoke_update_area_write_access",
         "find_dirty_update_areas",
+        "find_restore_areas",
         "should_dissolve",
         "trigger_dissolve_update_areas",
         "find_unregistered_update_areas",
@@ -74,6 +75,7 @@ def test_dependencies() -> None:
     get_database_name = dag.get_task("get_database_name")
     build_job_connection_uri_task = dag.get_task("build_job_connection_uri_task")
     find_dirty_update_areas = dag.get_task("find_dirty_update_areas")
+    find_restore_areas = dag.get_task("find_restore_areas")
     should_dissolve = dag.get_task("should_dissolve")
     trigger_dissolve = dag.get_task("trigger_dissolve_update_areas")
     find_unregistered_update_areas = dag.get_task("find_unregistered_update_areas")
@@ -85,8 +87,10 @@ def test_dependencies() -> None:
         build_job_connection_uri_task.task_id
         in find_dirty_update_areas.upstream_task_ids
     )
+    assert build_job_connection_uri_task.task_id in find_restore_areas.upstream_task_ids
     # Dirty areas gate the dissolve trigger, which runs before the register.
     assert find_dirty_update_areas.task_id in should_dissolve.upstream_task_ids
+    assert find_restore_areas.task_id in should_dissolve.upstream_task_ids
     assert should_dissolve.task_id in trigger_dissolve.upstream_task_ids
     assert trigger_dissolve.task_id in find_unregistered_update_areas.upstream_task_ids
     assert (
@@ -137,6 +141,7 @@ def test_processing_status_tasks() -> None:
         "build_job_admin_connection_uri",
         "revoke_update_area_write_access",
         "find_dirty_update_areas",
+        "find_restore_areas",
         "trigger_dissolve_update_areas",
         "find_unregistered_update_areas",
         "register_update_area",
@@ -153,12 +158,25 @@ def test_should_dissolve_gates_on_dirty_areas() -> None:
     dag = create_dag_to_test()
     should_dissolve = dag.get_task("should_dissolve").python_callable
 
-    assert should_dissolve(dirty_update_areas=[]) is False
+    assert should_dissolve(dirty_update_areas=[], restore_areas=[]) is False
     assert (
         should_dissolve(
             dirty_update_areas=[
                 {"update_area_id": "00000000-0000-0000-0000-000000000000"}
-            ]
+            ],
+            restore_areas=[],
+        )
+        is True
+    )
+    assert (
+        should_dissolve(
+            dirty_update_areas=[],
+            restore_areas=[
+                {
+                    "restore_id": "00000000-0000-0000-0000-000000000000",
+                    "geom_wkt": "POLYGON ((0 0, 0 1, 1 1, 0 0))",
+                }
+            ],
         )
         is True
     )

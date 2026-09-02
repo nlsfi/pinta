@@ -58,9 +58,12 @@ def test_dissolve_update_areas_all_tasks() -> None:
         "revoke_update_area_write_access",
         "should_restore_write_access",
         "find_dirty_update_areas",
+        "find_restore_areas",
         "ensure_dem_preview_coverage",
         "restore_stale_dem_preview",
         "dissolve_update_area",
+        "restore_update_area",
+        "delete_restore_area",
         "restore_update_area_write_access",
         "set_processing_status_completed",
         "set_processing_status_failed",
@@ -75,10 +78,14 @@ def test_dependencies() -> None:
     get_database_name = dag.get_task("get_database_name")
     build_job_connection_uri_task = dag.get_task("build_job_connection_uri_task")
     find_dirty_update_areas = dag.get_task("find_dirty_update_areas")
+    find_restore_areas = dag.get_task("find_restore_areas")
     ensure_dem_preview_coverage = dag.get_task("ensure_dem_preview_coverage")
     restore_stale_dem_preview = dag.get_task("restore_stale_dem_preview")
     dissolve_update_area = dag.get_task("dissolve_update_area")
+    restore_update_area = dag.get_task("restore_update_area")
+    delete_restore_area = dag.get_task("delete_restore_area")
     revoke_write_access = dag.get_task("revoke_update_area_write_access")
+    restore_write_access = dag.get_task("restore_update_area_write_access")
 
     assert status_started.task_id in get_database_name.upstream_task_ids
     assert get_database_name.task_id in build_job_connection_uri_task.upstream_task_ids
@@ -92,6 +99,8 @@ def test_dependencies() -> None:
     assert (
         find_dirty_update_areas.task_id in ensure_dem_preview_coverage.upstream_task_ids
     )
+    # Pending restore areas are listed while writer access is revoked.
+    assert revoke_write_access.task_id in find_restore_areas.upstream_task_ids
     assert (
         ensure_dem_preview_coverage.task_id
         in restore_stale_dem_preview.upstream_task_ids
@@ -99,6 +108,9 @@ def test_dependencies() -> None:
     # Pixels no update area covers any more are reset before any area is
     # dissolved, so a restore cannot wipe a freshly dissolved neighbour.
     assert restore_stale_dem_preview.task_id in dissolve_update_area.upstream_task_ids
+    assert find_restore_areas.task_id in restore_update_area.upstream_task_ids
+    assert restore_update_area.task_id in delete_restore_area.upstream_task_ids
+    assert delete_restore_area.task_id in restore_write_access.upstream_task_ids
 
 
 def test_processing_status_tasks() -> None:
@@ -116,9 +128,12 @@ def test_processing_status_tasks() -> None:
         "build_job_admin_connection_uri",
         "revoke_update_area_write_access",
         "find_dirty_update_areas",
+        "find_restore_areas",
         "ensure_dem_preview_coverage",
         "restore_stale_dem_preview",
         "dissolve_update_area",
+        "restore_update_area",
+        "delete_restore_area",
         "restore_update_area_write_access",
     }
     assert expected_upstream <= status_completed.upstream_task_ids
@@ -227,6 +242,51 @@ def test_dissolve_update_area_builds_and_executes_pipeline(
     assert kwargs["update_area"] is update_area
     assert "primary_session" in kwargs
     assert "job_session" in kwargs
+    mock_pipeline.execute.assert_called_once_with()
+
+
+def test_restore_update_area_builds_and_executes_pipeline(
+    mocker: "MockerFixture",
+    mock_submodule: "Callable[[str], MagicMock]",
+) -> None:
+    from pinta_processing.writer import WriterMode
+    from shapely import wkt as shapely_wkt
+
+    mocker.patch("sqlalchemy.create_engine")
+    mocker.patch("sqlmodel.Session")
+
+    mock_pipeline = MagicMock()
+    mock_pipelines_module = mock_submodule("pinta_processing.pipelines")
+    mock_pipelines_module.REGISTER_UPDATE_AREA_BUFFER = 4
+    mock_pipelines_module.postgis_to_postgis.return_value = mock_pipeline
+
+    dag = create_dag_to_test()
+    restore_update_area = dag.get_task("restore_update_area").python_callable
+
+    geom_wkt = "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))"
+    restore_update_area(
+        primary_connection_uri="postgres://primary",
+        job_connection_uri="postgres://job",
+        restore_id="00000000-0000-0000-0000-000000000000",
+        geom_wkt=geom_wkt,
+    )
+
+    mock_pipelines_module.postgis_to_postgis.assert_called_once()
+    kwargs = mock_pipelines_module.postgis_to_postgis.call_args.kwargs
+    assert kwargs["from_schema"] == "dem"
+    assert kwargs["from_table"] == "dem"
+    assert kwargs["to_schema"] == "user_data"
+    assert kwargs["to_table"] == "dem_preview"
+    assert kwargs["mode"] is WriterMode.UPDATE
+    assert "from_session" in kwargs
+    assert "to_session" in kwargs
+
+    read_area = shapely_wkt.loads(kwargs["tile_wkt"])
+    expected = shapely_wkt.loads(geom_wkt).buffer(
+        mock_pipelines_module.REGISTER_UPDATE_AREA_BUFFER
+    )
+    assert read_area.symmetric_difference(expected).area < 1e-6
+
     mock_pipeline.execute.assert_called_once_with()
 
 
