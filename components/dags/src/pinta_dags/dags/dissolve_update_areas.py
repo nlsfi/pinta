@@ -80,13 +80,15 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             return bool(params["restore_write_access"])
 
         @task.docker(
-            **config.PINTA_CONTAINER_TASK_ARGS,
-            max_active_tis_per_dag=_get_max_parallel_pipelines(),
             # Parallel tasks can race to insert the same shared overview tile;
             # the spatial uniqueness constraint fails the loser, and a retry
             # then sees the tile in place and skips it.
-            retries=3,
-            retry_delay=datetime.timedelta(seconds=10),
+            **{
+                **config.PINTA_CONTAINER_TASK_ARGS,
+                "retries": 3,
+                "retry_delay": datetime.timedelta(seconds=10),
+            },
+            max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
         def ensure_dem_preview_coverage(
             primary_connection_uri: str,
@@ -243,12 +245,14 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 pipeline.execute()
 
         @task.docker(
-            **config.PINTA_CONTAINER_TASK_ARGS,
-            max_active_tis_per_dag=_get_max_parallel_pipelines(),
             # Parallel tasks merging into the same base/overview tiles can
             # deadlock on the concurrent row updates; retry to ride out the loser.
-            retries=3,
-            retry_delay=datetime.timedelta(seconds=10),
+            **{
+                **config.PINTA_CONTAINER_TASK_ARGS,
+                "retries": 3,
+                "retry_delay": datetime.timedelta(seconds=10),
+            },
+            max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
         def dissolve_update_area(
             primary_connection_uri: str,

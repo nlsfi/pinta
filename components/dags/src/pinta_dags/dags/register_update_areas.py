@@ -75,12 +75,14 @@ def create_register_update_areas_dag(
             return len(dirty_update_areas) > 0
 
         @task.docker(
-            **config.PINTA_CONTAINER_TASK_ARGS,
-            max_active_tis_per_dag=_get_max_parallel_pipelines(),
             # Parallel tasks merging into the same base/overview tiles can
             # deadlock on the concurrent row updates, retry.
-            retries=3,
-            retry_delay=datetime.timedelta(seconds=10),
+            **{
+                **config.PINTA_CONTAINER_TASK_ARGS,
+                "retries": 3,
+                "retry_delay": datetime.timedelta(seconds=10),
+            },
+            max_active_tis_per_dag=_get_max_parallel_pipelines(),
         )
         def register_update_area(  # noqa: PLR0913
             primary_connection_uri: str,
