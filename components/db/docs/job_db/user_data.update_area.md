@@ -9,6 +9,7 @@
 | dirty | boolean | true | false |  |  |  |
 | elevation | double precision |  | true |  |  |  |
 | dissolved_geom | geometry(Polygon,3067) |  | true |  |  |  |
+| registered_at | timestamp without time zone |  | true |  |  |  |
 
 ## Constraints
 
@@ -29,6 +30,7 @@
 | Name | Definition |
 | ---- | ---------- |
 | set_update_area_dirty_trigger | CREATE TRIGGER set_update_area_dirty_trigger BEFORE UPDATE ON user_data.update_area FOR EACH ROW EXECUTE FUNCTION user_data.set_update_area_dirty() |
+| prevent_registered_update_area_modification_trigger | CREATE TRIGGER prevent_registered_update_area_modification_trigger BEFORE DELETE OR UPDATE ON user_data.update_area FOR EACH ROW WHEN ((old.registered_at IS NOT NULL)) EXECUTE FUNCTION user_data.prevent_registered_update_area_modification() |
 
 ## Relations
 
@@ -42,6 +44,7 @@ erDiagram
   boolean dirty
   double_precision elevation
   geometry_Polygon_3067_ dissolved_geom
+  timestamp_without_time_zone registered_at
 }
 ```
 
