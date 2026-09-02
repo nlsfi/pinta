@@ -122,6 +122,25 @@ def find_dirty_update_areas(
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def find_restore_areas(
+    connection_uri: str,
+) -> list[dict[str, str]]:
+    """Return id and geometry for every pending update area restore row."""
+    import sqlalchemy
+    import sqlmodel
+    from geoalchemy2.shape import to_shape
+    from pinta_db.job_db.models.user import UpdateAreaRestore
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        restore_rows = session.exec(sqlmodel.select(UpdateAreaRestore)).all()
+        return [
+            {"restore_id": str(row.id), "geom_wkt": to_shape(row.geom).wkt}
+            for row in restore_rows
+        ]
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
 def find_unregistered_update_areas(
     connection_uri: str,
 ) -> list[dict[str, str]]:
@@ -142,6 +161,21 @@ def find_unregistered_update_areas(
             {"update_area_id": str(area.id), "geom_wkt": to_shape(area.geom).wkt}
             for area in update_areas
         ]
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def delete_restore_area(connection_uri: str, restore_id: str) -> None:
+    """Delete one processed restore row."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db.job_db.models.user import UpdateAreaRestore
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        restore_row = session.get(UpdateAreaRestore, restore_id)
+        if restore_row is not None:
+            session.delete(restore_row)
+            session.commit()
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)

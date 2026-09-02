@@ -21,6 +21,7 @@ from pinta_dags.config import AirflowVariable
 from pinta_dags.tasks import (
     build_job_connection_uri_task,
     find_dirty_update_areas,
+    find_restore_areas,
     find_unregistered_update_areas,
     get_database_name,
     restore_update_area_write_access,
@@ -69,10 +70,13 @@ def create_register_update_areas_dag(
         # provisioned and database_name set for production area by orchestrator DAG.
 
         @task.short_circuit(ignore_downstream_trigger_rules=False)
-        def should_dissolve(dirty_update_areas: list[dict[str, str]]) -> bool:
+        def should_dissolve(
+            dirty_update_areas: list[dict[str, str]],
+            restore_areas: list[dict[str, str]],
+        ) -> bool:
             # Skip only the directly downstream dissolve trigger when every
-            # update area is already clean.
-            return len(dirty_update_areas) > 0
+            # update area is already clean and no restore rows are pending.
+            return len(dirty_update_areas) > 0 or len(restore_areas) > 0
 
         @task.docker(
             # Parallel tasks merging into the same base/overview tiles can
@@ -176,7 +180,8 @@ def create_register_update_areas_dag(
         restore_qgis_write_access = restore_update_area_write_access(job_admin_db_uri)
 
         dirty_update_areas = find_dirty_update_areas(job_db_uri)
-        dissolve_gate = should_dissolve(dirty_update_areas)
+        restore_areas = find_restore_areas(job_db_uri)
+        dissolve_gate = should_dissolve(dirty_update_areas, restore_areas)
 
         trigger_dissolve_update_areas = TriggerDagRunOperator(
             task_id="trigger_dissolve_update_areas",
@@ -229,6 +234,7 @@ def create_register_update_areas_dag(
             job_admin_db_uri,
             revoke_qgis_write_access,
             dirty_update_areas,
+            restore_areas,
             trigger_dissolve_update_areas,
             unregistered_update_areas,
             registered_areas,
