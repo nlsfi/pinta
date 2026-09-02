@@ -134,22 +134,30 @@
         <colorrampshader classificationMode="1" clip="0" colorRampType="INTERPOLATED" labelPrecision="4" maximumValue="1" minimumValue="-1">
           <colorramp name="[source]" type="gradient">
             <Option type="Map">
-              <Option name="color1" type="QString" value="43,131,186,255,rgb:0.1686275,0.5137255,0.7294118,1"/>
-              <Option name="color2" type="QString" value="215,25,28,255,rgb:0.8431373,0.0980392,0.1098039,1"/>
+              <Option name="color1" type="QString" value="0,64,128,255,rgb:0,0.2509804,0.5019608,1"/>
+              <Option name="color2" type="QString" value="255,0,0,255,rgb:1,0,0,1"/>
               <Option name="direction" type="QString" value="ccw"/>
               <Option name="discrete" type="QString" value="0"/>
               <Option name="rampType" type="QString" value="gradient"/>
               <Option name="spec" type="QString" value="rgb"/>
-              <Option name="stops" type="QString" value="0.0005;95,173,114,255,hsv:0.37505555152893066,0.45423057675361633,0.67931640148162842,1;rgb;ccw:0.25;182,255,195,255,hsv:0.36283332109451294,0.28621348738670349,1,1;rgb;ccw:0.5;255,255,216,255,rgb:1,1,0.8470588,1;rgb;ccw:0.75;255,255,149,255,rgb:1,1,0.5843138,1;rgb;ccw:0.9995;199,152,0,255,rgb:0.7793088,0.5966735,0,1;rgb;ccw"/>
+              <Option name="stops" type="QString" value="0.0909091;0,64,128,255,rgb:0,0.2509804,0.5019608,1;rgb;ccw:0.181818;0,128,128,255,rgb:0,0.5019608,0.5019608,1;rgb;ccw:0.272727;0,160,64,255,rgb:0,0.627451,0.2509804,1;rgb;ccw:0.363636;0,176,64,255,rgb:0,0.6901961,0.2509804,1;rgb;ccw:0.454545;0,192,64,255,rgb:0,0.7529412,0.2509804,1;rgb;ccw:0.5;160,192,32,255,rgb:0.627451,0.7529412,0.1254902,1;rgb;ccw:0.5;160,192,32,255,rgb:0.627451,0.7529412,0.1254902,1;rgb;ccw:0.5;160,192,32,255,rgb:0.627451,0.7529412,0.1254902,1;rgb;ccw:0.545455;192,192,32,255,rgb:0.7529412,0.7529412,0.1254902,1;rgb;ccw:0.636364;224,160,0,255,rgb:0.8784314,0.627451,0,1;rgb;ccw:0.727273;255,128,0,255,rgb:1,0.5019608,0,1;rgb;ccw:0.818182;255,64,0,255,rgb:1,0.2509804,0,1;rgb;ccw:0.909091;255,32,0,255,rgb:1,0.1254902,0,1;rgb;ccw"/>
             </Option>
           </colorramp>
-          <item alpha="255" color="#2b83ba" label="-1,0000" value="-1"/>
-          <item alpha="255" color="#5fad72" label="-0,9990" value="-0.999"/>
-          <item alpha="255" color="#b6ffc3" label="-0,5000" value="-0.5"/>
-          <item alpha="255" color="#ffffd8" label="0,0000" value="0"/>
-          <item alpha="255" color="#ffff95" label="0,5000" value="0.5"/>
-          <item alpha="255" color="#c79800" label="0,9990" value="0.999"/>
-          <item alpha="255" color="#d7191c" label="1,0000" value="1"/>
+          <item alpha="255" color="#004080" label="-1,0000" value="-1"/>
+          <item alpha="255" color="#004080" label="-0,8182" value="-0.818181818181818"/>
+          <item alpha="255" color="#008080" label="-0,6364" value="-0.636363636363636"/>
+          <item alpha="255" color="#00a040" label="-0,4545" value="-0.454545454545454"/>
+          <item alpha="255" color="#00b040" label="-0,2727" value="-0.272727272727273"/>
+          <item alpha="255" color="#00c040" label="-0,0909" value="-0.0909090909090909"/>
+          <item alpha="255" color="#a0c020" label="0,0000" value="0"/>
+          <item alpha="255" color="#a0c020" label="0,0000" value="0"/>
+          <item alpha="255" color="#a0c020" label="0,0000" value="0"/>
+          <item alpha="255" color="#c0c020" label="0,0909" value="0.0909090909090911"/>
+          <item alpha="255" color="#e0a000" label="0,2727" value="0.272727272727273"/>
+          <item alpha="255" color="#ff8000" label="0,4545" value="0.454545454545455"/>
+          <item alpha="255" color="#ff4000" label="0,6364" value="0.636363636363636"/>
+          <item alpha="255" color="#ff2000" label="0,8182" value="0.818181818181818"/>
+          <item alpha="255" color="#ff0000" label="1,0000" value="1"/>
           <rampLegendSettings direction="0" maximumLabel="" minimumLabel="" orientation="2" prefix="" suffix="" useContinuousLegend="1">
             <numericFormat id="basic">
               <Option type="Map">
@@ -409,5 +417,4 @@
     </maplayer>
   </originalStyle>
   <blendMode>0</blendMode>
-  <legend/>
 </qgis>
