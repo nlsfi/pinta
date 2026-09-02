@@ -18,6 +18,7 @@ from pinta_dags.tasks import (
     get_database_name,
     initialize_dem_tables,
     merge_dem_staging_tables,
+    truncate_dem_tables,
 )
 
 DB_SCHEMA = Schema.REFERENCE.value
@@ -136,12 +137,16 @@ def create_calculate_reference_dem_dag(
             staging_tables=_get_staging_tables(),
         )
 
+        # Truncate so a rerun replaces the previous reference DEM instead of
+        # violating the spatial uniqueness constraint on merge.
+        truncate_task = truncate_dem_tables(job_db_uri, DB_SCHEMA, DB_TABLE)
         initialize_task = initialize_dem_tables(
             job_db_uri, DB_SCHEMA, DB_TABLE, _get_staging_tables()
         )
         processed_files = las2dem_task.expand(input_path=file_paths)
         (
             file_paths
+            >> truncate_task
             >> initialize_task
             >> processed_files
             >> merge_dem_staging_tables(

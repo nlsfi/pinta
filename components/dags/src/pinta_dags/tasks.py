@@ -222,6 +222,24 @@ def initialize_dem_tables(
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+def truncate_dem_tables(connection_uri: str, schema: str, table: str) -> None:
+    """Truncate a DEM table and its overview tables before a full recompute."""
+    import sqlalchemy
+    import sqlmodel
+    from pinta_db_utils.postgis import raster
+
+    engine = sqlalchemy.create_engine(connection_uri)
+    with sqlmodel.Session(engine) as session:
+        raster.truncate_raster_table(session, schema, table)
+        for level in raster.DEFAULT_OVERVIEW_LEVELS:
+            overview_table = raster.OVERVIEW_TABLE_NAME.format(
+                level=level, table_name=table
+            )
+            raster.truncate_raster_table(session, schema, overview_table)
+        session.commit()
+
+
+@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
 def merge_dem_staging_tables(
     connection_uri: str, schema: str, table: str, staging_tables: int
 ) -> None:
