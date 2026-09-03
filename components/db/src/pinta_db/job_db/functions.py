@@ -8,7 +8,7 @@ import textwrap
 
 from alembic_utils import pg_function
 
-from pinta_db.job_db import user
+from pinta_db.job_db.models import user
 from pinta_db.job_db.schema import Schema
 from pinta_db_utils import model_utils
 
