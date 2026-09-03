@@ -8,14 +8,16 @@ import textwrap
 
 from alembic_utils import pg_function
 
+from pinta_db.job_db import user
 from pinta_db.job_db.schema import Schema
+from pinta_db_utils import model_utils
 
 # The dissolve worker clears the dirty flag once an update area has been merged
 # into the preview. Any other role editing the update area must flip it back to
 # dirty so the area is re-dissolved. Membership (not the exact login user) is
 # checked so the group role and its member logins are all treated as the worker.
 _PROCESSING_WORKER_ROLE = os.environ["DB_JOB_PROCESSING_WORKER_ROLE"]
-_RESTORE_TABLE = f"{Schema.USER.value}.update_area_restore"
+_RESTORE_TABLE = ".".join(model_utils.schema_and_table(user.UpdateAreaRestore))
 
 set_update_area_dirty = pg_function.PGFunction(
     schema=Schema.USER.value,
