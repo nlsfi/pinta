@@ -23,6 +23,7 @@
 | [user_data.o_2_dem_preview](user_data.o_2_dem_preview.md) | 2 |  | BASE TABLE |
 | [user_data.o_8_dem_preview](user_data.o_8_dem_preview.md) | 2 |  | BASE TABLE |
 | [user_data.o_128_dem_preview](user_data.o_128_dem_preview.md) | 2 |  | BASE TABLE |
+| [user_data.update_area_restore](user_data.update_area_restore.md) | 3 |  | BASE TABLE |
 
 ## Stored procedures and functions
 
@@ -30,6 +31,7 @@
 | ---- | ------- | ------- | ---- |
 | user_data.set_update_area_dirty | trigger |  | FUNCTION |
 | user_data.prevent_registered_update_area_modification | trigger |  | FUNCTION |
+| user_data.save_dissolved_geom_on_delete | trigger |  | FUNCTION |
 
 ## Relations
 
@@ -122,6 +124,11 @@ erDiagram
 "user_data.o_128_dem_preview" {
   bigint rid
   raster rast
+}
+"user_data.update_area_restore" {
+  uuid id
+  geometry_Polygon_3067_ geom
+  timestamp_with_time_zone created_at
 }
 ```
 
