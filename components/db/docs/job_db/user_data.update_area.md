@@ -31,6 +31,7 @@
 | ---- | ---------- |
 | set_update_area_dirty_trigger | CREATE TRIGGER set_update_area_dirty_trigger BEFORE UPDATE ON user_data.update_area FOR EACH ROW EXECUTE FUNCTION user_data.set_update_area_dirty() |
 | prevent_registered_update_area_modification_trigger | CREATE TRIGGER prevent_registered_update_area_modification_trigger BEFORE DELETE OR UPDATE ON user_data.update_area FOR EACH ROW WHEN ((old.registered_at IS NOT NULL)) EXECUTE FUNCTION user_data.prevent_registered_update_area_modification() |
+| save_dissolved_geom_on_delete_trigger | CREATE TRIGGER save_dissolved_geom_on_delete_trigger AFTER DELETE ON user_data.update_area FOR EACH ROW EXECUTE FUNCTION user_data.save_dissolved_geom_on_delete() |
 
 ## Relations
 
