@@ -9,6 +9,7 @@ import os
 import pytest
 import sqlalchemy as sa
 import sqlmodel
+from geoalchemy2 import WKTElement
 from geoalchemy2.shape import to_shape
 
 from pinta_db.job_db.models.user import UpdateArea, UpdateAreaRestore
@@ -176,4 +177,4 @@ def test_deleting_dissolved_update_area_writes_restore_row(
 
     restore_rows = job_db.exec(sqlmodel.select(UpdateAreaRestore)).all()
     assert len(restore_rows) == 1
-    assert to_shape(restore_rows[0].geom).wkt == dissolved_geom
+    assert to_shape(restore_rows[0].geom).equals(to_shape(WKTElement(dissolved_geom)))
