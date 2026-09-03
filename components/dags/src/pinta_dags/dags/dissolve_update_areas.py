@@ -294,10 +294,12 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 job_session.commit()
 
         @task.docker(
-            **config.PINTA_CONTAINER_TASK_ARGS,
+            **{
+                **config.PINTA_CONTAINER_TASK_ARGS,
+                "retries": 3,
+                "retry_delay": datetime.timedelta(seconds=10),
+            },
             max_active_tis_per_dag=_get_max_parallel_pipelines(),
-            retries=3,
-            retry_delay=datetime.timedelta(seconds=10),
         )
         def restore_update_area(
             primary_connection_uri: str,
