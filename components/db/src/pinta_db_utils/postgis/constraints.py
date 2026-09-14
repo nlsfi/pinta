@@ -181,15 +181,18 @@ def _make_empty_raster(  # noqa: PLR0913
 
 
 def _add_constraint_from_sql(session: sqlmodel.Session, sql: str) -> None:
-    """Add constraints to the overview table."""
+    """Add a constraint, ignoring it if it already exists.
+
+    Runs in a savepoint so a duplicate constraint does not roll back the
+    caller's pending transaction.
+    """
     try:
-        session.exec(sa.text(sql))  # type: ignore[call-overload]
+        with session.begin_nested():
+            session.exec(sa.text(sql))  # type: ignore[call-overload]
     except sa.exc.ProgrammingError as e:
         if hasattr(e, "orig") and type(e.orig) in (
             psycopg.errors.DuplicateObject,
             psycopg.errors.DuplicateTable,
         ):
-            # Constraint already exists, ignore
-            session.rollback()
             return
         raise

@@ -204,3 +204,5 @@ isna
 2d
 isin
 deletable
+unnest
+ordinality
