@@ -12,7 +12,6 @@ from collections import abc
 import geoalchemy2
 import sqlalchemy as sa
 import sqlmodel
-from sqlalchemy.dialects import postgresql
 
 from pinta_common import Settings
 from pinta_db_utils.postgis import constraints, utils
@@ -143,9 +142,6 @@ def merge_staging_tables(
     merge that handles duplicate geometries by merging overlapping rasters, then
     creates a GIST index on the raster envelope and deletes the staging tables.
 
-    Tiles that already exist in the main table are updated with the union of the
-    existing and the staged raster, so merging is idempotent and reruns are safe.
-
     Finally add extent and coverage constraints.
     """
     if session is None:
@@ -209,57 +205,25 @@ def merge_staging_tables(
     )
 
     tiles_to_main_table = sa.union_all(
-        sa.select(merged_duplicate_tiles.c.rast, merged_duplicate_tiles.c.geom),
-        sa.select(unique_tiles.c.rast, unique_tiles.c.geom),
+        sa.select(merged_duplicate_tiles.c.rast),
+        sa.select(unique_tiles.c.rast),
     ).cte("tiles_to_main_table")
 
+    # Build and execute INSERT statement
     main_table = sa.Table(
         table_name,
         sa.MetaData(),
         sa.Column("rast", geoalchemy2.Raster()),
         schema=schema,
     )
-    main_envelope = sa.func.ST_Envelope(main_table.c.rast)
-    main_matches_tile = sa.and_(
-        main_envelope.op("&&")(tiles_to_main_table.c.geom),
-        sa.func.ST_SnapToGrid(main_envelope, 0) == tiles_to_main_table.c.geom,
-    )
-
-    # Union existing and staged rasters, staged pixels win where both have data
-    existing_and_staged = (
-        sa.func.unnest(
-            postgresql.array([main_table.c.rast, tiles_to_main_table.c.rast])
-        )
-        .table_valued("rast", with_ordinality="ordinality")
-        .render_derived()
-    )
-    union_of_rasters = (
-        sa.select(
-            sa.func.ST_Union(
-                postgresql.aggregate_order_by(
-                    existing_and_staged.c.rast, existing_and_staged.c.ordinality
-                )
-            )
-        )
-        .correlate(main_table, tiles_to_main_table)
-        .scalar_subquery()
-    )
-    updated_tiles = (
-        sa.update(main_table)
-        .where(main_matches_tile)
-        .values(rast=union_of_rasters)
-        .returning(tiles_to_main_table.c.geom)
-        .cte("updated_tiles")
-    )
 
     insert_statement = sa.insert(main_table).from_select(
         [main_table.c.rast],
-        sa.select(tiles_to_main_table.c.rast).where(
-            tiles_to_main_table.c.geom.not_in(sa.select(updated_tiles.c.geom))
-        ),
+        sa.select(tiles_to_main_table.c.rast).select_from(tiles_to_main_table),
     )
 
     session.exec(insert_statement)  # type: ignore[call-overload]
+    session.commit()
 
     create_raster_index(session, schema, table_name)
     constraints.add_constraint_extent(session, schema, table_name)
