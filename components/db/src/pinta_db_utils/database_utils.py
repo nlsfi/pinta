@@ -3,9 +3,9 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+from pinta_common import Settings
 from sqlalchemy import Connection, text
 
-from pinta_common import Settings
 from pinta_db_utils import sql_utils
 
 _CREATE_DB_LOCK_KEY = "pinta-create-db"

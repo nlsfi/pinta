@@ -17,8 +17,8 @@ from typing import Any
 import sqlalchemy as sa
 from alembic import op
 from geoalchemy2 import Raster
-
 from pinta_common import Settings
+
 from pinta_db.primary_db.models import dem
 
 # revision identifiers, used by Alembic.

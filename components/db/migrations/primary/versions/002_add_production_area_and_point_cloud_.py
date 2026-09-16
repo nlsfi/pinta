@@ -18,7 +18,6 @@ import sqlmodel
 import sqlmodel.sql.sqltypes
 from alembic import op
 from geoalchemy2 import Geometry
-
 from pinta_common import Settings
 
 # revision identifiers, used by Alembic.

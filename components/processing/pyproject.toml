@@ -9,6 +9,7 @@ dependencies = [
   "laspy",
   "lazrs",
   "pinta-db[shapely,psycopg]",
+  "pinta-lib",
   "affine",
   "geopandas",
   "pandas",
@@ -37,7 +38,6 @@ development = [
   "pytest-dotenv",
   "pytest-xdist",
   "pytest-timeout",
-  "pinta-lib",
   "psycopg[binary]",
 ]
 linting = [

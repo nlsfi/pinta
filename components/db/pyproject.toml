@@ -8,6 +8,7 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
   "geoalchemy2>=0.18.4",
   "sqlmodel>=0.0.37",
+  "pinta-lib",
 ]
 
 [project.optional-dependencies]
@@ -40,7 +41,6 @@ dev = [
   "psycopg[binary]>=3.3.3",
   "pytest-dotenv>=0.5.2",
   "pytest-xdist>=3.8.0",
-  "pinta-lib",
   "pytest-mock>=3.15.1",
   "pytest-timeout",
 ]
@@ -58,7 +58,7 @@ requires = ["uv_build>=0.10.9,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["pinta_db", "pinta_common", "pinta_db_utils"]
+module-name = ["pinta_db", "pinta_db_utils"]
 include = ["py.typed"]
 
 [tool.ruff]

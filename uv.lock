@@ -2008,6 +2008,7 @@ dependencies = [
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "pinta-db", extra = ["psycopg"] },
+    { name = "pinta-lib" },
     { name = "pydantic-settings" },
     { name = "uvicorn" },
 ]
@@ -2034,6 +2035,7 @@ requires-dist = [
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "pinta-db", extras = ["psycopg"], editable = "components/db" },
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "pydantic-settings" },
     { name = "uvicorn" },
 ]
@@ -2059,6 +2061,7 @@ version = "0.0.0"
 source = { editable = "components/dags" }
 dependencies = [
     { name = "pinta-db" },
+    { name = "pinta-lib" },
     { name = "pinta-processing" },
 ]
 
@@ -2093,6 +2096,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'airflow'", specifier = "==2.5.1" },
     { name = "pinta-db", editable = "components/db" },
     { name = "pinta-db", extras = ["psycopg"], marker = "extra == 'airflow'", editable = "components/db" },
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "pinta-processing", editable = "components/processing" },
     { name = "scipy", marker = "extra == 'airflow'", specifier = "==1.18.0" },
 ]
@@ -2121,6 +2125,7 @@ version = "0.0.0"
 source = { editable = "components/db" }
 dependencies = [
     { name = "geoalchemy2" },
+    { name = "pinta-lib" },
     { name = "sqlmodel" },
 ]
 
@@ -2145,7 +2150,6 @@ shapely = [
 [package.dev-dependencies]
 dev = [
     { name = "dotenv" },
-    { name = "pinta-lib" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
@@ -2166,6 +2170,7 @@ requires-dist = [
     { name = "geoalchemy2", specifier = ">=0.18.4" },
     { name = "geoalchemy2", extras = ["shapely"], marker = "extra == 'shapely'" },
     { name = "numpy", marker = "extra == 'shapely'", specifier = ">=2" },
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'migrations'", specifier = ">=3.3.3" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'psycopg'", specifier = ">=3.3.3" },
     { name = "sqlmodel", specifier = ">=0.0.37" },
@@ -2176,7 +2181,6 @@ provides-extras = ["migrations", "psycopg", "shapely", "build"]
 [package.metadata.requires-dev]
 dev = [
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
@@ -2253,6 +2257,9 @@ version = "0.0.0"
 source = { editable = "components/lib" }
 
 [package.dev-dependencies]
+build = [
+    { name = "uv" },
+]
 dev = [
     { name = "pytest" },
 ]
@@ -2265,6 +2272,7 @@ lint = [
 [package.metadata]
 
 [package.metadata.requires-dev]
+build = [{ name = "uv" }]
 dev = [{ name = "pytest", specifier = ">=9.0.2" }]
 lint = [
     { name = "mypy" },
@@ -2284,6 +2292,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pinta-db", extra = ["psycopg"] },
     { name = "pinta-db", extra = ["shapely"], marker = "(extra == 'extra-10-pinta-dags-airflow' and extra == 'extra-17-pinta-qgis-plugin-qgis') or (extra != 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely') or (extra != 'extra-10-pinta-dags-airflow' and extra == 'extra-8-pinta-db-shapely')" },
+    { name = "pinta-lib" },
     { name = "rasterio" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-17-pinta-qgis-plugin-qgis'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
@@ -2299,7 +2308,6 @@ load-test-data = [
 
 [package.dev-dependencies]
 development = [
-    { name = "pinta-lib" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
     { name = "pytest-dotenv" },
@@ -2321,6 +2329,7 @@ requires-dist = [
     { name = "lazrs" },
     { name = "pandas" },
     { name = "pinta-db", extras = ["shapely", "psycopg"], editable = "components/db" },
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg", marker = "extra == 'load-test-data'" },
     { name = "rasterio" },
     { name = "scipy" },
@@ -2330,7 +2339,6 @@ provides-extras = ["build", "load-test-data"]
 
 [package.metadata.requires-dev]
 development = [
-    { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg", extras = ["binary"] },
     { name = "pytest" },
     { name = "pytest-dotenv" },
@@ -2350,6 +2358,7 @@ version = "0.0.0"
 source = { editable = "components/qgis_plugin" }
 dependencies = [
     { name = "pinta-db" },
+    { name = "pinta-lib" },
     { name = "qgis-plugin-tools" },
 ]
 
@@ -2369,7 +2378,6 @@ dev = [
     { name = "coverage" },
     { name = "coverage-enable-subprocess" },
     { name = "debugpy" },
-    { name = "pinta-lib" },
     { name = "pydevd-pycharm" },
     { name = "pytest" },
     { name = "pytest-dotenv" },
@@ -2396,6 +2404,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'qgis'", specifier = ">=1,<2" },
     { name = "owslib", marker = "extra == 'qgis'", specifier = "==0.29.3" },
     { name = "pinta-db", editable = "components/db" },
+    { name = "pinta-lib", editable = "components/lib" },
     { name = "psycopg2-binary", marker = "extra == 'qgis'", specifier = ">=2,<3" },
     { name = "qgis-plugin-tools" },
     { name = "requests", marker = "extra == 'qgis'", specifier = ">=2,<3" },
@@ -2408,7 +2417,6 @@ dev = [
     { name = "coverage", extras = ["toml"] },
     { name = "coverage-enable-subprocess" },
     { name = "debugpy", specifier = ">=1.8.20" },
-    { name = "pinta-lib", editable = "components/lib" },
     { name = "pydevd-pycharm", specifier = "~=261.22158.340" },
     { name = "pytest" },
     { name = "pytest-dotenv" },
@@ -3333,7 +3341,7 @@ resolution-markers = [
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-10-pinta-dags-airflow' or extra != 'extra-17-pinta-qgis-plugin-qgis' or (extra == 'extra-17-pinta-qgis-plugin-qgis' and extra == 'extra-8-pinta-db-shapely')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a7/25/c2700dfaf6442b4effaa91af24ebce5dc9d31bb4a69706313aae70d72cd0/scipy-1.18.0.tar.gz", hash = "sha256:67b2ad2ad54c72ca6d04975a9b2df8c3638c34ddd5b28738e94fc2b57929d378", size = 30774447, upload-time = "2026-06-19T15:01:43.456Z" }
 wheels = [

@@ -12,8 +12,8 @@ from collections import abc
 import geoalchemy2
 import sqlalchemy as sa
 import sqlmodel
-
 from pinta_common import Settings
+
 from pinta_db_utils.postgis import constraints, utils
 
 OVERVIEW_TABLE_NAME = "o_{level}_{table_name}"

@@ -31,9 +31,8 @@ requires = ["uv_build>=0.10.9,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = "pinta_test_utils"
+module-name = ["pinta_test_utils", "pinta_common"]
 include = ["py.typed"]
-
 
 [tool.semantic_release]
 commit_parser = "conventional-monorepo"
