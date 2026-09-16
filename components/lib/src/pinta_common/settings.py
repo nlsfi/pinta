@@ -65,5 +65,13 @@ class _Settings:
         # When set to a truthy value, LASTools commands are invoked with `-demo`.
         return _is_truthy(os.environ.get("LASTOOLS_DEMO_MODE", ""))
 
+    @property
+    def DEVELOPMENT_MODE(self) -> bool:  # noqa: N802
+        return _is_truthy(os.environ.get("PINTA_DEVELOPMENT_MODE", ""))
+
+    @property
+    def FEATURE_FLAG_CONFIG(self) -> str:  # noqa: N802
+        return _require("PINTA_FEATURE_FLAG_CONFIG")
+
 
 Settings = _Settings()
