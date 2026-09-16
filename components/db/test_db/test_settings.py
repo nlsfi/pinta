@@ -4,7 +4,6 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import pytest
-
 from pinta_common import Settings
 
 

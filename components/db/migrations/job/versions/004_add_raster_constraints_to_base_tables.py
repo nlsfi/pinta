@@ -14,8 +14,9 @@ Create Date: 2026-06-23
 import os
 from collections.abc import Sequence
 
-from migrations import _schema_op
 from pinta_common import Settings
+
+from migrations import _schema_op
 
 # revision identifiers, used by Alembic.
 revision: str = "004"

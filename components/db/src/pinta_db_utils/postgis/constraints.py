@@ -10,8 +10,8 @@ import logging
 import psycopg
 import sqlalchemy as sa
 import sqlmodel
-
 from pinta_common import Settings
+
 from pinta_db_utils.postgis import utils
 
 DEFAULT_EMPTY_RASTER_ANCHOR = (41248, 7880720)  # upper left

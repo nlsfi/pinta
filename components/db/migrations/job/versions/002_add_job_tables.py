@@ -16,7 +16,6 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 from geoalchemy2 import Geometry, Raster
-
 from pinta_common import Settings
 
 # revision identifiers, used by Alembic.

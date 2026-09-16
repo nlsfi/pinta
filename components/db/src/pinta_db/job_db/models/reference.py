@@ -7,10 +7,10 @@ import uuid
 from typing import Any
 
 from geoalchemy2 import Geometry
+from pinta_common import Settings
 from sqlalchemy import Column, Float
 from sqlmodel import Field
 
-from pinta_common import Settings
 from pinta_db.common.base import RasterBase
 from pinta_db.constants import POLYGON
 from pinta_db.job_db.models.base import ReferenceBase
