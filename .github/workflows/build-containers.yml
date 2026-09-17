@@ -240,6 +240,8 @@ jobs:
             test_folder: test_db
           - component-path: components/dags
             test_folder: test_dags
+          - component-path: components/lib
+            test_folder: test_lib
     needs: [ resolve-tag ]
     uses: ./.github/workflows/unit-tests.yml
     with:
