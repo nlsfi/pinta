@@ -80,6 +80,16 @@ Imports should follow the [Google style guide](https://google.github.io/stylegui
 classes and airflow sdk. Classes could be imported directly
 from the module as well as airflow sdk components.
 
+### Feature flags
+
+This project uses feature flags to support the development of new features.
+Declare flags in  [components/lib/src/pinta_common/flags.py](components/lib/src/pinta_common/flags.py) and use them with `if flags.FLAG_X:`.
+Outside development mode, every declared flag must exist in the JSON file pointed to by
+`PINTA_FEATURE_FLAG_CONFIG`.
+
+See [components/lib/test_lib/data/feature_flags.json](components/lib/test_lib/data/feature_flags.json)
+for an up-to-date example.
+
 ### Tests and coverage
 
 Run the suites with `make test` (unit) and `make test-integration` (needs the

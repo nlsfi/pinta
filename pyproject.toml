@@ -222,7 +222,7 @@ db_utils = [
   "src/pinta_db_utils",
 ]
 common = [
-  "components/db/src/pinta_common",
+  "components/lib/src/pinta_common",
   "src/pinta_common",
 ]
 dags = [

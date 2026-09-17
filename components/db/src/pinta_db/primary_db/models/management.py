@@ -12,11 +12,11 @@ from pathlib import Path
 from typing import Any
 
 from geoalchemy2 import Geometry
+from pinta_common import Settings
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlmodel import Field, Relationship
 
-from pinta_common import Settings
 from pinta_db import utils
 from pinta_db.common.base import BasePrimaryDb
 from pinta_db.constants import MULTIPOLYGON, POLYGON

@@ -7,10 +7,10 @@ import datetime
 from typing import Any
 
 from geoalchemy2 import Geometry
+from pinta_common import Settings
 from sqlalchemy import Boolean, Column, DateTime, Float, func, true
 from sqlmodel import Field
 
-from pinta_common import Settings
 from pinta_db.common import base
 from pinta_db.constants import POLYGON
 from pinta_db.job_db.models import base as job_base

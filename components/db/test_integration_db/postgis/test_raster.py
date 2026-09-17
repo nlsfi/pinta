@@ -6,8 +6,8 @@
 import pytest
 import sqlalchemy as sa
 import sqlmodel
-
 from pinta_common import Settings
+
 from pinta_db_utils.postgis import constraints, raster
 
 _SCHEMA = "reference"

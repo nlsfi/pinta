@@ -7,6 +7,7 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
   "pinta-db",
   "pinta-processing",
+  "pinta-lib",
 ]
 [project.optional-dependencies]
 airflow = [
@@ -27,6 +28,7 @@ include = ["py.typed"]
 [tool.uv.sources]
 pinta-processing = { workspace = true }
 pinta-db = { workspace = true }
+pinta-lib = { workspace = true }
 
 [tool.uv]
 default-groups = ["dev", "lint"]

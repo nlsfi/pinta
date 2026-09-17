@@ -12,6 +12,7 @@ dependencies = [
   "httpx",
   "jsonschema",
   "pinta-db[psycopg]",
+  "pinta-lib",
 ]
 
 
