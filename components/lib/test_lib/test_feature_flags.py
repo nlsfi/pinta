@@ -173,3 +173,36 @@ def test_registry_is_created_from_settings(
 
     assert registry is not None
     assert registry._config_file == config_file
+
+
+@pytest.mark.usefixtures("registry")
+def test_clear_cache_forces_reload(
+    registry: FeatureFlagRegistry,
+    write_config: Callable[[dict[str, bool]], None],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    registry._ttl = 10
+    monkeypatch.setattr(time, "monotonic", lambda: 0.0)
+    flag = FeatureFlag(name="FLAG_ON", description="on")
+    assert flag
+
+    write_config({"FLAG_ON": False, "FLAG_OFF": False})
+    assert flag
+
+    feature_flag_registry.clear_cache()
+    assert not flag
+
+
+@pytest.mark.usefixtures("registry")
+def test_flag_str_shows_name_and_state():
+    flag = FeatureFlag(name="FLAG_OFF", description="off")
+
+    assert str(flag) == "FLAG_OFF - enabled: False"
+
+
+def test_missing_config_setting_raises(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PINTA_DEVELOPMENT_MODE", "false")
+    monkeypatch.delenv("PINTA_FEATURE_FLAG_CONFIG", raising=False)
+
+    with pytest.raises(exceptions.MissingEnvironmentError):
+        feature_flag_registry._create_registry()
