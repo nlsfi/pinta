@@ -6,7 +6,7 @@
 """Example DAG with external venv task & connection URI variable."""
 
 from airflow.sdk import DAG, Param, chain, dag, task
-from pinta_common import constants
+from pinta_common import constants, flags
 
 from pinta_dags import config
 
@@ -24,7 +24,9 @@ def create_print_hello_world_dag(
             "name": Param(
                 "World",
                 type="string",
-                description="Name to greet in the log line.",
+                description=f"Name to greet in the log line. "
+                f"If {flags.FLAG_TEST_DAG_PRINT_CURRENT_TIME.name} "
+                f"is enabled, the current time will be printed as well.",
             ),
         },
         is_paused_upon_creation=False,
@@ -32,15 +34,25 @@ def create_print_hello_world_dag(
     def hello_world_dag() -> None:
         @task
         def hello_world_task(connection_uri: str, name: str) -> None:
+            import datetime
+
             from pinta_processing.scripts import hello_world
 
-            hello_world.log_hello_world(connection_uri, name=name)
+            text = connection_uri
+            if flags.FLAG_TEST_DAG_PRINT_CURRENT_TIME:
+                text += f" at {datetime.datetime.now(datetime.UTC)}"
+            hello_world.log_hello_world(text, name=name)
 
         @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
         def hello_world_task_docker(connection_uri: str, name: str) -> None:
+            import datetime
+
             from pinta_processing.scripts import hello_world
 
-            hello_world.log_hello_world(connection_uri, name=name)
+            text = connection_uri
+            if flags.FLAG_TEST_DAG_PRINT_CURRENT_TIME:
+                text += f" at {datetime.datetime.now(datetime.UTC)}"
+            hello_world.log_hello_world(text, name=name)
 
         chain(
             hello_world_task(
