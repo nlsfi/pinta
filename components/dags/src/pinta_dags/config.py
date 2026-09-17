@@ -110,6 +110,7 @@ PINTA_CONTAINER_TASK_ARGS: dict[str, Any] = {
         "DB_DEM_PIXEL_SIZE": "{{ var.value.pinta_db_dem_pixel_size }}",
         "DB_DEM_NODATA": "{{ var.value.pinta_db_dem_nodata }}",
         "DB_JOB_WRITER_ROLE": Settings.DB_JOB_WRITER_ROLE,
+        "PINTA_DEVELOPMENT_MODE": str(Settings.DEVELOPMENT_MODE).lower(),
         "LAStoolsLicenseFile": "/lastools/lastoolslicense.txt",
         # Resolved per run (empty = off); dev/e2e set it so unlicensed binaries run.
         "LASTOOLS_DEMO_MODE": "{{ var.value.get('pinta_lastools_demo_mode', '') }}",
@@ -165,6 +166,18 @@ if lastools_path := Variable.get("pinta_lastools_path", "/external/LAStools"):
         Mount(
             target="/lastools",
             source=lastools_path,
+            type="bind",
+            read_only=True,
+        )
+    )
+if feature_flag_config_path := Variable.get("pinta_feature_flag_config_path", None):
+    PINTA_CONTAINER_TASK_ARGS["environment"]["PINTA_FEATURE_FLAG_CONFIG"] = (
+        "/feature_flags.json"
+    )
+    PINTA_CONTAINER_TASK_ARGS["mounts"].append(
+        Mount(
+            target="/feature_flags.json",
+            source=feature_flag_config_path,
             type="bind",
             read_only=True,
         )
