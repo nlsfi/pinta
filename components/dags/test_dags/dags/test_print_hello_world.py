@@ -3,7 +3,6 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
-import json
 import re
 import uuid
 from typing import TYPE_CHECKING
@@ -12,7 +11,7 @@ import pytest
 from airflow.dag_processing.dagbag import sync_bag_to_db
 from airflow.models import DagBag
 from airflow.sdk import task
-from pinta_common import feature_flag_registry, flags
+from pinta_common import flags
 
 from pinta_dags.dags.print_hello_world import create_print_hello_world_dag
 
@@ -23,6 +22,10 @@ if TYPE_CHECKING:
 
     from airflow.sdk import DAG
     from pytest_mock import MockerFixture
+
+pytest_plugins = [
+    "pinta_test_utils.fixtures.flags",
+]
 
 
 def create_dag_to_test() -> "DAG":
@@ -44,15 +47,10 @@ def mock_airflow_settings(monkeypatch: "pytest.MonkeyPatch") -> None:
 
 @pytest.fixture
 def set_print_current_time_flag(
-    tmp_path: "Path", monkeypatch: "pytest.MonkeyPatch"
+    set_feature_flags: "Callable[[dict[str, bool]], Path]",
 ) -> "Callable[[bool], None]":
-    config_file = tmp_path / "feature_flags.json"
-
     def _set(enabled: bool) -> None:
-        content = {flags.FLAG_TEST_DAG_PRINT_CURRENT_TIME.name: {"enabled": enabled}}
-        config_file.write_text(json.dumps(content), encoding="utf-8")
-        registry = feature_flag_registry.FeatureFlagRegistry(config_file, ttl=0)
-        monkeypatch.setattr(feature_flag_registry, "_registry", registry)
+        set_feature_flags({flags.FLAG_TEST_DAG_PRINT_CURRENT_TIME.name: enabled})
 
     return _set
 

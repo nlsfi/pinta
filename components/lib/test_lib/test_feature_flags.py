@@ -14,10 +14,14 @@ from pinta_common.feature_flag_registry import FeatureFlag, FeatureFlagRegistry
 
 FLAG_CONFIG_FILE = Path(__file__).parent / "data/feature_flags.json"
 
+pytest_plugins = [
+    "pinta_test_utils.fixtures.flags",
+]
+
 
 @pytest.fixture
-def config_file(tmp_path: Path) -> Path:
-    return tmp_path / "feature_flags.json"
+def config_file(set_feature_flags: Callable[[dict[str, bool]], Path]) -> Path:
+    return set_feature_flags({"FLAG_ON": True, "FLAG_OFF": False})
 
 
 @pytest.fixture
@@ -30,14 +34,10 @@ def write_config(config_file: Path) -> Callable[[dict[str, bool]], None]:
 
 
 @pytest.fixture
-def registry(
-    config_file: Path,
-    write_config: Callable[[dict[str, bool]], None],
-    monkeypatch: pytest.MonkeyPatch,
-) -> FeatureFlagRegistry:
-    write_config({"FLAG_ON": True, "FLAG_OFF": False})
-    registry = FeatureFlagRegistry(config_file, ttl=0)
-    monkeypatch.setattr(feature_flag_registry, "_registry", registry)
+def registry(config_file: Path) -> FeatureFlagRegistry:
+    registry = feature_flag_registry._registry
+    assert registry is not None
+    assert registry._config_file == config_file
     return registry
 
 
@@ -126,9 +126,9 @@ def test_malformed_config_file_raises(config_file: Path, content: str):
         FeatureFlag(name="FLAG_ON", description="on")
 
 
-def test_missing_config_file_raises(config_file: Path):
+def test_missing_config_file_raises(tmp_path: Path):
     with pytest.raises(exceptions.FeatureFlagConfigError):
-        FeatureFlagRegistry(config_file)
+        FeatureFlagRegistry(tmp_path / "missing.json")
 
 
 @pytest.mark.usefixtures("registry")
@@ -162,10 +162,8 @@ def test_no_registry_is_created_in_development_mode(monkeypatch: pytest.MonkeyPa
 
 def test_registry_is_created_from_settings(
     config_file: Path,
-    write_config: Callable[[dict[str, bool]], None],
     monkeypatch: pytest.MonkeyPatch,
 ):
-    write_config({})
     monkeypatch.setenv("PINTA_DEVELOPMENT_MODE", "false")
     monkeypatch.setenv("PINTA_FEATURE_FLAG_CONFIG", str(config_file))
 
