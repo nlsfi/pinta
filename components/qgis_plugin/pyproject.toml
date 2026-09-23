@@ -125,6 +125,7 @@ changelog_file_path = "../../CHANGELOG.md"
 env_file_path = "../../.env"
 runtime_requires = [
   "qgis_plugin_tools",
+  "pinta-lib",
   "pinta-db",
   "geoalchemy2",
   "sqlalchemy",
