@@ -81,7 +81,7 @@
     <message>
         <location filename="../../project/config/job_layers.py" line="29"/>
         <source>Reference DEM</source>
-        <translation>Vertausnmalli</translation>
+        <translation>Vertausmalli</translation>
     </message>
     <message>
         <location filename="../../project/config/job_layers.py" line="36"/>
