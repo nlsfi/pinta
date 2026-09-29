@@ -4,7 +4,6 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 from enum import StrEnum
-from importlib import metadata
 from typing import Any
 
 import pydantic
@@ -27,7 +26,7 @@ class ApiDependencyHealth(pydantic.BaseModel):
 class ApiHealth(pydantic.BaseModel):
     """Api health response."""
 
-    backend_version: str = metadata.version("pinta_backend")
+    versions: dict[str, Any]
     airflow: ApiDependencyHealth
     primary_db: ApiDependencyHealth
     parsed_language: str

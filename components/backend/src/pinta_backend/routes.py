@@ -3,14 +3,15 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+import json
 import logging
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import fastapi
 from fastapi import responses
 
-from pinta_backend import airflow_client, db, exceptions, models, utils
+from pinta_backend import airflow_client, db, exceptions, models, settings, utils
 from pinta_backend.i18n import _, get_language
 from pinta_backend.services import production_area
 
@@ -24,12 +25,28 @@ AirflowClientDependency = Annotated[
 LOGGER = logging.getLogger(__name__)
 
 
+def _read_versions() -> dict[str, Any]:
+    """Read the deployment's component versions without affecting dependency health."""
+    version_file = settings.get_settings().version_dir / "version.json"
+    try:
+        versions = json.loads(version_file.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        LOGGER.warning("Cannot read component versions from %s: %s", version_file, exc)
+        return {}
+    if not isinstance(versions, dict):
+        LOGGER.warning("Component versions in %s must be a JSON object", version_file)
+        return {}
+    return versions
+
+
 @router.get("/health", response_model=models.ApiHealth)
 async def get_health(
     client: AirflowClientDependency,
 ) -> models.ApiHealth | responses.JSONResponse:
     """Return app health status."""
     parsed_language = get_language()
+
+    component_versions = _read_versions()
 
     airflow_health: models.ApiDependencyHealth
     try:
@@ -50,6 +67,7 @@ async def get_health(
     primary_db_health = utils.check_db_health(db.check_primary_db)
 
     health = models.ApiHealth(
+        versions=component_versions,
         airflow=airflow_health,
         primary_db=primary_db_health,
         parsed_language=parsed_language,

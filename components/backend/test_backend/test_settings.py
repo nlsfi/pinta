@@ -3,6 +3,8 @@
 # This file is part of the Pinta.
 # Licensed under the MIT License; see the repository LICENSE file.
 
+from pathlib import Path
+
 import pytest
 
 from pinta_backend import settings
@@ -72,6 +74,20 @@ def test_settings_reads_uvicorn_env_vars(
 
     assert loaded.api_host == "127.0.0.1"
     assert loaded.api_port == 8020
+
+
+def test_settings_reads_version_directory(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _set_required_airflow_env(monkeypatch)
+    monkeypatch.delenv("PINTA_BACKEND_VERSION_DIR", raising=False)
+
+    assert settings.Settings().version_dir == Path("/opt/pinta")
+
+    monkeypatch.setenv("PINTA_BACKEND_VERSION_DIR", str(tmp_path))
+
+    assert settings.Settings().version_dir == tmp_path
 
 
 def _set_required_airflow_env(monkeypatch: pytest.MonkeyPatch) -> None:

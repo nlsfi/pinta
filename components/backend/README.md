@@ -21,6 +21,19 @@ Verify that the API works:
 curl http://localhost:3011/health
 ```
 
+The health response includes a `versions` object containing the keys and values
+from `/opt/pinta/version.json`. On installed hosts, Ansible writes this file.
+Set `PINTA_BACKEND_VERSION_DIR` to change its containing directory. If the file
+is missing or invalid, `versions` is empty and dependency health is unchanged.
+
+For local development, `make up`, `make up-backend`, and `make backend-start`
+generate a root-level `version.json` from component `pyproject.toml` versions.
+Compose mounts it at `/opt/pinta/version.json`; the host-run backend reads it
+from the repository root. Before using `docker compose up` directly, run
+`make generate-versions`. Local `processing_image_tag` and `backend_image_tag`
+are package versions, not Docker image tags; `db_version` is the package
+version, not an Alembic revision. The backend returns all file values as-is.
+
 or play with the API manually with [requests.http](requests.http) file.
 
 If health shows DOWN for Airflow, make sure that you have Airflow running. The backend authenticates against Airflow using `PINTA_BACKEND_AIRFLOW_USERNAME` / `PINTA_BACKEND_AIRFLOW_PASSWORD` from `.env`.
