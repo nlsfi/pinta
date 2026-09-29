@@ -46,6 +46,9 @@ sync-all-but-qgis-and-airflow:
 # Docker Compose targets
 # =================
 
+generate-versions:
+	uv run --no-sync python $(ROOT_DIR)/scripts/generate_versions.py
+
 down:
 	docker compose down -v --remove-orphans
 
@@ -53,6 +56,7 @@ pull:
 	docker compose pull
 
 up:
+    generate-versions
 	# `processing` is an image-only service (no daemon), so we wait on the
 	# long-running services explicitly. `up` (no service arg) would still
 	# create the processing container, but `--wait` would then fail because
@@ -66,6 +70,7 @@ up-airflow:
 	docker compose up -d --wait airflow
 
 up-backend:
+    generate-versions
 	docker compose up -d --wait backend
 
 build:
@@ -180,7 +185,9 @@ airflow-reserialize:
 # =================
 
 backend-start:
+    generate-versions
 	@docker compose stop backend || true
+	PINTA_BACKEND_VERSION_DIR=$(ROOT_DIR) \
 	PINTA_BACKEND_AIRFLOW_BASE_URL=$(PINTA_BACKEND_AIRFLOW_BASE_URL) \
 	PINTA_BACKEND_AIRFLOW_USERNAME=$(PINTA_BACKEND_AIRFLOW_USERNAME) \
 	PINTA_BACKEND_AIRFLOW_PASSWORD=$(PINTA_BACKEND_AIRFLOW_PASSWORD) \

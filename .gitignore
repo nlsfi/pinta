@@ -17,6 +17,7 @@ report.json
 # env file
 .env
 .vault
+/version.json
 
 # IDE
 .vscode
