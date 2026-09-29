@@ -13,63 +13,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/pinta_backend/routes.py:129
+#: src/pinta_backend/routes.py:147
 msgid "Airflow is not reachable."
 msgstr "Airflow ei ole tavoitettavissa."
 
-#: src/pinta_backend/routes.py:134
+#: src/pinta_backend/routes.py:152
 #, python-brace-format
 msgid "Airflow returned an error: {error}."
 msgstr "Airflow palautti virheen: {error}."
 
-#: src/pinta_backend/routes.py:177
+#: src/pinta_backend/routes.py:195
 #, python-brace-format
 msgid "Database '{name}' cannot be deleted."
 msgstr "Tietokantaa '{name}' ei voi poistaa."
 
-#: src/pinta_backend/routes.py:104 src/pinta_backend/routes.py:196
+#: src/pinta_backend/routes.py:122 src/pinta_backend/routes.py:214
 #, fuzzy
 msgid "Database is not reachable."
 msgstr "Tietokantaan ei saada yhteyttä."
 
-#: src/pinta_backend/routes.py:124
+#: src/pinta_backend/routes.py:142
 msgid "Failed to authenticate against Airflow."
 msgstr "Airflow-todennus epäonnistui."
 
-#: src/pinta_backend/routes.py:184
+#: src/pinta_backend/routes.py:202
 #, python-brace-format
 msgid "Failed to delete database '{name}'."
 msgstr "Tietokannan '{name}' poistaminen epäonnistui."
 
-#: src/pinta_backend/routes.py:68
+#: src/pinta_backend/routes.py:86
 msgid "Hello World"
 msgstr "Moikka Maailma"
 
-#: src/pinta_backend/routes.py:109
+#: src/pinta_backend/routes.py:127
 #, python-brace-format
 msgid "Invalid workflow parameters: {error}."
 msgstr "Virheelliset työnkulun parametrit: {error}."
 
-#: src/pinta_backend/routes.py:191
+#: src/pinta_backend/routes.py:209
 msgid "Job database is not reachable."
 msgstr "Tuotantoalueen tietokantaan ei saada yhteyttä."
 
-#: src/pinta_backend/routes.py:119
+#: src/pinta_backend/routes.py:137
 #, python-brace-format
 msgid "Multiple workflows found for tag '{tag}'."
 msgstr "Tunnisteella '{tag}' löytyi useita työnkulkuja."
 
-#: src/pinta_backend/routes.py:114
+#: src/pinta_backend/routes.py:132
 #, python-brace-format
 msgid "No workflow found for tag '{tag}'."
 msgstr "Tunnisteella '{tag}' ei löytynyt työnkulkua."
 
-#: src/pinta_backend/routes.py:97 src/pinta_backend/routes.py:162
+#: src/pinta_backend/routes.py:115 src/pinta_backend/routes.py:180
 #, python-brace-format
 msgid "Production area '{id}' not found."
 msgstr "Tuotantoaluetta '{id}' ei löytynyt."
 
-#: src/pinta_backend/routes.py:170
+#: src/pinta_backend/routes.py:188
 #, python-brace-format
 msgid ""
 "Production area database cannot be deleted while its processing status is "
@@ -78,10 +78,10 @@ msgstr ""
 "Tuotantoalueen tietokantaa ei voi poistaa, kun sen käsittelyn tila on "
 "'{status}'."
 
-#: src/pinta_backend/routes.py:200
+#: src/pinta_backend/routes.py:218
 msgid "Production area database deleted."
 msgstr "Tuotantoalueen tietokanta poistettu."
 
-#: src/pinta_backend/routes.py:138
+#: src/pinta_backend/routes.py:156
 msgid "Workflow run started."
 msgstr "Työnkulun ajo käynnistetty."

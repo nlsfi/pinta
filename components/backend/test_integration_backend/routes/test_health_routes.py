@@ -30,5 +30,5 @@ def test_health_returns_version_and_selected_language(
 
     payload = response.json()
 
-    assert payload["backend_version"]
+    assert isinstance(payload["versions"], dict)
     assert payload["parsed_language"] == expected_language

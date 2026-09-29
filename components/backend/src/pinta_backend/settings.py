@@ -4,6 +4,7 @@
 # Licensed under the MIT License; see the repository LICENSE file.
 
 import functools
+from pathlib import Path
 
 import pydantic
 import pydantic_settings
@@ -49,6 +50,10 @@ class Settings(pydantic_settings.BaseSettings):
     development_mode: bool = pydantic.Field(
         default=False,
         validation_alias="PINTA_DEVELOPMENT_MODE",
+    )
+    version_dir: Path = pydantic.Field(
+        default=Path("/opt/pinta"),
+        validation_alias="PINTA_BACKEND_VERSION_DIR",
     )
 
     # Database settings
