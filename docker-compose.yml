@@ -151,6 +151,10 @@ services:
         source: ${REPO_DIR:-.}
         target: /code
         read_only: false
+      - type: bind
+        source: ${REPO_DIR:-.}/version.json
+        target: /opt/pinta/version.json
+        read_only: true
     working_dir: /code/components/backend
     depends_on:
       db:
