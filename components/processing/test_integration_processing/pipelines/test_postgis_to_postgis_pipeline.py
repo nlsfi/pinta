@@ -30,7 +30,10 @@ def test_postgis_to_postgis_copies_source_raster_to_target(
     session: "Session",
     processing_worker_session: "Session",
 ) -> None:
-    """The pipeline copies the source raster into the (empty) target table."""
+    """The pipeline copies the source raster into the (empty) target table.
+
+    Raster values are rounded to 3 decimals.
+    """
     bounds = _populate_source(admin_primary_session)
     _init_target(processing_worker_session)
 
@@ -49,7 +52,10 @@ def test_postgis_to_postgis_copies_source_raster_to_target(
     assert target_array is not None
     assert source_array is not None
     assert target_array.shape == source_array.shape
-    assert np.array_equal(target_array, source_array)
+    assert not np.array_equal(target_array, source_array)
+    rounded_array = np.round(source_array, 3)
+    assert rounded_array is not None
+    assert np.array_equal(rounded_array, target_array)
 
 
 def test_postgis_to_postgis_writes_overview_tables(

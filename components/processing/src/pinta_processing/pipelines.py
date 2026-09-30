@@ -39,11 +39,14 @@ DISSOLVE_PRIMARY_DEM_BUFFER = (
 REGISTER_UPDATE_AREA_BUFFER = (
     DISSOLVE_INTERPOLATE_AREA_BUFFER + Settings.DB_DEM_PIXEL_SIZE
 )
+# Decimal precision for rasters stored in the database
+DB_RASTER_PRECISION = 3
 DEFAULT_LASTOOLS_PARAMS = {
     "buffered": DEFAULT_BUFFERED,
     "kill": 300,
     "ncols": 500,
     "nrows": 500,
+    "float_precision": DB_RASTER_PRECISION,
 }
 
 LOGGER = logging.getLogger(__name__)
@@ -72,6 +75,7 @@ def rasterio_to_postgis(  # noqa: PLR0913
         # Calculate and write overviews
         | _generate_overview_stages(schema, table_name, session, staging_tables)
         # Write original data
+        | filters.RoundValues(precision=DB_RASTER_PRECISION)
         | writer.RasterPostgisWriter(schema, table_name, session, staging_tables)
     )
 
@@ -115,6 +119,7 @@ def las2dem_to_postgis(  # noqa: PLR0913
         # Calculate and write overviews
         | _generate_overview_stages(schema, table_name, job_session, staging_tables)
         # Write original data
+        | filters.RoundValues(precision=DB_RASTER_PRECISION)
         | writer.RasterPostgisWriter(schema, table_name, job_session, staging_tables)
     )
 
@@ -166,7 +171,8 @@ def calculate_diff_models(
             )
             # Write raster
             | core.Tee(
-                writer.RasterPostgisWriter(
+                filters.RoundValues(precision=DB_RASTER_PRECISION)
+                | writer.RasterPostgisWriter(
                     diff_schema, diff_table, job_session, staging_tables
                 )
             )
@@ -184,6 +190,7 @@ def calculate_diff_models(
                 lte_threshold_schema, lte_threshold_table, job_session, staging_tables
             )
             # Write raster
+            | filters.RoundValues(precision=DB_RASTER_PRECISION)
             | writer.RasterPostgisWriter(
                 lte_threshold_schema, lte_threshold_table, job_session, staging_tables
             )
@@ -249,6 +256,7 @@ def dissolve_update_area(
             staging_tables=0,
             mode=writer.WriterMode.UPDATE,
         )
+        | filters.RoundValues(precision=DB_RASTER_PRECISION)
         | writer.RasterPostgisWriter(
             preview_schema, preview_table, job_session, mode=writer.WriterMode.UPDATE
         )
@@ -277,6 +285,7 @@ def postgis_to_postgis(  # noqa: PLR0913
         | _generate_overview_stages(
             to_schema, to_table, to_session, staging_tables, mode
         )
+        | filters.RoundValues(precision=DB_RASTER_PRECISION)
         | writer.RasterPostgisWriter(
             to_schema, to_table, to_session, staging_tables, mode=mode
         )
@@ -318,6 +327,10 @@ def _overview_to_postgis(  # noqa: PLR0913
     staging_tables: int,
     mode: writer.WriterMode = writer.WriterMode.INSERT,
 ) -> core.Pipeline:
-    return filters.DownsampleOverview(factor) | writer.RasterPostgisWriter(
-        schema, table_name, session, staging_tables, mode=mode
+    return (
+        filters.DownsampleOverview(factor)
+        | filters.RoundValues(precision=DB_RASTER_PRECISION)
+        | writer.RasterPostgisWriter(
+            schema, table_name, session, staging_tables, mode=mode
+        )
     )
