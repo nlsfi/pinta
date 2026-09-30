@@ -9,6 +9,7 @@ from pinta_processing.filters.interpolate import RasterInterpolate
 from pinta_processing.filters.mask import RasterMask
 from pinta_processing.filters.multiply import MultiplyValues
 from pinta_processing.filters.overview import DownsampleOverview
+from pinta_processing.filters.round import RoundValues
 from pinta_processing.filters.union import RasterUnion
 from pinta_processing.filters.vectorize import VectorizeRaster
 
@@ -20,5 +21,6 @@ __all__ = [
     "RasterInterpolate",
     "RasterMask",
     "RasterUnion",
+    "RoundValues",
     "VectorizeRaster",
 ]

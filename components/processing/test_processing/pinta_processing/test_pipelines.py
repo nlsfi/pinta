@@ -35,6 +35,7 @@ def test_las2dem_to_postgis_uses_extra_param_defaults(mocker: MockerFixture) -> 
         "kill": 300,
         "ncols": 500,
         "nrows": 500,
+        "float_precision": 3,
         "ll": [503000, 6903000],
     }
 
@@ -68,6 +69,7 @@ def test_las2dem_to_postgis_override_extra_param_defaults(
         "ncols": 200,
         "nrows": 500,
         "ll": [111, 222],
+        "float_precision": 3,
         "neighbors": ["a.laz", "b.laz", "c.laz"],
     }
 
