@@ -7,6 +7,7 @@ import typing
 
 import pytest
 import sqlmodel
+from pinta_common import Settings
 from pinta_db.primary_db.models.management import ProcessingStatus, ProductionArea
 from pinta_db_test_utils import db_utils
 from pinta_db_utils import database_utils, engine_utils
@@ -73,6 +74,24 @@ SHRUNK_AREA_DISSOLVED_RADIUS_M = 40
 # the stale ring, kept clear of both buffered edges of the ring.
 STALE_PROBE_DISTANCE_M = 30
 STALE_PROBE_RADIUS_M = 5
+
+
+# Offset (m) of the deleted update area south of the DEM centroid, mirroring
+# the shrunk area so its dissolve footprint cannot reach the other update areas.
+DELETED_AREA_OFFSET_M = -SHRUNK_AREA_OFFSET_M
+
+# Distance (m) east of the deleted area centre of the update area that is kept:
+# it overlaps the east edge of the deleted area's dissolve footprint.
+KEPT_AREA_DISTANCE_M = SHRUNK_AREA_DISSOLVED_RADIUS_M
+
+# Distance (m) west of the deleted area centre of the probe the restore resets,
+# far from the kept area and inside the deleted dissolve footprint.
+RESTORED_PROBE_DISTANCE_M = -25
+
+# Distance (m) east of the deleted area centre of the probe inside both the kept
+# area and the deleted dissolve footprint.
+KEPT_PROBE_DISTANCE_M = 32
+KEPT_PROBE_RADIUS_M = 3
 
 
 class DissolveSetup(typing.NamedTuple):
@@ -529,6 +548,125 @@ def dissolve_update_area_setup(
     )
 
 
+class DeletedAreaSetup(typing.NamedTuple):
+    """Probes (EWKT) and expectations around a deleted update area."""
+
+    # Probe in the deleted dissolve footprint no update area covers any more.
+    restored_probe_ewkt: str
+    # Primary DEM mean over the restored probe, the value the restore returns.
+    restored_probe_primary_mean: float
+    # Probe in the overlap of the deleted footprint and the kept update area.
+    kept_probe_ewkt: str
+
+
+def _delete_dissolved_update_area(
+    database_name: str, primary_database_name: str
+) -> DeletedAreaSetup:
+    """Seed a dissolved update area next to a kept one and delete it in QGIS."""
+    job = db_utils.get_job_admin_credentials(database_name)
+    primary = db_utils.get_primary_admin_credentials(primary_database_name)
+    with (
+        engine_utils.get_autocommit_connection(job) as job_connection,
+        engine_utils.get_autocommit_connection(primary) as primary_connection,
+    ):
+
+        def centroid_buffer(dx: float, dy: float, radius: float) -> str:
+            return job_connection.execute(
+                sqlmodel.text(
+                    "SELECT ST_AsEWKT(ST_Buffer(ST_Translate("
+                    "ST_Centroid(ST_Union(rast::geometry)), :dx, :dy), :radius)) "
+                    "FROM user_data.dem_preview"
+                ).bindparams(dx=dx, dy=dy, radius=radius)
+            ).scalar_one()
+
+        deleted_area_ewkt = centroid_buffer(
+            0, DELETED_AREA_OFFSET_M, UPDATE_AREA_RADIUS_M
+        )
+        deleted_dissolved_ewkt = centroid_buffer(
+            0, DELETED_AREA_OFFSET_M, SHRUNK_AREA_DISSOLVED_RADIUS_M
+        )
+        kept_area_ewkt = centroid_buffer(
+            KEPT_AREA_DISTANCE_M, DELETED_AREA_OFFSET_M, UPDATE_AREA_RADIUS_M
+        )
+        restored_probe_ewkt = centroid_buffer(
+            RESTORED_PROBE_DISTANCE_M, DELETED_AREA_OFFSET_M, STALE_PROBE_RADIUS_M
+        )
+        kept_probe_ewkt = centroid_buffer(
+            KEPT_PROBE_DISTANCE_M, DELETED_AREA_OFFSET_M, KEPT_PROBE_RADIUS_M
+        )
+
+        # The restore must not reach the update areas seeded by the setup.
+        separation = job_connection.execute(
+            sqlmodel.text(
+                "SELECT min(ST_Distance(geom, ST_GeomFromEWKT(:footprint))) "
+                "FROM user_data.update_area"
+            ).bindparams(footprint=deleted_dissolved_ewkt)
+        ).scalar_one()
+        assert separation > EDGE_AREA_MIN_SEPARATION_M, (
+            "The deleted update area's dissolve footprint is too close to the "
+            "other update areas"
+        )
+
+        restored_probe_primary_mean = primary_connection.execute(
+            sqlmodel.text(
+                "SELECT (ST_SummaryStats(ST_Union("
+                "  ST_Clip(rast, ST_GeomFromEWKT(:area), true)"
+                "))).mean "
+                "FROM dem.dem WHERE ST_Intersects(rast, ST_GeomFromEWKT(:area))"
+            ).bindparams(area=restored_probe_ewkt)
+        ).scalar_one()
+        assert restored_probe_primary_mean is not None, (
+            "The seeded primary DEM has no data under the restored probe"
+        )
+
+        # Flatten the footprint the way an earlier dissolve of both areas left it.
+        job_connection.execute(
+            sqlmodel.text(
+                "UPDATE user_data.dem_preview "
+                "SET rast = ST_SetValue(rast, 1, ST_GeomFromEWKT(:geom), :value) "
+                "WHERE ST_Intersects(rast, ST_GeomFromEWKT(:geom))"
+            ).bindparams(geom=deleted_dissolved_ewkt, value=STALE_DEM_VALUE)
+        )
+        for geom, dissolved in (
+            (deleted_area_ewkt, deleted_dissolved_ewkt),
+            (kept_area_ewkt, kept_area_ewkt),
+        ):
+            job_connection.execute(
+                sqlmodel.text(
+                    "INSERT INTO user_data.update_area "
+                    "(id, geom, dissolved_geom, dirty) VALUES (gen_random_uuid(), "
+                    "ST_GeomFromEWKT(:geom), ST_GeomFromEWKT(:dissolved), false)"
+                ).bindparams(geom=geom, dissolved=dissolved)
+            )
+
+        # Delete the area as the QGIS editors do.
+        job_connection.execute(
+            sqlmodel.text(f'SET ROLE "{Settings.DB_JOB_WRITER_ROLE}"')
+        )
+        job_connection.execute(
+            sqlmodel.text(
+                "DELETE FROM user_data.update_area "
+                "WHERE ST_Equals(geom, ST_GeomFromEWKT(:geom))"
+            ).bindparams(geom=deleted_area_ewkt)
+        )
+        job_connection.execute(sqlmodel.text("RESET ROLE"))
+
+    return DeletedAreaSetup(
+        restored_probe_ewkt=restored_probe_ewkt,
+        restored_probe_primary_mean=restored_probe_primary_mean,
+        kept_probe_ewkt=kept_probe_ewkt,
+    )
+
+
+def _update_area_restore_count(database_name: str) -> int:
+    """Return the number of pending update area restore rows."""
+    credentials = db_utils.get_job_admin_credentials(database_name)
+    with engine_utils.get_autocommit_connection(credentials) as connection:
+        return connection.execute(
+            sqlmodel.text("SELECT count(*) FROM user_data.update_area_restore")
+        ).scalar_one()
+
+
 @pytest.mark.smoke
 @pytest.mark.xdist_group("airflow")
 def test_dissolve_update_areas_workflow(
@@ -624,6 +762,7 @@ def test_dissolve_skips_clean_update_areas(
     m_error_dialog: "MagicMock",
     airflow_client: "AirflowClient",
     db: "Session",
+    created_db: str,
     dissolve_update_area_setup: DissolveSetup,
 ) -> None:
     area_ewkt = dissolve_update_area_setup.area_ewkt
@@ -638,6 +777,13 @@ def test_dissolve_skips_clean_update_areas(
     mean_before = _dem_preview_mean(database_name, area_ewkt)
     assert mean_before != pytest.approx(REFERENCE_DEM_VALUE, abs=100)
     elevation_mean_before = _dem_preview_mean(database_name, elevation_area_ewkt)
+
+    # A deleted area must still be restored when no area is dirty.
+    deleted = _delete_dissolved_update_area(database_name, created_db)
+    assert _update_area_restore_count(database_name) == 1
+    assert _dem_preview_mean(
+        database_name, deleted.restored_probe_ewkt
+    ) == pytest.approx(STALE_DEM_VALUE, abs=1)
 
     _run_dissolve_workflow(qtbot, m_error_dialog, airflow_client)
 
@@ -672,3 +818,14 @@ def test_dissolve_skips_clean_update_areas(
         database_name, dissolve_update_area_setup.stale_probe_ewkt
     )
     assert stale_probe_mean == pytest.approx(STALE_DEM_VALUE, abs=1)
+
+    # The deleted area's pixels carry the primary DEM elevations again, the
+    # kept area overlapping its footprint keeps its dissolved pixels, and the
+    # processed restore row is cleared so the next run does not repeat it.
+    restored_probe_mean = _dem_preview_mean(database_name, deleted.restored_probe_ewkt)
+    assert restored_probe_mean == pytest.approx(
+        deleted.restored_probe_primary_mean, abs=0.01
+    )
+    kept_probe_mean = _dem_preview_mean(database_name, deleted.kept_probe_ewkt)
+    assert kept_probe_mean == pytest.approx(STALE_DEM_VALUE, abs=1)
+    assert _update_area_restore_count(database_name) == 0
