@@ -6,7 +6,7 @@
 import datetime
 from typing import cast
 
-from airflow.sdk import DAG, Param, Variable, dag, task
+from airflow.sdk import DAG, Param, TriggerRule, Variable, dag, task
 from pinta_common import constants
 from pinta_db.job_db.models.user import DemPreview
 from pinta_db.job_db.schema import Schema
@@ -17,9 +17,7 @@ from pinta_dags import config
 from pinta_dags.config import AirflowVariable
 from pinta_dags.tasks import (
     build_job_connection_uri_task,
-    delete_restore_area,
     find_dirty_update_areas,
-    find_restore_areas,
     get_database_name,
     restore_update_area_write_access,
     revoke_update_area_write_access,
@@ -194,7 +192,11 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                         )
                         pipeline.execute()
 
-        @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
+        @task.docker(
+            # Run even when no area is dirty so deleted areas are still restored.
+            **config.PINTA_CONTAINER_TASK_ARGS,
+            trigger_rule=TriggerRule.NONE_FAILED,
+        )
         def restore_stale_dem_preview(  # noqa: PLR0913
             primary_connection_uri: str,
             job_connection_uri: str,
@@ -207,7 +209,7 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             import sqlalchemy
             import sqlmodel
             from geoalchemy2.shape import to_shape
-            from pinta_db.job_db.models.user import UpdateArea
+            from pinta_db.job_db.models.user import UpdateArea, UpdateAreaRestore
             from pinta_processing import pipelines, writer
 
             with (
@@ -219,32 +221,39 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 ) as job_session,
             ):
                 update_areas = job_session.exec(sqlmodel.select(UpdateArea)).all()
+                restore_rows = job_session.exec(
+                    sqlmodel.select(UpdateAreaRestore)
+                ).all()
                 buffer = pipelines.REGISTER_UPDATE_AREA_BUFFER
                 # Pixels an earlier dissolve wrote that no update area covers any
-                # more must be reset from the primary DEM.
+                # more, whether the area was edited or deleted, must be reset from
+                # the primary DEM.
                 stale_area = shapely.union_all(
                     [
                         to_shape(area.dissolved_geom).buffer(buffer)
                         for area in update_areas
                         if area.dirty and area.dissolved_geom is not None
                     ]
+                    + [to_shape(row.geom).buffer(buffer) for row in restore_rows]
                 ) - shapely.union_all(
                     [to_shape(area.geom).buffer(buffer) for area in update_areas]
                 )
-                if stale_area.is_empty:
-                    return
+                if not stale_area.is_empty:
+                    pipeline = pipelines.postgis_to_postgis(
+                        from_session=primary_session,
+                        from_schema=from_schema,
+                        from_table=from_table,
+                        to_session=job_session,
+                        to_schema=to_schema,
+                        to_table=to_table,
+                        tile_wkt=stale_area.wkt,
+                        mode=writer.WriterMode.UPDATE,
+                    )
+                    pipeline.execute()
 
-                pipeline = pipelines.postgis_to_postgis(
-                    from_session=primary_session,
-                    from_schema=from_schema,
-                    from_table=from_table,
-                    to_session=job_session,
-                    to_schema=to_schema,
-                    to_table=to_table,
-                    tile_wkt=stale_area.wkt,
-                    mode=writer.WriterMode.UPDATE,
-                )
-                pipeline.execute()
+                for row in restore_rows:
+                    job_session.delete(row)
+                job_session.commit()
 
         @task.docker(
             # Parallel tasks merging into the same base/overview tiles can
@@ -293,53 +302,6 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
                 job_session.add(update_area)
                 job_session.commit()
 
-        @task.docker(
-            **{
-                **config.PINTA_CONTAINER_TASK_ARGS,
-                "retries": 3,
-                "retry_delay": datetime.timedelta(seconds=10),
-            },
-            max_active_tis_per_dag=_get_max_parallel_pipelines(),
-        )
-        def restore_update_area(
-            primary_connection_uri: str,
-            job_connection_uri: str,
-            restore_id: str,
-            geom_wkt: str,
-        ) -> None:
-            import sqlalchemy
-            import sqlmodel
-            from pinta_processing import pipelines, writer
-            from shapely import wkt as shapely_wkt
-
-            # The mapping key is needed by expand_kwargs even when only the
-            # geometry drives the restore.
-            del restore_id
-
-            read_area = shapely_wkt.loads(geom_wkt).buffer(
-                pipelines.REGISTER_UPDATE_AREA_BUFFER
-            )
-
-            with (
-                sqlmodel.Session(
-                    sqlalchemy.create_engine(primary_connection_uri)
-                ) as primary_session,
-                sqlmodel.Session(
-                    sqlalchemy.create_engine(job_connection_uri)
-                ) as job_session,
-            ):
-                pipeline = pipelines.postgis_to_postgis(
-                    from_session=primary_session,
-                    from_schema=FROM_DB_SCHEMA,
-                    from_table=FROM_DB_TABLE,
-                    to_session=job_session,
-                    to_schema=TO_DB_SCHEMA,
-                    to_table=TO_DB_TABLE,
-                    tile_wkt=read_area.wkt,
-                    mode=writer.WriterMode.UPDATE,
-                )
-                pipeline.execute()
-
         primary_connection_uri = config.connection_uri_template("pinta_processing_db")
         job_connection_uri = config.connection_uri_template("pinta_job_db")
         job_admin_connection_uri = config.connection_uri_template("pinta_job_db_admin")
@@ -378,7 +340,6 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
         )
 
         dirty_update_areas = find_dirty_update_areas(job_db_uri)
-        restore_areas_list = find_restore_areas(job_db_uri)
 
         ensured_areas = ensure_dem_preview_coverage.partial(
             primary_connection_uri=primary_connection_uri,
@@ -399,15 +360,6 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             job_connection_uri=job_db_uri,
         ).expand_kwargs(dirty_update_areas)
 
-        restored_areas = restore_update_area.partial(
-            primary_connection_uri=primary_connection_uri,
-            job_connection_uri=job_db_uri,
-        ).expand_kwargs(restore_areas_list)
-
-        deleted_restore_rows = delete_restore_area.partial(
-            connection_uri=job_db_uri,
-        ).expand_kwargs(restore_areas_list)
-
         status_completed = set_processing_status_completed(
             primary_connection_uri, prod_area_id
         )
@@ -421,13 +373,10 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
         status_started >> database_name
 
         job_admin_db_uri >> revoke_qgis_write_access >> dirty_update_areas
-        revoke_qgis_write_access >> restore_areas_list
 
         dirty_update_areas >> ensured_areas >> restore_dem >> dissolved_areas
-        restore_areas_list >> restored_areas >> deleted_restore_rows
 
         dissolved_areas >> restore_qgis_write_access
-        deleted_restore_rows >> restore_qgis_write_access
 
         # Resolve the final status off every task that can fail (each is a direct
         # upstream, so ONE_FAILED still fires when an early step fails and the
@@ -439,12 +388,9 @@ def create_dissolve_update_areas_dag(  # noqa: C901, PLR0915
             job_admin_db_uri,
             revoke_qgis_write_access,
             dirty_update_areas,
-            restore_areas_list,
             ensured_areas,
             restore_dem,
             dissolved_areas,
-            restored_areas,
-            deleted_restore_rows,
             restore_qgis_write_access,
         ]
         processing_steps >> status_completed

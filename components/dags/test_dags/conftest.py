@@ -75,7 +75,11 @@ def mock_task_docker(mocker: "MockerFixture") -> "MagicMock":
 
     def mock_task_docker(*d_args: Any, **d_kwargs: Any) -> Callable:
         def wrapper(func: Callable) -> Callable:
-            return task()(func)  # drop docker-specific args
+            # Drop docker-specific args but keep the trigger rule under test.
+            trigger_rule = d_kwargs.get("trigger_rule")
+            return task(**({"trigger_rule": trigger_rule} if trigger_rule else {}))(
+                func
+            )
 
         return wrapper
 
