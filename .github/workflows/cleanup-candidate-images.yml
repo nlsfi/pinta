@@ -42,6 +42,17 @@ jobs:
               "https://ghcr.io/v2/${GHCR_OWNER}/${GHCR_REPOSITORY_PREFIX}/${path}"
           }
 
+          registry_digest() {
+            local token="$1"
+            local path="$2"
+            curl -fsSL --head \
+              -H "Authorization: Bearer ${token}" \
+              -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" \
+              "https://ghcr.io/v2/${GHCR_OWNER}/${GHCR_REPOSITORY_PREFIX}/${path}" \
+              | tr -d '\r' \
+              | awk 'tolower($1) == "docker-content-digest:" { print $2 }'
+          }
+
           image_created_at() {
             local token="$1"
             local image="$2"
@@ -124,9 +135,20 @@ jobs:
               registry_get "$token" "${image}/tags/list" \
                 | jq -r '.tags[]? | select(startswith("ci-"))'
             )"
+            # latest references a candidate's manifest, which must survive.
+            protected="$(
+              registry_get "$token" "${image}/manifests/latest" \
+                | jq -r '.manifests[]?.digest'
+            )"
 
             while IFS= read -r tag; do
               if [ -z "$tag" ]; then
+                continue
+              fi
+
+              digest="$(registry_digest "$token" "${image}/manifests/${tag}")"
+              if [ -z "$digest" ] || grep -qxF "$digest" <<< "$protected"; then
+                echo "Keeping ${image}:${tag}, referenced by latest"
                 continue
               fi
 
