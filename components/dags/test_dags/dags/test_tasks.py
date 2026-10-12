@@ -224,29 +224,6 @@ def test_find_restore_areas_returns_id_and_geom_wkt(
     ]
 
 
-def test_delete_restore_area_deletes_existing_row(mock_session: MagicMock) -> None:
-    restore_row = MagicMock()
-    mock_session.get.return_value = restore_row
-
-    tasks.delete_restore_area.function("postgres://mock/db", "restore-1")
-
-    mock_session.get.assert_called_once()
-    mock_session.delete.assert_called_once_with(restore_row)
-    mock_session.commit.assert_called_once_with()
-
-
-def test_delete_restore_area_is_idempotent_when_missing(
-    mock_session: MagicMock,
-) -> None:
-    mock_session.get.return_value = None
-
-    tasks.delete_restore_area.function("postgres://mock/db", "restore-1")
-
-    mock_session.get.assert_called_once()
-    mock_session.delete.assert_not_called()
-    mock_session.commit.assert_not_called()
-
-
 def test_build_job_connection_uri_task_replaces_database_name() -> None:
     result = tasks.build_job_connection_uri_task.function(
         base_uri="postgresql://user:pass@host:1234/template_db",

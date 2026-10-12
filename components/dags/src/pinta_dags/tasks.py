@@ -164,21 +164,6 @@ def find_unregistered_update_areas(
 
 
 @task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
-def delete_restore_area(connection_uri: str, restore_id: str) -> None:
-    """Delete one processed restore row."""
-    import sqlalchemy
-    import sqlmodel
-    from pinta_db.job_db.models.user import UpdateAreaRestore
-
-    engine = sqlalchemy.create_engine(connection_uri)
-    with sqlmodel.Session(engine) as session:
-        restore_row = session.get(UpdateAreaRestore, restore_id)
-        if restore_row is not None:
-            session.delete(restore_row)
-            session.commit()
-
-
-@task.docker(**config.PINTA_CONTAINER_TASK_ARGS)
 def revoke_update_area_write_access(connection_uri: str) -> None:
     """Lock QGIS editors out of editing update_area."""
     import sqlalchemy
