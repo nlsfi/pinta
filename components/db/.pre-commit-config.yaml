@@ -5,4 +5,6 @@ repos:
       - id: mypy
         args: [ --explicit-package-bases ] # for monorepo components
         additional_dependencies:
-          - sqlmodel
+          # Keep in sync with uv.lock
+          - sqlmodel==0.0.37
+          - sqlalchemy==2.0.52
