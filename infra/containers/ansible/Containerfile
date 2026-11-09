@@ -52,7 +52,7 @@ RUN apk add --no-cache \
 # hadolint ignore=DL3059
 RUN pip install --no-cache-dir --break-system-packages \
     psycopg2-binary==2.9.11 \
-    uv==0.10.9
+    uv==0.13.7
 
 # ---- END SERVER DEPENDENCIES ----
 
