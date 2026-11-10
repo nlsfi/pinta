@@ -12,7 +12,7 @@ fi
 
 source .venv/bin/activate
 # Cache (most) of the dependencies
-uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
+uv sync --all-packages --all-groups --all-extras --no-extra qgis
 # Keep only the root dependencies initially
 uv sync
 prek install
