@@ -10,10 +10,6 @@ inputs:
   github_token:
     required: true
     description: Token used to push release commits and tags.
-  push:
-    required: false
-    default: "true"
-    description: Push release commits and tags.
 
 outputs:
   released:
@@ -30,7 +26,6 @@ runs:
         directory: components/${{ inputs.component }}
         github_token: ${{ inputs.github_token }}
         vcs_release: false # TODO: set to true if we want to have github releases
-        push: ${{ inputs.push }}
 
     # Publish right away so that dependents are never released before the components they depend on
     - name: Publish package (DRY RUN)
@@ -51,7 +46,6 @@ runs:
       env:
         COMPONENT: ${{ inputs.component }}
         VERSION: ${{ steps.release.outputs.version }}
-        PUSH: ${{ inputs.push }}
       run: |
         set -euo pipefail
         git config user.name "semantic-release"
@@ -61,4 +55,4 @@ runs:
           git add "components/$dependent/pyproject.toml" uv.lock
           git commit -m "build(deps): require $COMPONENT >=$VERSION in $dependent"
         done
-        if [ "$PUSH" = "true" ]; then git push; fi
+        git push

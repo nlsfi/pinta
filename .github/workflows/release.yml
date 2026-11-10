@@ -2,24 +2,16 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      test_mode:
-        description: 'Publish to test PyPI instead of PyPi and do not push or create tags.'
-        required: true
-        default: false
-        type: boolean
 
 jobs:
   # Components are released one after another in dependency order (lib -> db -> processing, backend ->
   # qgis_plugin, dags) in a single job, because each release pushes a commit to the same branch.
-  # A component is released if it has feat/fix commits. When a component is released, its dependents get a fix
-  # commit that raises the version requirement, which makes them releasable as well.
+  # A component is released if it has feat/fix/build commits. When a component is released, its dependents get a
+  # build(deps) commit that raises the version requirement, which makes them releasable as well.
   release:
     runs-on: ubuntu-latest
     environment:
       name: pypi-release
-    env:
-      UV_PUBLISH_INDEX: ${{ inputs.test_mode && 'testpypi' || 'pypi' }}
     permissions:
       contents: write
       id-token: write
@@ -38,7 +30,6 @@ jobs:
         with:
           component: lib
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          push: ${{ !inputs.test_mode }}
 
       - name: Release db
         id: db
@@ -46,7 +37,6 @@ jobs:
         with:
           component: db
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          push: ${{ !inputs.test_mode }}
 
       - name: Release processing
         id: processing
@@ -54,7 +44,6 @@ jobs:
         with:
           component: processing
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          push: ${{ !inputs.test_mode }}
 
       - name: Release backend
         id: backend
@@ -62,7 +51,6 @@ jobs:
         with:
           component: backend
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          push: ${{ !inputs.test_mode }}
 
       - name: Release qgis_plugin
         id: qgis_plugin
@@ -70,7 +58,6 @@ jobs:
         with:
           component: qgis_plugin
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          push: ${{ !inputs.test_mode }}
 
       - name: Release dags
         id: dags
@@ -78,7 +65,6 @@ jobs:
         with:
           component: dags
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          push: ${{ !inputs.test_mode }}
 
   notify-teams:
     needs: release
