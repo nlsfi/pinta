@@ -25,6 +25,9 @@ description: NLS Python coding conventions for .py changes, including type hints
 - Do not add comments in test code.
 - Use `pytest` fixtures for setup and teardown.
 - Use `pytest.mark.parametrize` when testing multiple input values.
+- For configuration-driven behavior (for example, dictionaries or lists), test only
+ values that produce distinct effects where the configuration is used; do not add tests
+ for values that behave identically.
 - Prefer pytest-mock's `mocker.patch` over `mocker.patch.object` and
  `monkeypatch.setattr`; annotate `mocker` as `pytest_mock.MockerFixture`.
 - When only observing whether or how a function or method is called, prefer

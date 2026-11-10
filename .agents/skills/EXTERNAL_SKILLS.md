@@ -5,8 +5,8 @@ Vendored copies of third-party Agent Skills. **Do not hand-edit the contents of 
 To change what's vendored, edit the `external_skills` answer and run:
 `copier update --trust --answers-file .copier-answers.agent-instructions.yml`
 
-_Last vendored: 2026-10-12T11:48:19+00:00_
+_Last vendored: 2026-11-10T06:11:24+00:00_
 
 | Skill directory | Source | Pinned ref (resolved SHA) | License | Vendored on |
 |---|---|---|---|---|
-| `gispo-coding-pyqgis-pyqgis-dev` | https://github.com/GispoCoding/pyqgis-skills.git | `9753052d1135b1ffbcd520efe0d2191fb52c1dcc` (corresponds to v0.3.0; resolved `9753052d1135b1ffbcd520efe0d2191fb52c1dcc`) | MIT | 2026-10-12 |
+| `gispo-coding-pyqgis-pyqgis-dev` | https://github.com/GispoCoding/pyqgis-skills.git | `9753052d1135b1ffbcd520efe0d2191fb52c1dcc` (corresponds to v0.3.0; resolved `9753052d1135b1ffbcd520efe0d2191fb52c1dcc`) | MIT | 2026-11-10 |

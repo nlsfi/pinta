@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 National Land Survey of Finland
-# (https://www.maanmittauslaitos.fi/en).
-# This file is part of the Pinta.
-# Licensed under the MIT License; see the repository LICENSE file.
-
 """Find the QGIS / Qt sources, the QGIS docs and the QGIS-capable Pythons on this machine.
 
 Resolution order for every item: environment variable -> auto-detect -> missing.
@@ -32,7 +27,6 @@ Relative paths are taken from the current directory.
 
 Other scripts do `from pyqgis_env import resolve`.
 """
-
 from __future__ import annotations
 
 import glob
@@ -78,7 +72,7 @@ HINTS = {
     "PYQT6_BINDINGS": "found automatically next to the PyQt6 package of a Qt 6 Python",
 }
 
-_PROBE = r"""
+_PROBE = r'''
 import json, sys
 out = {"exe": sys.executable}
 try:
@@ -95,7 +89,7 @@ try:
 except Exception as e:  # noqa: BLE001
     out["error"] = repr(e)
 print("PYQGIS_PROBE=" + json.dumps(out))
-"""
+'''
 
 
 # --------------------------------------------------------------------------- directories
@@ -269,10 +263,7 @@ def _python_candidates() -> list[tuple[str, str]]:
             if (venv / rel).is_file():
                 cands.append((str(venv / rel), "auto"))
     if _WIN:
-        for pat in (
-            r"C:\OSGeo4W*\bin\python-qgis*.bat",
-            r"C:\Program Files\QGIS*\bin\python-qgis*.bat",
-        ):
+        for pat in (r"C:\OSGeo4W*\bin\python-qgis*.bat", r"C:\Program Files\QGIS*\bin\python-qgis*.bat"):
             cands.extend((p, "auto") for p in sorted(glob.glob(pat), reverse=True))
     else:
         for name in ("python3", "python"):
@@ -326,11 +317,7 @@ def _find_pythons(quick: bool) -> dict[str, dict]:
         return f"QGIS {i['qgis']} | Qt {i['qt']} | PyQt {i['pyqt']}"
 
     out["QGIS_PYTHON"] = (
-        {
-            "value": primary["exe"],
-            "source": primary["source"],
-            "detail": describe(primary),
-        }
+        {"value": primary["exe"], "source": primary["source"], "detail": describe(primary)}
         if primary
         else {"value": None, "source": "missing", "detail": ""}
     )
@@ -340,21 +327,13 @@ def _find_pythons(quick: bool) -> dict[str, dict]:
         else {
             "value": None,
             "source": "missing",
-            "detail": "QGIS_PYTHON is already QGIS 4"
-            if (primary and primary is q4)
-            else "",
+            "detail": "QGIS_PYTHON is already QGIS 4" if (primary and primary is q4) else "",
         }
     )
     for key, qt_major in (("PYQT_BINDINGS", 5), ("PYQT6_BINDINGS", 6)):
         env_b = os.environ.get(key)
         found = next(
-            (
-                e["info"]["bindings"]
-                for e in (primary, second)
-                if e
-                and e["info"].get("qt_major") == qt_major
-                and e["info"].get("bindings")
-            ),
+            (e["info"]["bindings"] for e in (primary, second) if e and e["info"].get("qt_major") == qt_major and e["info"].get("bindings")),
             None,
         )
         out[key] = {
@@ -385,9 +364,7 @@ def resolve(keys=None, quick: bool = False) -> dict[str, dict]:
             out[k] = {
                 "value": str(p),
                 "source": "env",
-                "detail": describe(p)
-                if ok
-                else "WARNING: does not look like the expected checkout",
+                "detail": describe(p) if ok else "WARNING: does not look like the expected checkout",
             }
         else:
             found = _search(pred)
@@ -416,9 +393,7 @@ def _report(res: dict[str, dict]) -> str:
             lines.append(f"  {'':<16} {'':<8}   {r['detail']}")
     warn = res.get("_warnings", {}).get("detail", "")
     if warn:
-        lines += ["", "Problems with configured Pythons:"] + [
-            "  " + w for w in warn.splitlines()
-        ]
+        lines += ["", "Problems with configured Pythons:"] + ["  " + w for w in warn.splitlines()]
     missing = [k for k in KEYS if not res.get(k, {}).get("value")]
     if missing:
         lines += ["", "Missing (all optional except QGIS_PYTHON):"]
@@ -438,11 +413,7 @@ def main(argv: list[str]) -> int:
     quick = "--quick" in argv
     res = resolve(quick=quick)
     if "--json" in argv:
-        print(
-            json.dumps(
-                {k: v for k, v in res.items() if not k.startswith("_")}, indent=2
-            )
-        )
+        print(json.dumps({k: v for k, v in res.items() if not k.startswith("_")}, indent=2))
     else:
         print(_report(res))
     return 0 if res.get("QGIS_PYTHON", {}).get("value") or quick else 1

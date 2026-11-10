@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 National Land Survey of Finland
-# (https://www.maanmittauslaitos.fi/en).
-# This file is part of the Pinta.
-# Licensed under the MIT License; see the repository LICENSE file.
-
 """Ask the *live* QGIS Python what an API name really is. This beats stubs, docs and memory.
 
     "$QGIS_PYTHON" api_doc.py QgsVectorLayer.featureAdded     # signal: the real C++ signature
@@ -19,7 +14,6 @@ Run it with $QGIS4_PYTHON as well when a QGIS 3 / QGIS 4 (Qt 5 / Qt 6) differenc
 Source lines come from the checkout that matches this Python: QGIS_SRC or QGIS4_SRC, and
 QTBASE_SRC or QTBASE6_SRC (see pyqgis_env.py). --no-source skips that.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -124,9 +118,7 @@ def resolve_name(name: str):
         mod = _import(modname)
         if mod is not None and hasattr(mod, parts[0]):
             return _walk(mod, modname, parts)
-    sys.exit(
-        f"'{name}' not found in {', '.join(MODULES)}.\nGive a dotted module path, e.g. qgis.core.{name}"
-    )
+    sys.exit(f"'{name}' not found in {', '.join(MODULES)}.\nGive a dotted module path, e.g. qgis.core.{name}")
 
 
 def _is_enum(obj) -> bool:
@@ -157,12 +149,7 @@ def split_doc(doc: str | None) -> tuple[list[str], str]:
     lines = (doc or "").strip("\n").splitlines()
     sigs: list[str] = []
     i = 0
-    while (
-        i < len(lines)
-        and lines[i].strip()
-        and "(" in lines[i]
-        and not lines[i].startswith(" ")
-    ):
+    while i < len(lines) and lines[i].strip() and "(" in lines[i] and not lines[i].startswith(" "):
         sigs.append(lines[i].strip())
         i += 1
     return sigs, "\n".join(lines[i:]).strip()
@@ -221,28 +208,19 @@ def list_members(cls, inherited: bool, grep: str | None) -> None:
             t = type(v).__name__
             if t in SIGNAL_TYPES:
                 sigs = getattr(v, "signatures", None) or ()
-                groups["signals"].append(
-                    f"{n}: " + (" | ".join(sigs) if sigs else "?") + origin
-                )
+                groups["signals"].append(f"{n}: " + (" | ".join(sigs) if sigs else "?") + origin)
             elif inspect.isclass(v):
                 label = "enum" if _is_enum(v) else "class"
                 groups["enums / nested classes"].append(f"{n}  ({label}){origin}")
             elif callable(v) or t in _METHOD_TYPES:
-                func = getattr(
-                    c, n, v
-                )  # the bound descriptor carries the SIP docstring
-                sigs, _ = split_doc(
-                    getattr(func, "__doc__", None)
-                    or getattr(getattr(v, "__func__", v), "__doc__", None)
-                )
+                func = getattr(c, n, v)  # the bound descriptor carries the SIP docstring
+                sigs, _ = split_doc(getattr(func, "__doc__", None) or getattr(getattr(v, "__func__", v), "__doc__", None))
                 line = sigs[0] if sigs else f"{n}(...)"
                 if len(sigs) > 1:
                     line += f"   (+{len(sigs) - 1} overloads)"
                 groups["methods"].append(line + origin)
             elif isinstance(v, int) and not isinstance(v, bool):
-                groups[
-                    "enum values (unscoped names; Qt 5 only, use the scoped enum)"
-                ].append(f"{n} = {int(v)}" + origin)
+                groups["enum values (unscoped names; Qt 5 only, use the scoped enum)"].append(f"{n} = {int(v)}" + origin)
             else:
                 groups["attributes"].append(f"{n} = {v!r}"[:100] + origin)
     for title, rows in groups.items():
@@ -260,24 +238,10 @@ def _find_files(root: Path, sub: str, name: str) -> list[Path]:
     return sorted(base.rglob(name))
 
 
-def _git_grep(
-    root: Path, pattern: str, paths: list[str], max_lines: int = 12
-) -> list[str]:
+def _git_grep(root: Path, pattern: str, paths: list[str], max_lines: int = 12) -> list[str]:
     try:
         r = subprocess.run(
-            [
-                "git",
-                "-C",
-                str(root),
-                "grep",
-                "-n",
-                "-I",
-                "-E",
-                "-e",
-                pattern,
-                "--",
-                *paths,
-            ],
+            ["git", "-C", str(root), "grep", "-n", "-I", "-E", "-e", pattern, "--", *paths],
             capture_output=True,
             text=True,
             timeout=120,
@@ -297,24 +261,18 @@ def _header_notes(lines: list[str], idx: int) -> list[str]:
             notes.append(s.lstrip("* "))
         if s.startswith("/**"):
             break
-        if (
-            s
-            and not s.startswith("*")
-            and not s.startswith("/")
-            and not s.endswith("*/")
-        ):
+        if s and not s.startswith("*") and not s.startswith("/") and not s.endswith("*/"):
             break
         j -= 1
     return list(reversed(notes))
 
 
-def source_hits(
-    cls, member: str | None, qt6: bool, member_is_class: bool = False
-) -> None:
+def source_hits(cls, member: str | None, qt6: bool, member_is_class: bool = False) -> None:
     here = Path(__file__).resolve().parent
     if str(here) not in sys.path:
         sys.path.insert(0, str(here))
-    import pyqgis_env
+    import pyqgis_env  # noqa: E402
+
     from qgis.core import Qgis
 
     top = cls.__name__
@@ -328,27 +286,17 @@ def source_hits(
     key = next((k for k in keys if found[k]["value"]), None)
     print("source:")
     if key is None:
-        print(
-            f"  {keys[0]} is not set and was not found; run pyqgis_env.py (web docs are the fallback)."
-        )
+        print(f"  {keys[0]} is not set and was not found; run pyqgis_env.py (web docs are the fallback).")
         return
     if key != keys[0]:
-        print(
-            f"  ({keys[0]} not found; showing {key}, a different major version - check \\since / \\deprecated)"
-        )
+        print(f"  ({keys[0]} not found; showing {key}, a different major version - check \\since / \\deprecated)")
     root_s = found[key]["value"]
     root = Path(root_s)
     base = top.lower()
-    files = _find_files(root, "src", base + ".h") + _find_files(
-        root, "src", base + ".cpp"
-    )
+    files = _find_files(root, "src", base + ".h") + _find_files(root, "src", base + ".cpp")
     if is_qgis:
         # the Qt 5 and Qt 6 sip files are near-identical; show the one that matches this Python
-        files += [
-            f
-            for f in _find_files(root, "python", base + ".sip.in")
-            if ("PyQt6" in f.parts) == qt6
-        ]
+        files += [f for f in _find_files(root, "python", base + ".sip.in") if ("PyQt6" in f.parts) == qt6]
     if not files:
         hits = _git_grep(root, rf"^\s*class\s+(\w+_EXPORT\s+)?{top}\b", ["src"], 5)
         if not hits:
@@ -365,11 +313,7 @@ def source_hits(
         except OSError:
             continue
         # methods and signals: require "name(" so doc mentions are skipped; nested enums/classes: bare name
-        rx = re.compile(
-            rf"\b{re.escape(member)}\b"
-            if member_is_class
-            else rf"\b{re.escape(member)}\s*\("
-        )
+        rx = re.compile(rf"\b{re.escape(member)}\b" if member_is_class else rf"\b{re.escape(member)}\s*\(")
         limit = 4 if f.suffix == ".cpp" else 8
         shown = 0
         for i, line in enumerate(lines):
@@ -383,29 +327,17 @@ def source_hits(
                     print(f"  {rel}: ... more hits; use find_source.py")
                     break
         if shown == 0:
-            print(
-                f"  {rel}: no line mentions {member} (inherited? check the base class)"
-            )
+            print(f"  {rel}: no line mentions {member} (inherited? check the base class)")
 
 
 # --------------------------------------------------------------------------- main
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("name")
-    ap.add_argument(
-        "--members", action="store_true", help="list what the class really has"
-    )
-    ap.add_argument(
-        "--inherited", action="store_true", help="with --members: include base classes"
-    )
-    ap.add_argument(
-        "--grep", metavar="RX", help="with --members: only names matching this regex"
-    )
-    ap.add_argument(
-        "--no-source", action="store_true", help="skip the source-file lookup"
-    )
+    ap.add_argument("--members", action="store_true", help="list what the class really has")
+    ap.add_argument("--inherited", action="store_true", help="with --members: include base classes")
+    ap.add_argument("--grep", metavar="RX", help="with --members: only names matching this regex")
+    ap.add_argument("--no-source", action="store_true", help="skip the source-file lookup")
     a = ap.parse_args()
 
     from qgis.PyQt.QtCore import QT_VERSION_STR
@@ -422,9 +354,7 @@ def main() -> int:
     if member and inspect.isclass(owner):
         d = defining_class(owner, member)
         if d is not None and d is not owner:
-            print(
-                f"defined in: {d.__module__}.{d.__name__}  (inherited by {owner.__name__})"
-            )
+            print(f"defined in: {d.__module__}.{d.__name__}  (inherited by {owner.__name__})")
         elif d is not None:
             print(f"defined in: {d.__name__}")
 
@@ -434,29 +364,18 @@ def main() -> int:
         for s in sigs:
             print(f"  {s}   -> slot receives {signal_hint(s)}")
         if len(sigs) > 1:
-            print(
-                "  overloaded: connect a specific one with signal[type].connect(slot)"
-            )
+            print("  overloaded: connect a specific one with signal[type].connect(slot)")
         doc = getattr(obj, "__doc__", None)
-        if (
-            doc and doc != type(obj).__doc__
-        ):  # unbound signals usually carry only the generic pyqtSignal doc
+        if doc and doc != type(obj).__doc__:  # unbound signals usually carry only the generic pyqtSignal doc
             _, text = split_doc(doc)
             if text:
                 print("doc:\n  " + text.replace("\n", "\n  "))
         else:
-            print(
-                "doc: (not attached to the signal object; see the header / sip lines below)"
-            )
+            print("doc: (not attached to the signal object; see the header / sip lines below)")
     elif kind in ("class", "enum"):
         bases = [b for b in obj.__mro__[1:] if b is not object]
         if bases:
-            print(
-                "bases: "
-                + " -> ".join(
-                    f"{b.__module__.split('.')[-1]}.{b.__name__}" for b in bases[:6]
-                )
-            )
+            print("bases: " + " -> ".join(f"{b.__module__.split('.')[-1]}.{b.__name__}" for b in bases[:6]))
         sigs, text = split_doc(getattr(obj, "__doc__", None))
         if sigs:
             print("constructors:")
