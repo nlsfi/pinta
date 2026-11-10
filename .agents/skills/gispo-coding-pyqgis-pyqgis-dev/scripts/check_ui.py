@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 National Land Survey of Finland
-# (https://www.maanmittauslaitos.fi/en).
-# This file is part of the Pinta.
-# Licensed under the MIT License; see the repository LICENSE file.
-
 """Check that Qt Designer .ui files compile and load with the PyQt of *this* Python.
 
     "$QGIS_PYTHON"     check_ui.py path/to/file.ui other.ui     # Qt 5 side
@@ -15,7 +10,6 @@ Two checks per file:
 Custom widgets with a dotted <header> are imported from the current directory; add --path DIR for more.
 Exit code 1 when any file fails. Run it under both Pythons before you call a .ui change done.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -27,19 +21,10 @@ from pathlib import Path
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("targets", nargs="+", help=".ui files or directories")
-    ap.add_argument(
-        "--path",
-        action="append",
-        default=[],
-        help="extra sys.path entry for custom widgets (repeatable)",
-    )
-    ap.add_argument(
-        "--no-load", action="store_true", help="only compile, do not build widgets"
-    )
+    ap.add_argument("--path", action="append", default=[], help="extra sys.path entry for custom widgets (repeatable)")
+    ap.add_argument("--no-load", action="store_true", help="only compile, do not build widgets")
     a = ap.parse_args()
 
     files: list[Path] = []
@@ -79,9 +64,7 @@ def main() -> int:
         if app is not None:
             try:
                 w = uic.loadUi(str(f))
-                status.append(
-                    f"load ok ({type(w).__name__}, {len(w.findChildren(QObject))} children)"
-                )
+                status.append(f"load ok ({type(w).__name__}, {len(w.findChildren(QObject))} children)")
                 w.deleteLater()
             except Exception as e:  # noqa: BLE001
                 tb = traceback.format_exc().strip().splitlines()[-1]

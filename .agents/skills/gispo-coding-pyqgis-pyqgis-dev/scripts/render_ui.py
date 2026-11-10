@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 National Land Survey of Finland
-# (https://www.maanmittauslaitos.fi/en).
-# This file is part of the Pinta.
-# Licensed under the MIT License; see the repository LICENSE file.
-
 """Render a Qt Designer .ui file to a PNG without a display. Then look at the PNG.
 
     "$QGIS_PYTHON" render_ui.py path/to/dialog.ui                    # -> <tmp>/dialog.png
@@ -15,7 +10,6 @@ QGIS widgets (QgsFilterLineEdit, QgsFileWidget, ...) render because a QgsApplica
 Plugin-own custom widgets are imported from the current directory (add --path DIR for more).
 Text that the plugin sets at run time is empty in the picture; --names shows which widget is where.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -26,24 +20,13 @@ from pathlib import Path
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("ui_file")
     ap.add_argument("-o", "--out", help="PNG path (default: <temp dir>/<ui name>.png)")
     ap.add_argument("--width", type=int, help="force width in px")
     ap.add_argument("--height", type=int, help="force height in px")
-    ap.add_argument(
-        "--names",
-        action="store_true",
-        help="put objectName into empty labels, buttons and group boxes",
-    )
-    ap.add_argument(
-        "--path",
-        action="append",
-        default=[],
-        help="extra sys.path entry for custom widgets (repeatable)",
-    )
+    ap.add_argument("--names", action="store_true", help="put objectName into empty labels, buttons and group boxes")
+    ap.add_argument("--path", action="append", default=[], help="extra sys.path entry for custom widgets (repeatable)")
     a = ap.parse_args()
 
     ui = Path(a.ui_file)
@@ -66,11 +49,7 @@ def main() -> int:
     if a.names:
         for cls in (QLabel, QAbstractButton, QGroupBox):
             for child in w.findChildren(cls):
-                if (
-                    hasattr(child, "text")
-                    and not child.text()
-                    and hasattr(child, "setText")
-                ):
+                if hasattr(child, "text") and not child.text() and hasattr(child, "setText"):
                     child.setText(child.objectName())
                 elif isinstance(child, QGroupBox) and not child.title():
                     child.setTitle(child.objectName())
@@ -83,9 +62,7 @@ def main() -> int:
     w.show()
     app.processEvents()
     ok = w.grab().save(str(out))
-    print(
-        ("saved " if ok else "FAILED to save ") + f"{out}  ({w.width()}x{w.height()})"
-    )
+    print(("saved " if ok else "FAILED to save ") + f"{out}  ({w.width()}x{w.height()})")
     w.close()
     app.exitQgis()
     return 0 if ok else 1
