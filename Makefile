@@ -38,10 +38,10 @@ venv:
 	UV_PYTHON=/usr/bin/python3 uv venv --system-site-packages --clear
 
 sync:
-	uv sync --all-packages --all-groups --all-extras --no-extra qgis --no-extra build
+	uv sync --all-packages --all-groups --all-extras --no-extra qgis
 
 sync-all-but-qgis-and-airflow:
-	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis --no-extra build
+	uv sync --all-packages --all-groups --no-group qgis --no-group airflow --all-extras --no-extra qgis
 
 # Docker Compose targets
 # =================
