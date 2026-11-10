@@ -104,6 +104,10 @@ When the branch is in a releasable state, trigger the `[release.yml](.github/wor
 GitHub Actions. Workflow checks which components need releasing automatically based on commits in the repository.
 For each component the tag will be created, and a new version to PyPI will be published.
 
+A component is released only if it has `feat` (minor), `fix` or `build` (patch) commits since its last release,
+other commit types never trigger a release. Components are released one after another in dependency order
+(`lib` → `db` → `processing`, `backend` → `qgis_plugin`, `dags`), so dependencies are published first.
+
 ## License
 
 This repository contains multiple components licensed under different licenses.
