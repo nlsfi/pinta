@@ -8,13 +8,12 @@ on:
         required: true
         default: false
         type: boolean
-      components:
-        description: 'Components to release given as an array.'
-        required: true
-        default: '["db", "processing", "qgis_plugin", "dags"]'
-        type: string
 
 jobs:
+  # Components are released one after another in dependency order (lib -> db -> processing, backend ->
+  # qgis_plugin, dags) in a single job, because each release pushes a commit to the same branch.
+  # A component is released if it has feat/fix commits. When a component is released, its dependents get a fix
+  # commit that raises the version requirement, which makes them releasable as well.
   release:
     runs-on: ubuntu-latest
     environment:
@@ -24,40 +23,62 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    strategy:
-      fail-fast: false
-      matrix:
-        component: ${{ fromJSON(inputs.components) }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - name: Release component ${{ matrix.component }}
-        id: release
-        uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Release lib
+        id: lib
+        uses: ./.github/actions/release-component
         with:
-          directory: components/${{ matrix.component }}
+          component: lib
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          vcs_release: false # TODO: set to true if we want to have github releases
           push: ${{ !inputs.test_mode }}
 
-      # Publsh to PyPI only if the release was made
-      - name: Install uv
-        if: steps.release.outputs.released == 'true'
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - name: Install Python
-        if: steps.release.outputs.released == 'true'
-        run: uv python install 3.13
-      - name: Publish package (DRY RUN)
-        if: steps.release.outputs.released == 'true'
-        working-directory: components/${{ matrix.component }}
-        run: uv publish --dry-run dist/*
-      - name: Publish package to PyPI
-        if: steps.release.outputs.released == 'true'
-        working-directory: components/${{ matrix.component }}
-        run: uv publish dist/*
+      - name: Release db
+        id: db
+        uses: ./.github/actions/release-component
+        with:
+          component: db
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ !inputs.test_mode }}
+
+      - name: Release processing
+        id: processing
+        uses: ./.github/actions/release-component
+        with:
+          component: processing
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ !inputs.test_mode }}
+
+      - name: Release backend
+        id: backend
+        uses: ./.github/actions/release-component
+        with:
+          component: backend
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ !inputs.test_mode }}
+
+      - name: Release qgis_plugin
+        id: qgis_plugin
+        uses: ./.github/actions/release-component
+        with:
+          component: qgis_plugin
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ !inputs.test_mode }}
+
+      - name: Release dags
+        id: dags
+        uses: ./.github/actions/release-component
+        with:
+          component: dags
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ !inputs.test_mode }}
 
   notify-teams:
     needs: release

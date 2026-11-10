@@ -1,0 +1,64 @@
+name: Release component
+description: >
+  Release one component with python-semantic-release and publish it. After a release, the version requirements
+  of the components that depend on it are raised in a fix commit, so the dependents get released as well.
+
+inputs:
+  component:
+    description: Component directory name under components/.
+    required: true
+  github_token:
+    required: true
+    description: Token used to push release commits and tags.
+  push:
+    required: false
+    default: "true"
+    description: Push release commits and tags.
+
+outputs:
+  released:
+    description: '"true" if the component was released.'
+    value: ${{ steps.release.outputs.released }}
+
+runs:
+  using: composite
+  steps:
+    - name: Release component ${{ inputs.component }}
+      id: release
+      uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
+      with:
+        directory: components/${{ inputs.component }}
+        github_token: ${{ inputs.github_token }}
+        vcs_release: false # TODO: set to true if we want to have github releases
+        push: ${{ inputs.push }}
+
+    # Publish right away so that dependents are never released before the components they depend on
+    - name: Publish package (DRY RUN)
+      if: steps.release.outputs.released == 'true'
+      shell: bash
+      working-directory: components/${{ inputs.component }}
+      run: uv publish --dry-run dist/*
+    - name: Publish package
+      if: steps.release.outputs.released == 'true'
+      shell: bash
+      working-directory: components/${{ inputs.component }}
+      run: uv publish dist/*
+
+    # One build(deps) commit per dependent, the changed path makes it releasable for that dependent only
+    - name: Raise version requirements of dependents
+      if: steps.release.outputs.released == 'true'
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VERSION: ${{ steps.release.outputs.version }}
+        PUSH: ${{ inputs.push }}
+      run: |
+        set -euo pipefail
+        git config user.name "semantic-release"
+        git config user.email "semantic-release"
+        for dependent in $(python3 scripts/bump_dependents.py "$COMPONENT" "$VERSION"); do
+          uv lock
+          git add "components/$dependent/pyproject.toml" uv.lock
+          git commit -m "build(deps): require $COMPONENT >=$VERSION in $dependent"
+        done
+        if [ "$PUSH" = "true" ]; then git push; fi

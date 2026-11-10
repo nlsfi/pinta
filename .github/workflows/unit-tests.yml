@@ -33,7 +33,7 @@ jobs:
       - name: Create virtualenv and install dependencies
         run: |
           uv sync --locked --all-packages --all-groups --all-extras \
-            --no-group qgis --no-extra qgis --no-extra build
+            --no-group qgis --no-extra qgis
 
       - name: Copy .env.example to .env
         run: cp ../../.env.example ../../.env
