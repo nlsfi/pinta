@@ -1,0 +1,92 @@
+name: Publish release image
+description: Build the release image for a published Pinta backend or processing package.
+
+inputs:
+  component:
+    description: Pinta component name (backend or processing).
+    required: true
+  version:
+    description: Published package version to install in the image.
+    required: true
+  dry_run:
+    description: Build the image without pushing it.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Check release image tags
+      id: image
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VERSION: ${{ inputs.version }}
+        DRY_RUN: ${{ inputs.dry_run }}
+      run: |
+        set -euo pipefail
+
+        if [ "$DRY_RUN" = "true" ]; then
+          echo "build=true" >> "$GITHUB_OUTPUT"
+        elif docker buildx imagetools inspect "ghcr.io/nlsfi/pinta/$COMPONENT:$VERSION" >/dev/null 2>&1 &&
+          docker buildx imagetools inspect "ghcr.io/nlsfi/pinta/pinta-$COMPONENT:$VERSION" >/dev/null 2>&1; then
+          echo "Release image tags already exist."
+          echo "build=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "build=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Prepare release image constraints
+      if: steps.image.outputs.build == 'true'
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VERSION: ${{ inputs.version }}
+        DRY_RUN: ${{ inputs.dry_run }}
+      run: |
+        set -euo pipefail
+
+        module="pinta_$COMPONENT"
+        wheel="$(find "components/$COMPONENT/dist" -maxdepth 1 -type f \
+          -name "*$VERSION*.whl" -print -quit 2>/dev/null || true)"
+        if [ -z "$wheel" ]; then
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "The dry-run release wheel for $COMPONENT was not built." >&2
+            exit 1
+          fi
+          # Retry of an earlier run: fetch the already published wheel
+          python3 -m pip download --no-deps --only-binary=:all: \
+            --dest "$RUNNER_TEMP" "pinta-$COMPONENT==$VERSION"
+          wheel="$(find "$RUNNER_TEMP" -maxdepth 1 -name "${module}-${VERSION}-*.whl" -print -quit)"
+        fi
+
+        mkdir -p "$GITHUB_WORKSPACE/.release-constraints"
+        unzip -p "$wheel" "$module/constraints.txt" \
+          > "$GITHUB_WORKSPACE/.release-constraints/$module.txt"
+        test -s "$GITHUB_WORKSPACE/.release-constraints/$module.txt"
+
+    - name: Build and publish release image
+      if: steps.image.outputs.build == 'true'
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VERSION: ${{ inputs.version }}
+        DRY_RUN: ${{ inputs.dry_run }}
+      run: |
+        set -euo pipefail
+
+        args=(
+          --file "components/$COMPONENT/Containerfile"
+          --target prod
+          --build-arg "PINTA_${COMPONENT^^}_VERSION=$VERSION"
+          --build-arg "PINTA_${COMPONENT^^}_CONSTRAINT=.release-constraints/pinta_$COMPONENT.txt"
+          --tag "ghcr.io/nlsfi/pinta/$COMPONENT:$VERSION"
+          --tag "ghcr.io/nlsfi/pinta/pinta-$COMPONENT:$VERSION"
+        )
+        if [ "$DRY_RUN" = "true" ]; then
+          args+=(--load)
+        else
+          args+=(--push)
+        fi
+
+        docker buildx build "${args[@]}" "$GITHUB_WORKSPACE"
