@@ -16,7 +16,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-from migrations import _schema_op
+from pinta_db_migrations import _schema_op
 
 # revision identifiers, used by Alembic.
 revision: str = "006"

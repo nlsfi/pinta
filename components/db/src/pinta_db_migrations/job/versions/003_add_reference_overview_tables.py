@@ -16,7 +16,7 @@ from collections.abc import Sequence
 from alembic import op
 from pinta_common import Settings
 
-from migrations import _schema_op
+from pinta_db_migrations import _schema_op
 
 # revision identifiers, used by Alembic.
 revision: str = "003"
