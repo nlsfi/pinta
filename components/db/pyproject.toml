@@ -57,8 +57,13 @@ requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["pinta_db", "pinta_db_utils"]
-include = ["py.typed"]
+module-name = ["pinta_db", "pinta_db_utils", "pinta_db_migrations"]
+include = [
+  "py.typed",
+  "constraints.txt",
+  "pinta_db_migrations/**/*.ini",
+  "pinta_db_migrations/**/*.mako",
+]
 
 [tool.ruff]
 # Extend the root `pyproject.toml`
@@ -100,11 +105,13 @@ tag_format = "pinta-db-v{version}"
 version_toml = ["pyproject.toml:project.version"]
 build_command = """
     set -euo pipefail
-    python -m pip install uv
+    python -m pip install uv packaging
     rm -rf dist
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add ../../uv.lock
+    python ../../scripts/build_constraints.py --module pinta_db --extra migrations
     uv build --out-dir dist
+    python ../../scripts/check_wheel_constraints.py --module pinta_db --extra migrations
 """
 
 [tool.semantic_release.commit_parser_options]

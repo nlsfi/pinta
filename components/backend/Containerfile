@@ -49,6 +49,8 @@ ARG PINTA_BACKEND_CONSTRAINT
 ARG PYPI_INDEX_URL=https://pypi.org/simple
 ARG PYPI_EXTRA_INDEX_URL
 
+COPY ${PINTA_BACKEND_CONSTRAINT} /tmp/pinta-backend-constraints.txt
+
 RUN test -n "${PINTA_BACKEND_VERSION}" && \
     test -n "${PINTA_BACKEND_CONSTRAINT}" && \
     uv venv /opt/venv && \
@@ -56,8 +58,9 @@ RUN test -n "${PINTA_BACKEND_VERSION}" && \
     UV_EXTRA_INDEX_URL="${PYPI_EXTRA_INDEX_URL}" \
       uv pip install \
       --python /opt/venv/bin/python \
-      --constraint "${PINTA_BACKEND_CONSTRAINT}" \
+      --constraint /tmp/pinta-backend-constraints.txt \
       "pinta_backend==${PINTA_BACKEND_VERSION}" && \
+    rm /tmp/pinta-backend-constraints.txt && \
     mkdir -p /opt/python && \
     cp -a /opt/venv/lib/python*/site-packages/. /opt/python/
 

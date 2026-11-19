@@ -34,20 +34,25 @@ jobs:
     outputs:
       candidate-tag: ${{ steps.image_tag.outputs.candidate-tag }}
       branch-name: ${{ steps.image_tag.outputs.branch-name }}
+      release-tag: ${{ steps.image_tag.outputs.release-tag }}
     steps:
       - name: Resolve image tag
         id: image_tag
         env:
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
         run: |
           set -euo pipefail
 
           CANDIDATE_TAG="ci-${{ github.sha }}"
           BRANCH_NAME="${HEAD_REF:-$REF_NAME}"
 
-          echo "candidate-tag=$CANDIDATE_TAG" >> "$GITHUB_OUTPUT"
-          echo "branch-name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+          {
+            echo "candidate-tag=$CANDIDATE_TAG"
+            echo "branch-name=$BRANCH_NAME"
+            echo "release-tag=$RELEASE_TAG"
+          } >> "$GITHUB_OUTPUT"
 
   build-containers:
     needs: resolve-tag
@@ -125,8 +130,47 @@ jobs:
       - name: Start database
         run: make up-db
 
-      - name: Run migrations
-        run: make db-migrate-all
+      - name: Build db wheel
+        run: |
+          set -euo pipefail
+
+          cd components/db
+          uv run --with packaging python ../../scripts/build_constraints.py \
+            --module pinta_db --extra migrations
+          uv build --wheel --out-dir "$RUNNER_TEMP/db-wheel"
+          uv build --directory ../lib --wheel --out-dir "$RUNNER_TEMP/db-wheel"
+
+      - name: Run packaged migrations
+        run: |
+          set -euo pipefail
+
+          venv="$RUNNER_TEMP/db-wheel-venv"
+          uv venv --python 3.12 "$venv"
+          UV_PROJECT_ENVIRONMENT="$venv" uv sync \
+            --directory components/db \
+            --locked \
+            --extra migrations \
+            --no-install-project \
+            --no-install-workspace \
+            --no-default-groups
+          uv pip install \
+            --python "$venv/bin/python" \
+            --no-deps \
+            "$RUNNER_TEMP/db-wheel"/pinta_db-*.whl \
+            "$RUNNER_TEMP/db-wheel"/pinta_lib-*.whl
+
+          set -a
+          . .env
+          set +a
+
+          migration_dir="$("$venv/bin/python" -c \
+            'import pinta_db_migrations; print(pinta_db_migrations.__path__[0])')"
+          (
+            cd "$migration_dir"
+            "$venv/bin/alembic" -c primary/alembic.ini upgrade head
+            "$venv/bin/alembic" -c job/alembic.ini upgrade head
+          )
+          make db-sync-users
 
       - name: Load test data from test-data image
         run: |
@@ -367,6 +411,7 @@ jobs:
       candidate_sha: ${{ github.sha }}
       source_event: ${{ github.event_name }}
       head_branch: ${{ needs.resolve-tag.outputs.branch-name }}
+      release_tag: ${{ needs.resolve-tag.outputs.release-tag }}
     secrets: inherit
 
   notify-teams:

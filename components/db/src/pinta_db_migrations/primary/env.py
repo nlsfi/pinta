@@ -27,10 +27,14 @@ from alembic_utils import (  # noqa: E402
     replaceable_entity,
 )
 
-from migrations import common  # noqa: E402
-from pinta_db.common.base import BaseJobDb  # noqa: E402
-from pinta_db.job_db import functions, schema, triggers  # noqa: E402
-from pinta_db.job_db.models.all import *  # noqa: F403, E402
+from pinta_db.common.base import BasePrimaryDb  # noqa: E402
+from pinta_db.primary_db import (  # noqa: E402
+    functions,
+    schema,
+    triggers,
+)
+from pinta_db.primary_db.models.all import *  # noqa: F403, E402
+from pinta_db_migrations import common  # noqa: E402
 from pinta_db_utils import engine_utils  # noqa: E402
 
 config = alembic.context.config
@@ -38,7 +42,7 @@ config = alembic.context.config
 if config.config_file_name is not None:
     logging.config.fileConfig(config.config_file_name)
 
-target_metadata = BaseJobDb.metadata
+target_metadata = BasePrimaryDb.metadata
 
 # Triggers, functions, views etc. are registered here
 replaceable_entity.register_entities(
@@ -48,12 +52,12 @@ replaceable_entity.register_entities(
 )
 
 ADMIN_CREDENTIALS = engine_utils.Credentials(
-    user=os.environ["DB_JOB_ADMIN_USER"],
-    password=os.environ["DB_JOB_ADMIN_PASSWORD"],
-    host=os.environ["DB_JOB_HOST"],
-    port=os.environ["DB_JOB_PORT"],
-    db_name=os.environ["DB_JOB_TEMPLATE_NAME"],
-    role=os.environ["DB_JOB_OWNER_ROLE"],
+    user=os.environ["DB_PRIMARY_ADMIN_USER"],
+    password=os.environ["DB_PRIMARY_ADMIN_PASSWORD"],
+    host=os.environ["DB_PRIMARY_HOST"],
+    port=os.environ["DB_PRIMARY_PORT"],
+    db_name=os.environ["DB_PRIMARY_NAME"],
+    role=os.environ["DB_PRIMARY_OWNER_ROLE"],
 )
 
 config.set_main_option("sqlalchemy.url", ADMIN_CREDENTIALS.get_connection_string())

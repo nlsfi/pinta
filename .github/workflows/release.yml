@@ -2,12 +2,18 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build release packages and images without publishing them
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  # Components are released one after another in dependency order (lib -> db -> processing, backend ->
-  # qgis_plugin, dags) in a single job, because each release pushes a commit to the same branch.
-  # A component is released if it has feat/fix/build commits. When a component is released, its dependents get a
-  # build(deps) commit that raises the version requirement, which makes them releasable as well.
   release:
     runs-on: ubuntu-latest
     environment:
@@ -15,56 +21,88 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      packages: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - name: Install uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-
-      - name: Release lib
-        id: lib
-        uses: ./.github/actions/release-component
+      - name: Release Python packages
+        id: release
+        uses: nlsfi/python-monorepo-release-action@v1.0.0
         with:
-          component: lib
+          components: |
+            lib
+            db
+            processing
+            backend
+            qgis_plugin
+            dags
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: ${{ inputs.dry_run }}
 
-      - name: Release db
-        id: db
-        uses: ./.github/actions/release-component
-        with:
-          component: db
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve release image versions
+        id: image-versions
+        shell: bash
+        env:
+          RELEASES: ${{ steps.release.outputs.releases }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
 
-      - name: Release processing
-        id: processing
-        uses: ./.github/actions/release-component
-        with:
-          component: processing
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          for component in backend processing; do
+            version="$(python3 -c \
+              'import json, os, sys; print(json.loads(os.environ["RELEASES"]).get(sys.argv[1], ""))' \
+              "$component")"
 
-      - name: Release backend
-        id: backend
-        uses: ./.github/actions/release-component
+            if [ -z "$version" ] && [ "$DRY_RUN" != "true" ]; then
+              tag="$(git tag --list "pinta-$component-v*" --sort=-version:refname | sed -n '1p')"
+              if [ -n "$tag" ]; then
+                version="${tag##*-v}"
+              fi
+            fi
+
+            echo "${component}_version=$version" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Set up QEMU
+        if: >-
+          steps.image-versions.outputs.backend_version != '' ||
+          steps.image-versions.outputs.processing_version != ''
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
+      - name: Set up Docker Buildx
+        if: >-
+          steps.image-versions.outputs.backend_version != '' ||
+          steps.image-versions.outputs.processing_version != ''
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Login to GitHub Container Registry
+        if: >-
+          inputs.dry_run != true &&
+          (steps.image-versions.outputs.backend_version != '' ||
+          steps.image-versions.outputs.processing_version != '')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Publish backend release image
+        if: steps.image-versions.outputs.backend_version != ''
+        uses: ./.github/actions/publish-release-image
         with:
           component: backend
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          version: ${{ steps.image-versions.outputs.backend_version }}
+          dry_run: ${{ inputs.dry_run }}
 
-      - name: Release qgis_plugin
-        id: qgis_plugin
-        uses: ./.github/actions/release-component
+      - name: Publish processing release image
+        if: steps.image-versions.outputs.processing_version != ''
+        uses: ./.github/actions/publish-release-image
         with:
-          component: qgis_plugin
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Release dags
-        id: dags
-        uses: ./.github/actions/release-component
-        with:
-          component: dags
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          component: processing
+          version: ${{ steps.image-versions.outputs.processing_version }}
+          dry_run: ${{ inputs.dry_run }}
 
   notify-teams:
     needs: release

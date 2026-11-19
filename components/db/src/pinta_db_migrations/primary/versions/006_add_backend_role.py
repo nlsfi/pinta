@@ -14,7 +14,7 @@ Create Date: 2026-05-28 09:26:37.369532
 import os
 from collections.abc import Sequence
 
-from migrations import _schema_op as schema_op
+from pinta_db_migrations import _schema_op as schema_op
 
 # revision identifiers, used by Alembic.
 revision: str = "006"

@@ -69,20 +69,25 @@ Build targets:
 Build a production image with:
 
 ```bash
+VERSION=0.3.1
+uv pip install --no-deps --target /tmp/pinta-backend "pinta_backend==$VERSION"
+mkdir -p .release-constraints
+cp /tmp/pinta-backend/pinta_backend/constraints.txt .release-constraints/pinta_backend.txt
+
 docker build \
   --target prod \
   -f components/backend/Containerfile \
-  --build-arg PINTA_BACKEND_VERSION=0.0.0 \
-  --build-arg PINTA_BACKEND_CONSTRAINT=https://example.invalid/constraints.txt \
+  --build-arg "PINTA_BACKEND_VERSION=$VERSION" \
+  --build-arg PINTA_BACKEND_CONSTRAINT=.release-constraints/pinta_backend.txt \
   --build-arg PYPI_INDEX_URL=https://pypi.example.invalid/simple \
-  -t ghcr.io/nlsfi/pinta/backend:0.0.0 \
+  -t "ghcr.io/nlsfi/pinta/pinta-backend:$VERSION" \
   .
 ```
 
 Image tags:
 
 * `latest` is the nightly build from the `main` branch.
-* Version tags are release builds from tagged versions.
+* Version tags are release builds from tagged versions, published as both `backend:<version>` and `pinta-backend:<version>`.
 
 ## Translations
 
