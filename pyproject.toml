@@ -108,6 +108,7 @@ banned-module-level-imports = ["pinta"]
 
 
 [tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = ["INP001"]
 "*/exceptions.py" = [
   "D", # pydocstyle
 ]
