@@ -14,6 +14,14 @@ report.json
 # virtual environments
 .venv
 
+# Generated package constraints
+/components/backend/src/pinta_backend/constraints.txt
+/components/dags/src/pinta_dags/constraints.txt
+/components/db/src/pinta_db/constraints.txt
+/components/lib/src/pinta_common/constraints.txt
+/components/processing/src/pinta_processing/constraints.txt
+/.release-constraints/
+
 # env file
 .env
 .vault
