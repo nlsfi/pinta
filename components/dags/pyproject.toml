@@ -23,7 +23,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "pinta_dags"
-include = ["py.typed"]
+include = ["py.typed", "constraints.txt"]
 
 [tool.uv.sources]
 pinta-processing = { workspace = true }
@@ -78,11 +78,13 @@ tag_format = "pinta-dags-v{version}"
 version_toml = ["pyproject.toml:project.version"]
 build_command = """
     set -euo pipefail
-    python -m pip install uv
+    python -m pip install uv packaging
     rm -rf dist
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add ../../uv.lock
+    python ../../scripts/build_constraints.py --module pinta_dags --extra airflow --airflow
     uv build --out-dir dist
+    python ../../scripts/check_wheel_constraints.py --module pinta_dags --extra airflow
 """
 
 [tool.semantic_release.commit_parser_options]

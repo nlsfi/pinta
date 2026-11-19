@@ -96,6 +96,38 @@ RUN tmp_dir="$(mktemp -d)" \
   && rm -rf "${tmp_dir}" /tmp/local-LAStools.tar.gz
 
 
+FROM ${LASTOOLS_SOURCE} AS prod
+
+ARG PINTA_PROCESSING_VERSION
+ARG PINTA_PROCESSING_CONSTRAINT
+ARG PYPI_INDEX_URL=https://pypi.org/simple
+ARG PYPI_EXTRA_INDEX_URL
+
+# hadolint ignore=DL3013
+RUN python -m pip install --no-cache-dir uv
+
+COPY ${PINTA_PROCESSING_CONSTRAINT} /tmp/pinta-processing-constraints.txt
+
+RUN test -n "${PINTA_PROCESSING_VERSION}" && \
+    test -n "${PINTA_PROCESSING_CONSTRAINT}" && \
+    uv venv /venv && \
+    UV_INDEX_URL="${PYPI_INDEX_URL}" \
+    UV_EXTRA_INDEX_URL="${PYPI_EXTRA_INDEX_URL}" \
+      uv pip install \
+      --python /venv/bin/python \
+      --constraint /tmp/pinta-processing-constraints.txt \
+      "pinta-processing==${PINTA_PROCESSING_VERSION}" && \
+    rm /tmp/pinta-processing-constraints.txt
+
+ENV VIRTUAL_ENV=/venv \
+    PATH="/venv/bin:$PATH"
+
+COPY components/processing/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+
 # Run LASTools dependecy check based on LASTOOLS_SOURCE build arg
 FROM ${LASTOOLS_SOURCE} AS final
 

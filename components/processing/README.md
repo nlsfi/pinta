@@ -5,6 +5,9 @@ Running Python code from processing component:
 * Build the container in project root: `docker compose build processing`
 * Run code: `docker compose run --rm processing python -m pinta_processing.main` or `docker compose run --rm processing python src/pinta_processing/main.py`
 
+The release workflow builds the `prod` image from the published `pinta-processing` wheel and its bundled constraints.
+Versioned releases are published as both `processing:<version>` and `pinta-processing:<version>` images.
+
 ## Table of contents
 
 * [Parallel raster ingestion and staging tables](#parallel-raster-ingestion-and-staging-tables)

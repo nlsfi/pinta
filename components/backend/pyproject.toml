@@ -43,7 +43,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "pinta_backend"
-include = ["py.typed"]
+include = ["py.typed", "constraints.txt"]
 
 [tool.ruff]
 # Extend the root `pyproject.toml`
@@ -74,11 +74,13 @@ tag_format = "pinta-backend-v{version}"
 version_toml = ["pyproject.toml:project.version"]
 build_command = """
     set -euo pipefail
-    python -m pip install uv
+    python -m pip install uv packaging
     rm -rf dist
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add ../../uv.lock
+    python ../../scripts/build_constraints.py --module pinta_backend
     uv build --out-dir dist
+    python ../../scripts/check_wheel_constraints.py --module pinta_backend
 """
 
 [tool.semantic_release.commit_parser_options]

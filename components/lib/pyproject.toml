@@ -31,7 +31,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = ["pinta_test_utils", "pinta_common"]
-include = ["py.typed"]
+include = ["py.typed", "constraints.txt"]
 
 [tool.semantic_release]
 commit_parser = "conventional-monorepo"
@@ -46,11 +46,13 @@ tag_format = "pinta-lib-v{version}"
 version_toml = ["pyproject.toml:project.version"]
 build_command = """
     set -euo pipefail
-    python -m pip install uv
+    python -m pip install uv packaging
     rm -rf dist
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add ../../uv.lock
+    python ../../scripts/build_constraints.py --module pinta_common
     uv build --out-dir dist
+    python ../../scripts/check_wheel_constraints.py --module pinta_common
 """
 
 [tool.semantic_release.commit_parser_options]
