@@ -91,10 +91,10 @@ restart-fully: down pull up
 # ================
 
 db-migrate-primary:
-	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/primary/alembic.ini upgrade head
+	uv run --extra migrations --directory $(DB_DIR) alembic -c src/pinta_db_migrations/primary/alembic.ini upgrade head
 
 db-migrate-job:
-	uv run --extra migrations --directory $(DB_DIR) alembic -c migrations/job/alembic.ini upgrade head
+	uv run --extra migrations --directory $(DB_DIR) alembic -c src/pinta_db_migrations/job/alembic.ini upgrade head
 
 db-migrate-all: db-migrate-primary db-migrate-job db-sync-users
 
