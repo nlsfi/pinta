@@ -60,7 +60,12 @@ runs:
           wheel="$(find "$RUNNER_TEMP" -maxdepth 1 -name "${module}-${VERSION}-*.whl" -print -quit)"
         fi
 
-        mkdir -p "$GITHUB_WORKSPACE/.release-constraints"
+        mkdir -p "$GITHUB_WORKSPACE/.release-constraints" "$GITHUB_WORKSPACE/.release-wheels"
+        if [ "$DRY_RUN" = "true" ]; then
+          # Unpublished sibling wheels (lib, db, ...) are resolved from here
+          find components/*/dist -maxdepth 1 -type f -name '*.whl' \
+            -exec cp {} "$GITHUB_WORKSPACE/.release-wheels/" \;
+        fi
         unzip -p "$wheel" "$module/constraints.txt" \
           > "$GITHUB_WORKSPACE/.release-constraints/$module.txt"
         test -s "$GITHUB_WORKSPACE/.release-constraints/$module.txt"

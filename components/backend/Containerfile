@@ -50,6 +50,8 @@ ARG PYPI_INDEX_URL=https://pypi.org/simple
 ARG PYPI_EXTRA_INDEX_URL
 
 COPY ${PINTA_BACKEND_CONSTRAINT} /tmp/pinta-backend-constraints.txt
+# Wheels built by a release dry run, not yet available on the package index
+COPY .release-wheels /tmp/wheels
 
 RUN test -n "${PINTA_BACKEND_VERSION}" && \
     test -n "${PINTA_BACKEND_CONSTRAINT}" && \
@@ -59,8 +61,9 @@ RUN test -n "${PINTA_BACKEND_VERSION}" && \
       uv pip install \
       --python /opt/venv/bin/python \
       --constraint /tmp/pinta-backend-constraints.txt \
+      --find-links /tmp/wheels \
       "pinta_backend==${PINTA_BACKEND_VERSION}" && \
-    rm /tmp/pinta-backend-constraints.txt && \
+    rm -r /tmp/pinta-backend-constraints.txt /tmp/wheels && \
     mkdir -p /opt/python && \
     cp -a /opt/venv/lib/python*/site-packages/. /opt/python/
 

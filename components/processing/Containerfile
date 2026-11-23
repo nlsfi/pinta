@@ -107,6 +107,8 @@ ARG PYPI_EXTRA_INDEX_URL
 RUN python -m pip install --no-cache-dir uv
 
 COPY ${PINTA_PROCESSING_CONSTRAINT} /tmp/pinta-processing-constraints.txt
+# Wheels built by a release dry run, not yet available on the package index
+COPY .release-wheels /tmp/wheels
 
 RUN test -n "${PINTA_PROCESSING_VERSION}" && \
     test -n "${PINTA_PROCESSING_CONSTRAINT}" && \
@@ -116,8 +118,9 @@ RUN test -n "${PINTA_PROCESSING_VERSION}" && \
       uv pip install \
       --python /venv/bin/python \
       --constraint /tmp/pinta-processing-constraints.txt \
+      --find-links /tmp/wheels \
       "pinta-processing==${PINTA_PROCESSING_VERSION}" && \
-    rm /tmp/pinta-processing-constraints.txt
+    rm -r /tmp/pinta-processing-constraints.txt /tmp/wheels
 
 ENV VIRTUAL_ENV=/venv \
     PATH="/venv/bin:$PATH"

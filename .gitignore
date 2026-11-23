@@ -21,6 +21,7 @@ report.json
 /components/lib/src/pinta_common/constraints.txt
 /components/processing/src/pinta_processing/constraints.txt
 /.release-constraints/
+/.release-wheels/
 
 # env file
 .env

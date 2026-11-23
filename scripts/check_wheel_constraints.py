@@ -50,7 +50,15 @@ def check_wheel(
             "--constraint",
             str(constraint),
         ]
-        for find_link in find_links:
+        # Sibling components released earlier in the same run are not on the index yet.
+        sibling_distributions = [
+            distributions
+            for distributions in sorted(
+                wheel_dir.resolve().parent.parent.glob("*/dist")
+            )
+            if distributions != wheel_dir.resolve()
+        ]
+        for find_link in [*find_links, *sibling_distributions]:
             command.extend(["--find-links", str(find_link)])
         command.append(requirement)
         subprocess.run(command, check=True)  # noqa: S603

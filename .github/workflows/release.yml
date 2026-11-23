@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
       - name: Release Python packages
         id: release
-        uses: nlsfi/python-monorepo-release-action@v1.0.0
+        uses: nlsfi/python-monorepo-release-action@v1.0.2
         with:
           components: |
             lib
