@@ -55,7 +55,7 @@ runs:
             exit 1
           fi
           # Retry of an earlier run: fetch the already published wheel
-          python3 -m pip download --no-deps --only-binary=:all: \
+          python3 -m pip download --no-deps --only-binary=:all: --python-version 3.12 \
             --dest "$RUNNER_TEMP" "pinta-$COMPONENT==$VERSION"
           wheel="$(find "$RUNNER_TEMP" -maxdepth 1 -name "${module}-${VERSION}-*.whl" -print -quit)"
         fi
