@@ -2015,7 +2015,7 @@ lint = [
 
 [[package]]
 name = "pinta-backend"
-version = "0.0.0"
+version = "0.1.0"
 source = { editable = "components/backend" }
 default-groups = ["dev", "lint"]
 dependencies = [
