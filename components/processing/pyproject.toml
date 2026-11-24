@@ -8,7 +8,7 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
   "laspy",
   "lazrs",
-  "pinta-db[shapely,psycopg]",
+  "pinta-db[shapely,psycopg]>=0.2.0,<0.3",
   "pinta-lib",
   "affine",
   "geopandas",

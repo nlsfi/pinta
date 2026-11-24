@@ -5,14 +5,14 @@ description = "DAG component of the elevation production system"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-  "pinta-db",
+  "pinta-db>=0.2.0,<0.3",
   "pinta-processing",
   "pinta-lib",
 ]
 [project.optional-dependencies]
 airflow = [
   "apache-airflow[docker,postgres,standard]==3.3.1",
-  "pinta-db[psycopg]",
+  "pinta-db[psycopg]>=0.2.0,<0.3",
   "numpy==2.5.1",
   "scipy==1.18.0",
 ]

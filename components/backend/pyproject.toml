@@ -11,7 +11,7 @@ dependencies = [
   "apache-airflow-client==3.3.1",
   "httpx",
   "jsonschema",
-  "pinta-db[psycopg]",
+  "pinta-db[psycopg]>=0.2.0,<0.3",
   "pinta-lib",
 ]
 

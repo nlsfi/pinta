@@ -5,7 +5,7 @@ version = "0.0.0"
 description = "QGIS plugin component of the elevation production system"
 readme = "README.md"
 dependencies = [
-  "pinta-db",
+  "pinta-db>=0.2.0,<0.3",
   "pinta-lib",
   "qgis_plugin_tools",
 ]
