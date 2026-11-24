@@ -2294,7 +2294,7 @@ lint = [
 
 [[package]]
 name = "pinta-processing"
-version = "0.0.0"
+version = "0.1.0"
 source = { editable = "components/processing" }
 default-groups = ["development", "linting"]
 dependencies = [
