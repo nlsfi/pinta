@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "pinta-db>=0.2.0,<0.3",
-  "pinta-processing",
+  "pinta-processing>=0.1.0,<0.2",
   "pinta-lib",
 ]
 [project.optional-dependencies]
